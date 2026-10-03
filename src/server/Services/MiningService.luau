@@ -61,11 +61,20 @@ local function isInRange(player: Player, meteor: MeteorService.Meteor): boolean
     return surfaceDistance <= MeteorsConfig.MineRange + MeteorsConfig.MineRangeTolerance
 end
 
+-- Marca el personaje para que los clientes animen el brazo (SwingController).
+local function setMiningFlag(player: Player, mining: boolean)
+    local character = player.Character
+    if character then
+        character:SetAttribute("Mining", if mining then true else nil)
+    end
+end
+
 local function stopMining(player: Player)
     if miners[player] == nil then
         return
     end
     miners[player] = nil
+    setMiningFlag(player, false)
     Remotes.MineState:FireClient(player, "stop")
 end
 
@@ -80,6 +89,7 @@ end
 local function beginCycle(player: Player, meteorId: number, data: Types.Profile)
     local duration = PlayerStats.GetMineTime(data)
     miners[player] = { meteorId = meteorId, startedAt = os.clock(), duration = duration }
+    setMiningFlag(player, true)
     Remotes.MineState:FireClient(player, "start", meteorId, duration)
 end
 

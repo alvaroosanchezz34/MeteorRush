@@ -45,6 +45,13 @@ Meteors.CrystalCount = 3
 Meteors.RimRockCount = 9
 Meteors.GroundCrackCount = 6
 
+-- Animación de picar (solo cliente): segundos por golpe de brazo, ángulo con el brazo
+-- levantado y bajado (radianes hacia delante) y parte del ciclo que dura la bajada.
+Meteors.SwingPeriod = 0.55
+Meteors.SwingRaisedAngle = 2.6
+Meteors.SwingLoweredAngle = 0.8
+Meteors.SwingChopFraction = 0.3
+
 -- Efecto visual de la caída (solo cliente).
 Meteors.FallHeight = 350
 Meteors.FallDuration = 1.5
