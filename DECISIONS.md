@@ -137,6 +137,17 @@ Sustituyen a los bloques lisos. Siguen siendo el "placeholder": un modelo real e
 - **Barras y etiquetas flotantes:** como ahora los meteoritos y minerales son `Model`, los `BillboardGui` se enganchan a su parte principal.
 - **Sin probar en Studio:** las proporciones están calculadas, no vistas. Puede hacer falta retocar tamaños o colores.
 
+## Segunda pasada de aspecto
+
+- **Ambiente:** noche espacial definida en `default.project.json` (Lighting con tecnología Future, cielo estrellado, neblina y bloom). `Technology` no se puede cambiar desde un script, por eso va en el proyecto de Rojo.
+- **Decorado (`server/Builders/Scenery.luau`):** montañas de terreno (`Terrain:FillBall`) alrededor del mapa con vetas de lava, caminos iluminados de cada parcela a la zona de impacto, formaciones de cristal, rocas, tres tipos de estructura entre parcelas (torre de radar, cápsula estrellada, depósito de combustible), charcos de lava sin colisión en la zona de impacto, un planeta con anillo y asteroides flotando. Todo sale de `Map.Scenery` y usa una semilla fija. Dentro de la zona de impacto no hay nada con colisión, para no estorbar a los meteoritos.
+- **`server/Builders/Kit.luau`:** piezas reutilizables (roca facetada, cristal con punta, farola). No son servicios: no tienen `Init`/`Start`.
+- **Parcelas:** pasillo central, valla de energía sin colisión en los lados, muro al fondo con ventanas, baliza de luz vertical, rótulo "DEPOSIT" en el arco, cajas y barriles, y marco en la placa de cobro. Pedestales con columna redonda.
+- **Meteoritos:** bultos de formas mezcladas, grietas de neón, cristales que asoman, rocas alrededor de la base y humo.
+- **Minerales:** modelos de 5 a 11 partes; Legendario y Mítico sueltan destellos. Los expuestos en pedestales giran y flotan en cada cliente (`DisplayController`, etiqueta `SpinDisplay`).
+- **Interfaz:** fuente FredokaOne, botones con degradado, borde y respuesta al pasar el ratón y pulsar, barra lateral de botones cuadrados con icono (emoji) y color propio, ventanas con borde y animación al abrir.
+- **Game passes en Studio:** `Shop.IgnoreOwnedPassesInStudio`. El creador posee todos sus passes, así que en Studio se empieza sin ninguno para probar como un jugador normal.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

@@ -39,6 +39,16 @@ local MENUS: { { key: string, module: MenuModule } } = {
     { key = "trade", module = TradeMenu },
 }
 
+local MENU_COLORS: { [string]: Color3 } = {
+    inventory = Color3.fromRGB(60, 170, 200),
+    upgrades = Color3.fromRGB(80, 190, 90),
+    shop = Color3.fromRGB(235, 90, 150),
+    index = Color3.fromRGB(150, 100, 240),
+    daily = Color3.fromRGB(245, 140, 50),
+    rebirth = Color3.fromRGB(250, 195, 50),
+    trade = Color3.fromRGB(70, 130, 245),
+}
+
 local BOOST_NAMES: { [string]: string } = {
     carryShield = "carryShield30",
     magnet = "magnet30",
@@ -76,6 +86,11 @@ function Hud.Mount()
     statsPadding.PaddingLeft = UDim.new(0.05, 0)
     statsPadding.PaddingTop = UDim.new(0.04, 0)
     statsPadding.Parent = stats
+    local statsStroke = Instance.new("UIStroke")
+    statsStroke.Color = Components.Colors.Gold
+    statsStroke.Thickness = 2
+    statsStroke.Transparency = 0.3
+    statsStroke.Parent = stats
     local statsLayout = Instance.new("UIListLayout")
     statsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     statsLayout.Parent = stats
@@ -86,11 +101,18 @@ function Hud.Mount()
     local boostsLabel = makeStatLabel(stats, 4, Components.Colors.Muted)
 
     -- Próximo meteorito y flecha (arriba en el centro) ------------------------
+    local nextMeteorPill = Components.Panel({
+        size = UDim2.fromScale(0.26, 0.05),
+        position = UDim2.fromScale(0.37, 0.012),
+        color = Components.Colors.Background,
+        transparency = 0.3,
+        parent = gui,
+    })
     local nextMeteorLabel = Components.Label({
         text = "",
-        size = UDim2.fromScale(0.3, 0.045),
-        position = UDim2.fromScale(0.35, 0.015),
-        parent = gui,
+        size = UDim2.fromScale(0.92, 0.76),
+        position = UDim2.fromScale(0.04, 0.12),
+        parent = nextMeteorPill,
     })
     nextMeteorLabel.TextStrokeTransparency = 0.4
     local arrow = Components.Label({
@@ -121,16 +143,29 @@ function Hud.Mount()
     })
     tutorialLabel.BackgroundColor3 = Components.Colors.Background
     tutorialLabel.BackgroundTransparency = 0.3
+    local tutorialCorner = Instance.new("UICorner")
+    tutorialCorner.CornerRadius = UDim.new(0.3, 0)
+    tutorialCorner.Parent = tutorialLabel
+    local tutorialStroke = Instance.new("UIStroke")
+    tutorialStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    tutorialStroke.Color = Components.Colors.Gold
+    tutorialStroke.Thickness = 2
+    tutorialStroke.Parent = tutorialLabel
 
     -- Menús y botones laterales -----------------------------------------------
     local sideBar = Instance.new("Frame")
     sideBar.BackgroundTransparency = 1
-    sideBar.Size = UDim2.fromScale(0.11, 0.58)
+    sideBar.Size = UDim2.fromScale(0.16, 0.56)
     sideBar.Position = UDim2.fromScale(0.01, 0.22)
     sideBar.Parent = gui
-    local sideLayout = Instance.new("UIListLayout")
+    -- Dos columnas de botones cuadrados: el marco mantiene la proporción 2 x 4.
+    local sideAspect = Instance.new("UIAspectRatioConstraint")
+    sideAspect.AspectRatio = 0.5
+    sideAspect.Parent = sideBar
+    local sideLayout = Instance.new("UIGridLayout")
     sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    sideLayout.Padding = UDim.new(0.015, 0)
+    sideLayout.CellSize = UDim2.fromScale(0.47, 0.235)
+    sideLayout.CellPadding = UDim2.fromScale(0.06, 0.02)
     sideLayout.Parent = sideBar
 
     local windows: { Components.Window } = {}
@@ -151,13 +186,11 @@ function Hud.Mount()
         end)
         menu.module.Mount(window)
 
-        Components.Button({
+        Components.IconButton({
+            icon = Strings.Hud.Icons[menu.key] or "",
             text = Strings.Hud.Buttons[menu.key],
-            size = UDim2.fromScale(1, 0.125),
             layoutOrder = order,
-            color = if menu.key == "rebirth"
-                then Components.Colors.Gold
-                else Components.Colors.Primary,
+            color = MENU_COLORS[menu.key] or Components.Colors.Primary,
             parent = sideBar,
             onClick = function()
                 Sound.Play("UiClick")

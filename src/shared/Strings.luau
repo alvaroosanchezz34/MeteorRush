@@ -10,6 +10,7 @@ local Strings = {
         FreeSign = "Free Plot",
         OwnerSign = "%s's Base",
         CollectPad = "COLLECT\n$%s",
+        Deposit = "DEPOSIT",
     },
     Meteor = {
         Incoming = {
@@ -169,10 +170,10 @@ local Strings = {
         NoPlayers = "No other players in this server.",
     },
     Hud = {
-        Coins = "$%s",
-        PerSecond = "+$%s/s",
-        Backpack = "Backpack %d/%d",
-        NextMeteor = "Next meteor: %s",
+        Coins = "💰 $%s",
+        PerSecond = "📈 +$%s/s",
+        Backpack = "🎒 Backpack %d/%d",
+        NextMeteor = "☄️ Next meteor: %s",
         MeteorDistance = "%d studs",
         Buttons = {
             inventory = "Base",
@@ -182,6 +183,15 @@ local Strings = {
             daily = "Daily",
             rebirth = "Rebirth",
             trade = "Trade",
+        } :: { [string]: string },
+        Icons = {
+            inventory = "🏠",
+            upgrades = "⚡",
+            shop = "🛒",
+            index = "📖",
+            daily = "🎁",
+            rebirth = "⭐",
+            trade = "🤝",
         } :: { [string]: string },
         Close = "X",
     },

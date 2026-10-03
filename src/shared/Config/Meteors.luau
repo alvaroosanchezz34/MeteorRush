@@ -39,8 +39,10 @@ Meteors.MinSeparation = 6
 Meteors.PlacementAttempts = 10
 
 -- Modelo generado: bultos de roca y vetas brillantes por meteorito.
-Meteors.LumpCount = 10
-Meteors.VeinCount = 7
+Meteors.LumpCount = 14
+Meteors.VeinCount = 9
+Meteors.CrystalCount = 5
+Meteors.RimRockCount = 9
 
 -- Efecto visual de la caída (solo cliente).
 Meteors.FallHeight = 350

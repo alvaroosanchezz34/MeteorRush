@@ -66,6 +66,8 @@ local function createDisplay(plotPedestal: Instance, item: Types.InventoryItem):
     if visual:IsA("Model") then
         billboard.Adornee = visual.PrimaryPart
     end
+    -- El cliente hace girar y flotar los minerales expuestos (DisplayController).
+    visual:AddTag(MapConfig.SpinTag)
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.fromScale(1, 1)

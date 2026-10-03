@@ -6,6 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local Kit = require(script.Parent.Parent.Builders.Kit)
+
 local Shared = ReplicatedStorage.Shared
 local Assets = require(Shared.Util.Assets)
 local MapConfig = require(Shared.Config.Map)
@@ -116,34 +118,76 @@ local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Inst
     model.PrimaryPart = core
 
     -- Bultos de roca: no sobresalen del radio, que es el que se usa para medir la distancia de minado.
+    local shapes = { Enum.PartType.Block, Enum.PartType.Wedge, Enum.PartType.Ball }
     for _ = 1, MeteorsConfig.LumpCount do
         local direction = randomDirection()
-        local size = radius * rng:NextNumber(0.4, 0.55)
+        local shape = shapes[rng:NextInteger(1, #shapes)]
+        local size = if shape == Enum.PartType.Ball
+            then Vector3.one * radius * rng:NextNumber(0.4, 0.6)
+            else Vector3.new(
+                radius * rng:NextNumber(0.35, 0.6),
+                radius * rng:NextNumber(0.3, 0.5),
+                radius * rng:NextNumber(0.35, 0.6)
+            )
         local rotation = CFrame.Angles(
             rng:NextNumber(0, math.pi),
             rng:NextNumber(0, math.pi),
             rng:NextNumber(0, math.pi)
         )
-        local shade = meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.3))
+        local shade = meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.35))
         addPart(
-            if rng:NextNumber() < 0.5 then Enum.PartType.Ball else Enum.PartType.Block,
-            Vector3.one * size,
+            shape,
+            size,
             CFrame.new(direction * radius * 0.6) * rotation,
             shade,
-            Enum.Material.Basalt
+            if rng:NextNumber() < 0.3 then Enum.Material.Slate else Enum.Material.Basalt
         )
     end
 
+    -- Grietas: tiras de neón pegadas a la superficie, cada una con un giro distinto.
     for _ = 1, MeteorsConfig.VeinCount do
         local direction = randomDirection()
-        local vein = addPart(
-            Enum.PartType.Ball,
-            Vector3.one * radius * rng:NextNumber(0.2, 0.35),
-            CFrame.new(direction * radius * 0.86),
+        local crack = addPart(
+            Enum.PartType.Block,
+            Vector3.new(radius * rng:NextNumber(0.5, 0.9), radius * 0.12, radius * 0.08),
+            CFrame.lookAt(direction * radius * 0.93, direction * radius * 2)
+                * CFrame.Angles(0, 0, rng:NextNumber(0, math.pi)),
             meteorType.glowColor,
             Enum.Material.Neon
         )
-        vein.CanCollide = false
+        crack.CanCollide = false
+        crack.CastShadow = false
+    end
+
+    -- Cristales que asoman por la mitad superior: lo que se mina.
+    for _ = 1, MeteorsConfig.CrystalCount do
+        local direction = randomDirection()
+        direction = Vector3.new(direction.X, math.abs(direction.Y) * 0.8 + 0.1, direction.Z).Unit
+        local base = direction * radius * 0.8
+        Kit.Crystal({
+            -- lookAt apunta -Z hacia fuera; el giro deja +Y (el eje del cristal) en esa dirección.
+            cframe = CFrame.lookAt(base, base + direction) * CFrame.Angles(-math.pi / 2, 0, 0),
+            height = radius * rng:NextNumber(0.5, 0.85),
+            width = radius * rng:NextNumber(0.12, 0.18),
+            color = meteorType.glowColor:Lerp(Color3.new(1, 1, 1), 0.25),
+            canCollide = false,
+            parent = model,
+        })
+    end
+
+    -- Borde del cráter: rocas sueltas alrededor de la base, sin colisión para no estorbar.
+    for index = 1, MeteorsConfig.RimRockCount do
+        local angle = index / MeteorsConfig.RimRockCount * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+        local distance = radius * rng:NextNumber(1.15, 1.45)
+        Kit.Rock({
+            cframe = CFrame.new(math.cos(angle) * distance, -radius, math.sin(angle) * distance),
+            size = radius * rng:NextNumber(0.25, 0.45),
+            color = meteorType.color:Lerp(Color3.new(0, 0, 0), 0.3),
+            material = Enum.Material.Basalt,
+            rng = rng,
+            canCollide = false,
+            parent = model,
+        })
     end
 
     local scorch = addPart(
@@ -174,6 +218,17 @@ local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Inst
     embers.SpreadAngle = Vector2.new(40, 40)
     embers.Size = NumberSequence.new(radius * 0.12, 0)
     embers.Parent = core
+
+    local smoke = Instance.new("ParticleEmitter")
+    smoke.Name = "Smoke"
+    smoke.Color = ColorSequence.new(Color3.fromRGB(50, 45, 55))
+    smoke.Transparency = NumberSequence.new(0.6, 1)
+    smoke.Rate = 3
+    smoke.Lifetime = NumberRange.new(3, 5)
+    smoke.Speed = NumberRange.new(radius * 0.4, radius * 0.7)
+    smoke.SpreadAngle = Vector2.new(20, 20)
+    smoke.Size = NumberSequence.new(radius * 0.5, radius * 1.4)
+    smoke.Parent = core
 
     return model
 end

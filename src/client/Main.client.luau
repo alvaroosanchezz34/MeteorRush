@@ -12,6 +12,7 @@ local CONTROLLER_ORDER: { string } = {
     "NotificationController",
     "CarryController",
     "MeteorController",
+    "DisplayController",
     "InputController",
     "UIController",
 }

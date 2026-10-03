@@ -9,6 +9,8 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 local Assets = require(Shared.Util.Assets)
 local MapConfig = require(Shared.Config.Map)
+local Scenery = require(script.Parent.Parent.Builders.Scenery)
+local Strings = require(Shared.Strings)
 
 export type PlotLayout = {
     index: number,
@@ -194,14 +196,34 @@ local function makePedestalPlaceholder(): Instance
     local slab = size.Y / 6
 
     local column = makePart({
-        name = "Column",
-        size = Vector3.new(size.X * 0.65, size.Y - slab * 2, size.Z * 0.65),
+        name = "Core",
+        size = Vector3.new(size.X * 0.4, size.Y - slab * 2, size.Z * 0.4),
         cframe = CFrame.identity,
-        color = MapConfig.PedestalColor,
+        color = MapConfig.PedestalBaseColor,
         material = Enum.Material.Marble,
         parent = model,
     })
     model.PrimaryPart = column
+    -- Columna redonda alrededor del núcleo (el eje de los cilindros es X).
+    local shaft = makePart({
+        name = "Column",
+        size = Vector3.new(size.Y - slab * 2, size.X * 0.68, size.Z * 0.68),
+        cframe = CFrame.Angles(0, 0, math.rad(90)),
+        color = MapConfig.PedestalColor,
+        material = Enum.Material.Marble,
+        parent = model,
+    })
+    shaft.Shape = Enum.PartType.Cylinder
+    local ring = makePart({
+        name = "Ring",
+        size = Vector3.new(slab * 0.3, size.X * 0.74, size.Z * 0.74),
+        cframe = CFrame.Angles(0, 0, math.rad(90)),
+        color = MapConfig.PedestalAccentColor,
+        material = Enum.Material.Neon,
+        canCollide = false,
+        parent = model,
+    })
+    ring.Shape = Enum.PartType.Cylinder
     makePart({
         name = "Base",
         size = Vector3.new(size.X, slab, size.Z),
@@ -306,6 +328,215 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
         canCollide = false,
         parent = parent,
     })
+
+    -- Rótulo sobre el arco, legible por las dos caras.
+    local banner = makePart({
+        name = "GateBanner",
+        size = Vector3.new(MapConfig.DepositZoneWidth * 0.7, 2.6, 0.6),
+        cframe = cframe * CFrame.new(0, gateHeight + 2.3, -edge),
+        color = MapConfig.SignColor,
+        canCollide = false,
+        parent = parent,
+    })
+    for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+        local gui = Instance.new("SurfaceGui")
+        gui.Face = face
+        gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+        gui.PixelsPerStud = 40
+        gui.LightInfluence = 0
+        gui.Parent = banner
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.fromScale(1, 1)
+        label.BackgroundTransparency = 1
+        label.TextScaled = true
+        label.Font = Enum.Font.FredokaOne
+        label.TextColor3 = MapConfig.DepositZoneColor
+        label.Text = Strings.Plot.Deposit
+        label.Parent = gui
+    end
+
+    -- Pasillo central entre los pedestales, con dos líneas de luz.
+    makePart({
+        name = "Walkway",
+        size = Vector3.new(3, 0.1, MapConfig.PlotSize - 4),
+        cframe = cframe * CFrame.new(0, 0.05, 0),
+        color = MapConfig.PlotTrimColor,
+        material = Enum.Material.DiamondPlate,
+        canCollide = false,
+        parent = parent,
+    })
+    for _, side in { -1, 1 } do
+        makePart({
+            name = "WalkwayLight",
+            size = Vector3.new(0.25, 0.14, MapConfig.PlotSize - 4),
+            cframe = cframe * CFrame.new(side * 1.6, 0.07, 0),
+            color = MapConfig.PlotAccentColor,
+            material = Enum.Material.Neon,
+            canCollide = false,
+            parent = parent,
+        })
+    end
+
+    -- Valla de energía en los lados: postes y paneles translúcidos que no bloquean el paso.
+    local fenceSpan = (MapConfig.PlotSize - 6) / MapConfig.PlotFenceSegments
+    for _, side in { -1, 1 } do
+        for segment = 1, MapConfig.PlotFenceSegments do
+            local z = -half + 3 + (segment - 0.5) * fenceSpan
+            makePart({
+                name = "FencePanel",
+                size = Vector3.new(0.2, 3, fenceSpan - 1),
+                cframe = cframe * CFrame.new(side * edge, 2.2, z),
+                color = MapConfig.PlotAccentColor,
+                material = Enum.Material.Neon,
+                canCollide = false,
+                transparency = 0.8,
+                parent = parent,
+            })
+            if segment < MapConfig.PlotFenceSegments then
+                makePart({
+                    name = "FencePost",
+                    size = Vector3.new(0.8, 4.2, 0.8),
+                    cframe = cframe * CFrame.new(side * edge, 2.1, z + fenceSpan / 2),
+                    color = MapConfig.PlotTrimColor,
+                    material = Enum.Material.Metal,
+                    parent = parent,
+                })
+            end
+        end
+    end
+
+    -- Muro del fondo con ventanas luminosas y remate.
+    local wallHeight = MapConfig.PlotWallHeight
+    local wallWidth = MapConfig.PlotSize - 6
+    makePart({
+        name = "BackWall",
+        size = Vector3.new(wallWidth, wallHeight, 1.5),
+        cframe = cframe * CFrame.new(0, wallHeight / 2, half - 1.25),
+        color = MapConfig.PlotTrimColor,
+        material = Enum.Material.Metal,
+        parent = parent,
+    })
+    makePart({
+        name = "BackWallTop",
+        size = Vector3.new(wallWidth + 1, 0.5, 2.2),
+        cframe = cframe * CFrame.new(0, wallHeight + 0.25, half - 1.25),
+        color = MapConfig.PlotAccentColor,
+        material = Enum.Material.Neon,
+        canCollide = false,
+        parent = parent,
+    })
+    local windows = 5
+    for index = 1, windows do
+        local x = (index - (windows + 1) / 2) * (wallWidth / windows)
+        makePart({
+            name = "BackWallWindow",
+            size = Vector3.new(wallWidth / windows * 0.6, wallHeight * 0.4, 0.3),
+            cframe = cframe * CFrame.new(x, wallHeight * 0.6, half - 2.1),
+            color = MapConfig.PlotAccentColor,
+            material = Enum.Material.Neon,
+            canCollide = false,
+            transparency = 0.35,
+            parent = parent,
+        })
+    end
+
+    -- Baliza: haz de luz vertical que marca la base desde lejos.
+    local beaconBase = cframe * CFrame.new(0, wallHeight + 0.5, half - 1.25)
+    local emitter = makePart({
+        name = "BeaconBase",
+        size = Vector3.new(3, 1.5, 3),
+        cframe = beaconBase * CFrame.new(0, 0.75, 0),
+        color = MapConfig.PlotTrimColor,
+        material = Enum.Material.Metal,
+        parent = parent,
+    })
+    local beam = makePart({
+        name = "Beacon",
+        size = Vector3.new(MapConfig.PlotBeaconHeight, 1.6, 1.6),
+        cframe = beaconBase
+            * CFrame.new(0, 1.5 + MapConfig.PlotBeaconHeight / 2, 0)
+            * CFrame.Angles(0, 0, math.rad(90)),
+        color = MapConfig.PlotAccentColor,
+        material = Enum.Material.Neon,
+        canCollide = false,
+        transparency = 0.55,
+        parent = parent,
+    })
+    beam.Shape = Enum.PartType.Cylinder
+    beam.CastShadow = false
+    beam.CanQuery = false
+    local beaconLight = Instance.new("PointLight")
+    beaconLight.Color = MapConfig.PlotAccentColor
+    beaconLight.Range = 30
+    beaconLight.Brightness = 1.5
+    beaconLight.Shadows = false
+    beaconLight.Parent = emitter
+
+    -- Cajas y barriles en la esquina del fondo opuesta a la placa de cobro.
+    local crates = {
+        { x = 22, z = 23, size = 4, y = 0 },
+        { x = 17.5, z = 24, size = 3.2, y = 0 },
+        { x = 21.5, z = 23.5, size = 3, y = 4 },
+    }
+    for _, crate in crates do
+        local crateCFrame = cframe
+            * CFrame.new(crate.x, crate.y + crate.size / 2, crate.z)
+            * CFrame.Angles(0, crate.x * 0.3, 0)
+        makePart({
+            name = "Crate",
+            size = Vector3.one * crate.size,
+            cframe = crateCFrame,
+            color = MapConfig.CrateColor,
+            material = Enum.Material.DiamondPlate,
+            parent = parent,
+        })
+        makePart({
+            name = "CrateBand",
+            size = Vector3.new(crate.size + 0.1, crate.size * 0.15, crate.size + 0.1),
+            cframe = crateCFrame,
+            color = MapConfig.CollectPadColor,
+            material = Enum.Material.Neon,
+            canCollide = false,
+            parent = parent,
+        })
+    end
+    for index = 1, 2 do
+        local barrel = makePart({
+            name = "Barrel",
+            size = Vector3.new(4, 2.6, 2.6),
+            cframe = cframe
+                * CFrame.new(25.5, 2, 18.5 - index * 3.2)
+                * CFrame.Angles(0, 0, math.rad(90)),
+            color = MapConfig.PlotAccentColor:Lerp(Color3.new(0, 0, 0), 0.45),
+            material = Enum.Material.Metal,
+            parent = parent,
+        })
+        barrel.Shape = Enum.PartType.Cylinder
+    end
+
+    -- Marco de la placa de cobro.
+    local padSize = MapConfig.CollectPadSize
+    local padCenter = cframe * CFrame.new(MapConfig.CollectPadOffset)
+    for _, side in { -1, 1 } do
+        makePart({
+            name = "PadFrame",
+            size = Vector3.new(padSize + 1, 0.6, 0.5),
+            cframe = padCenter * CFrame.new(0, 0.3, side * (padSize / 2 + 0.25)),
+            color = MapConfig.PlotTrimColor,
+            material = Enum.Material.Metal,
+            canCollide = false,
+            parent = parent,
+        })
+        makePart({
+            name = "PadFrame",
+            size = Vector3.new(0.5, 0.6, padSize + 1),
+            cframe = padCenter * CFrame.new(side * (padSize / 2 + 0.25), 0.3, 0),
+            color = MapConfig.PlotTrimColor,
+            material = Enum.Material.Metal,
+            canCollide = false,
+            parent = parent,
+        })
+    end
 end
 
 local function pedestalCFrame(plotCFrame: CFrame, number: number): CFrame
@@ -465,6 +696,8 @@ function MapService.Init()
     for index = 1, MapConfig.PlotCount do
         table.insert(plots, buildPlot(index, plotFolder))
     end
+
+    Scenery.Build(folder)
 
     folder.Parent = Workspace
     mapFolder = folder

@@ -3,6 +3,8 @@
 -- Piezas de interfaz reutilizables. Todo con tamaños relativos (escala), nunca píxeles fijos,
 -- para que funcione igual en móvil, PC y consola.
 
+local TweenService = game:GetService("TweenService")
+
 local Components = {}
 
 Components.Colors = {
@@ -17,12 +19,64 @@ Components.Colors = {
     Disabled = Color3.fromRGB(80, 80, 92),
 }
 
-local FONT = Enum.Font.GothamBold
+local FONT = Enum.Font.FredokaOne
+local HOVER_TWEEN = TweenInfo.new(0.1)
+local OPEN_TWEEN = TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
 local function corner(parent: Instance, scale: number?)
     local instance = Instance.new("UICorner")
     instance.CornerRadius = UDim.new(scale or 0.15, 0)
     instance.Parent = parent
+end
+
+local function border(
+    parent: Instance,
+    color: Color3,
+    thickness: number,
+    transparency: number
+): UIStroke
+    local stroke = Instance.new("UIStroke")
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Color = color
+    stroke.Thickness = thickness
+    stroke.Transparency = transparency
+    stroke.Parent = parent
+    return stroke
+end
+
+-- Degradado vertical: más claro arriba y más oscuro abajo, para dar volumen.
+local function shade(parent: Instance, bottom: number): UIGradient
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 90
+    gradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(bottom, bottom, bottom))
+    gradient.Parent = parent
+    return gradient
+end
+
+-- Borde que se ilumina al pasar el ratón y degradado que se invierte al pulsar.
+local function addButtonFeedback(button: GuiButton)
+    local stroke = border(button, Color3.new(0, 0, 0), 2.5, 0.5)
+    local gradient = shade(button, 0.72)
+
+    local function setHover(hover: boolean)
+        TweenService:Create(stroke, HOVER_TWEEN, {
+            Color = if hover then Color3.new(1, 1, 1) else Color3.new(0, 0, 0),
+            Transparency = if hover then 0.1 else 0.5,
+        }):Play()
+    end
+    button.MouseEnter:Connect(function()
+        setHover(true)
+    end)
+    button.MouseLeave:Connect(function()
+        setHover(false)
+        gradient.Rotation = 90
+    end)
+    button.MouseButton1Down:Connect(function()
+        gradient.Rotation = 270
+    end)
+    button.MouseButton1Up:Connect(function()
+        gradient.Rotation = 90
+    end)
 end
 
 -- Texto con tamaño automático.
@@ -68,9 +122,11 @@ function Components.Button(props: {
     button.Text = props.text
     button.TextColor3 = Components.Colors.Text
     button.TextScaled = true
+    button.TextStrokeTransparency = 0.6
     button.Font = FONT
     button.LayoutOrder = props.layoutOrder or 0
-    corner(button)
+    corner(button, 0.28)
+    addButtonFeedback(button)
 
     local padding = Instance.new("UIPadding")
     padding.PaddingTop = UDim.new(0.15, 0)
@@ -78,6 +134,47 @@ function Components.Button(props: {
     padding.PaddingLeft = UDim.new(0.05, 0)
     padding.PaddingRight = UDim.new(0.05, 0)
     padding.Parent = button
+
+    local onClick = props.onClick
+    if onClick then
+        button.Activated:Connect(onClick)
+    end
+    button.Parent = props.parent
+    return button
+end
+
+-- Botón cuadrado con un icono grande y el nombre debajo (barra lateral del HUD).
+function Components.IconButton(props: {
+    icon: string,
+    text: string,
+    color: Color3,
+    layoutOrder: number?,
+    parent: Instance?,
+    onClick: (() -> ())?,
+}): TextButton
+    local button = Instance.new("TextButton")
+    button.BackgroundColor3 = props.color
+    button.AutoButtonColor = true
+    button.Text = ""
+    button.LayoutOrder = props.layoutOrder or 0
+    corner(button, 0.22)
+    addButtonFeedback(button)
+
+    local icon = Components.Label({
+        text = props.icon,
+        size = UDim2.fromScale(0.62, 0.56),
+        position = UDim2.fromScale(0.19, 0.06),
+        parent = button,
+    })
+    icon.Name = "Icon"
+    local name = Components.Label({
+        text = props.text,
+        size = UDim2.fromScale(0.9, 0.28),
+        position = UDim2.fromScale(0.05, 0.66),
+        parent = button,
+    })
+    name.Name = "Name"
+    name.TextStrokeTransparency = 0.5
 
     local onClick = props.onClick
     if onClick then
@@ -104,6 +201,7 @@ function Components.Panel(props: {
     frame.BorderSizePixel = 0
     frame.LayoutOrder = props.layoutOrder or 0
     corner(frame, 0.08)
+    border(frame, Color3.new(1, 1, 1), 1.5, 0.85)
     frame.Parent = props.parent
     return frame
 end
@@ -169,6 +267,10 @@ function Components.Window(props: { title: string, closeText: string, parent: In
     frame.Visible = false
     -- Por encima del resto del HUD (los hijos se dibujan sobre su padre).
     frame.ZIndex = 5
+    border(frame, Components.Colors.Primary, 3, 0.15)
+    shade(frame, 0.7)
+    local scale = Instance.new("UIScale")
+    scale.Parent = frame
 
     Components.Label({
         text = props.title,
@@ -206,6 +308,10 @@ function Components.Window(props: { title: string, closeText: string, parent: In
         frame = frame,
         content = content,
         Open = function()
+            if not frame.Visible then
+                scale.Scale = 0.88
+                TweenService:Create(scale, OPEN_TWEEN, { Scale = 1 }):Play()
+            end
             frame.Visible = true
             for _, callback in openedCallbacks do
                 task.spawn(callback)
