@@ -192,6 +192,7 @@ local Strings = {
             shop = "Shop",
             index = "Index",
             daily = "Daily",
+            quests = "Quests",
             rebirth = "Rebirth",
             trade = "Trade",
         } :: { [string]: string },
@@ -201,6 +202,7 @@ local Strings = {
             shop = "🛒",
             index = "📖",
             daily = "🎁",
+            quests = "📜",
             rebirth = "⭐",
             trade = "🤝",
         } :: { [string]: string },
@@ -222,6 +224,35 @@ local Strings = {
         NothingToSell = "No common minerals to sell.",
         Fused = "Fused into %s!",
         FuseNotEnough = "You need %d identical minerals off pedestals to fuse.",
+    },
+    Quests = {
+        -- %d = objetivo de la misión
+        Descriptions = {
+            mine = "Mine %d minerals",
+            deposit = "Deposit %d minerals in your base",
+            rare = "Mine %d Rare or better minerals",
+            upgrade = "Buy %d upgrades",
+            mineMore = "Mine %d minerals",
+        } :: { [string]: string },
+        Progress = "%d/%d",
+        Reward = "Claim $%s",
+        Claimed = "Claimed",
+        ResetsIn = "New quests in %s",
+        Completed = "Quest complete: %s! Claim it in Quests.",
+        RewardClaimed = "Quest reward: +$%s",
+    },
+    Codes = {
+        Placeholder = "Enter a code",
+        Redeem = "Redeem",
+        Invalid = "That code does not exist.",
+        Used = "You already redeemed that code.",
+        Redeemed = "Code redeemed: %s",
+    },
+    Leaderboard = {
+        Title = "TOP MINERS",
+        -- %d = puesto, %s = jugador, %s = monedas ganadas en total
+        Row = "%d. %s  -  $%s",
+        Empty = "No data yet",
     },
     Tutorial = {
         Steps = {

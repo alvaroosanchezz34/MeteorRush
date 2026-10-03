@@ -17,6 +17,7 @@ local DataController = require(script.Parent.Parent.Controllers.DataController)
 local IndexMenu = require(script.Parent.IndexMenu)
 local InventoryMenu = require(script.Parent.InventoryMenu)
 local MeteorController = require(script.Parent.Parent.Controllers.MeteorController)
+local QuestsMenu = require(script.Parent.QuestsMenu)
 local RebirthMenu = require(script.Parent.RebirthMenu)
 local ShopMenu = require(script.Parent.ShopMenu)
 local Sound = require(script.Parent.Sound)
@@ -36,6 +37,7 @@ local MENUS: { { key: string, module: MenuModule } } = {
     { key = "shop", module = ShopMenu },
     { key = "index", module = IndexMenu },
     { key = "daily", module = DailyMenu },
+    { key = "quests", module = QuestsMenu },
     { key = "rebirth", module = RebirthMenu },
     { key = "trade", module = TradeMenu },
 }
@@ -46,6 +48,7 @@ local MENU_COLORS: { [string]: Color3 } = {
     shop = Color3.fromRGB(235, 90, 150),
     index = Color3.fromRGB(150, 100, 240),
     daily = Color3.fromRGB(245, 140, 50),
+    quests = Color3.fromRGB(200, 80, 80),
     rebirth = Color3.fromRGB(250, 195, 50),
     trade = Color3.fromRGB(70, 130, 245),
 }

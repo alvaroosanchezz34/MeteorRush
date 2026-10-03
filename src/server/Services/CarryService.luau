@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DataService = require(script.Parent.DataService)
 local PlotService = require(script.Parent.PlotService)
+local QuestService = require(script.Parent.QuestService)
 local TutorialService = require(script.Parent.TutorialService)
 
 local Shared = ReplicatedStorage.Shared
@@ -196,6 +197,7 @@ local function deposit(player: Player)
     changed(player)
     Remotes.Notify:FireClient(player, string.format(Strings.Carry.Deposited, #items))
     TutorialService.Advance(player, 2)
+    QuestService.Progress(player, "deposit", #items)
 end
 
 local function checkDeposits()

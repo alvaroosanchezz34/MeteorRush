@@ -23,6 +23,13 @@ export type DailyData = {
     lastClaim: number,
 }
 
+export type QuestData = {
+    -- Día (Quests.GetDay) al que pertenecen el progreso y los cobros.
+    day: number,
+    progress: { [string]: number },
+    claimed: { [string]: boolean },
+}
+
 export type CosmeticsData = {
     owned: { string },
     equipped: { [string]: string },
@@ -52,6 +59,9 @@ export type Profile = {
     cosmetics: CosmeticsData,
     -- Paso del tutorial de primer uso: 0..3; 3 = terminado.
     tutorialStep: number,
+    quests: QuestData,
+    -- [código] = true para los códigos ya canjeados.
+    codes: { [string]: boolean },
 }
 
 return {}

@@ -12,6 +12,7 @@ local CarryService = require(script.Parent.CarryService)
 local DataService = require(script.Parent.DataService)
 local IndexService = require(script.Parent.IndexService)
 local MeteorService = require(script.Parent.MeteorService)
+local QuestService = require(script.Parent.QuestService)
 local TutorialService = require(script.Parent.TutorialService)
 
 local Shared = ReplicatedStorage.Shared
@@ -140,6 +141,10 @@ local function grantMineral(
     }
     CarryService.Add(player, item)
     IndexService.Register(player, mineral.id, mutation.id)
+    QuestService.Progress(player, "mine", 1)
+    if Minerals.GetRank(mineral.id) >= Minerals.RareRank then
+        QuestService.Progress(player, "rare", 1)
+    end
 
     -- El cliente muestra el mineral obtenido como un texto flotante sobre el meteorito.
     Remotes.MineReward:FireClient(player, meteorPosition, meteorRadius, mineral.id, mutation.id)

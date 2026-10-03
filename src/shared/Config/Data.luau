@@ -39,6 +39,8 @@ local template: Types.Profile = {
     boosts = {},
     cosmetics = { owned = {}, equipped = {} },
     tutorialStep = 0,
+    quests = { day = 0, progress = {}, claimed = {} },
+    codes = {},
 }
 
 Data.Template = template

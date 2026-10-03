@@ -172,6 +172,13 @@ Sustituyen a los bloques lisos. Siguen siendo el "placeholder": un modelo real e
 - **Meteoritos que se rompen:** al gastarse los golpes se le caen placas de la corteza (hasta quedarse con el 30 %), que saltan y desaparecen. Lo hace el servidor para que todos vean el mismo meteorito.
 - **Animación de picar:** `SwingController` gira el hombro derecho (`Motor6D.Transform`) de los personajes con el atributo `Mining`, que pone `MiningService`. Ritmo fijo, no sincronizado con cada golpe.
 
+## Misiones, códigos y clasificación global
+
+- **Misiones diarias (`QuestService`, `Config/Quests.luau`):** las mismas cinco para todos, se reinician a medianoche UTC. Los servicios donde ocurre la acción llaman a `QuestService.Progress` (minar, minar Raro o superior, depositar, comprar mejoras). La recompensa es una fracción del coste del siguiente rebirth (mínimo 500), para que siga valiendo la pena al avanzar. Se cobra a mano desde el menú.
+- **Datos nuevos:** `quests` (`day`, `progress`, `claimed`) y `codes`. Si el día guardado no es el de hoy, el progreso cuenta como cero.
+- **Códigos (`CodeService`, `Config/Codes.luau`):** un uso por jugador, sin distinguir mayúsculas. Dan monedas o un mineral. La casilla está en el menú de misiones para no añadir un noveno botón al HUD.
+- **Clasificación global (`LeaderboardService`, `Config/Leaderboard.luau`):** `OrderedDataStore` con `totalCoinsEarned`. Se guarda al entrar, al salir y cada 5 minutos; se lee cada 2 minutos. Hay dos tableros en el mapa, justo fuera de la zona de impacto. En Studio también escribe en la clasificación real.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

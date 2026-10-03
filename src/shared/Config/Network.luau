@@ -21,6 +21,8 @@ Network.RateLimits = {
     BuyUpgrade = { maxRequests = 6, windowSeconds = 1 } :: RateLimit,
     Rebirth = { maxRequests = 2, windowSeconds = 2 } :: RateLimit,
     ClaimDaily = { maxRequests = 2, windowSeconds = 2 } :: RateLimit,
+    ClaimQuest = { maxRequests = 4, windowSeconds = 2 } :: RateLimit,
+    RedeemCode = { maxRequests = 2, windowSeconds = 3 } :: RateLimit,
     HitPlayer = { maxRequests = 4, windowSeconds = 1 } :: RateLimit,
     TradeRequest = { maxRequests = 3, windowSeconds = 3 } :: RateLimit,
     TradeRespond = { maxRequests = 4, windowSeconds = 2 } :: RateLimit,

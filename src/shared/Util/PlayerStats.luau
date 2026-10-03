@@ -9,6 +9,7 @@ local Carry = require(Config.Carry)
 local Income = require(Config.Income)
 local Minerals = require(Config.Minerals)
 local Mutations = require(Config.Mutations)
+local Quests = require(Config.Quests)
 local Rebirth = require(Config.Rebirth)
 local Shop = require(Config.Shop)
 local Upgrades = require(Config.Upgrades)
@@ -162,6 +163,27 @@ end
 -- Monedas que da un paquete de monedas: una fracción del coste del siguiente rebirth.
 function PlayerStats.GetCoinPackAmount(data: Types.Profile, product: Shop.Product): number
     return math.floor(Rebirth.GetCost(data.rebirths) * (product.rebirthCostFraction or 0))
+end
+
+-- Monedas que da una misión diaria: una fracción del coste del siguiente rebirth.
+function PlayerStats.GetQuestReward(data: Types.Profile, quest: Quests.Quest): number
+    return math.max(
+        Quests.MinReward,
+        math.floor(Rebirth.GetCost(data.rebirths) * quest.rewardFraction)
+    )
+end
+
+-- Progreso de una misión hoy (0 si el progreso guardado es de otro día).
+function PlayerStats.GetQuestProgress(data: Types.Profile, questId: string, now: number): number
+    if data.quests.day ~= Quests.GetDay(now) then
+        return 0
+    end
+    return data.quests.progress[questId] or 0
+end
+
+-- Indica si la recompensa de una misión ya se ha cobrado hoy.
+function PlayerStats.IsQuestClaimed(data: Types.Profile, questId: string, now: number): boolean
+    return data.quests.day == Quests.GetDay(now) and data.quests.claimed[questId] == true
 end
 
 -- Indica si el jugador puede equipar un cosmético (comprado, o exclusivo vip con el pass).

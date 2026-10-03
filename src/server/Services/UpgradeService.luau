@@ -6,6 +6,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DataService = require(script.Parent.DataService)
+local QuestService = require(script.Parent.QuestService)
 
 local Shared = ReplicatedStorage.Shared
 local Network = require(Shared.Config.Network)
@@ -52,6 +53,7 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
         player,
         string.format(Strings.Upgrades.Bought, Strings.Upgrades.Names[upgradeId], level + 1)
     )
+    QuestService.Progress(player, "upgrade", 1)
 end
 
 function UpgradeService.Init()
