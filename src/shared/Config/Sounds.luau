@@ -9,7 +9,8 @@ local Sounds = {
     MeteorImpact = "rbxasset://sounds/impact_explosion_03.mp3",
     -- "Pickaxe Hit", de la Creator Store.
     MineHit = "rbxassetid://9120146349",
-    MineralObtained = "rbxasset://sounds/snap.mp3",
+    -- "gem collect", de la Creator Store.
+    MineralObtained = "rbxassetid://11439707919",
     Deposit = "rbxasset://sounds/unsheath.wav",
     Collect = "rbxasset://sounds/clickfast.wav",
     Hit = "rbxasset://sounds/swordslash.wav",
@@ -20,8 +21,8 @@ local Sounds = {
 -- Volumen de cada sonido (0-1). Los que no aparecen usan DefaultVolume.
 local Volume: { [string]: number } = {
     MeteorImpact = 0.8,
-    MineHit = 0.35,
-    MineralObtained = 0.4,
+    MineHit = 0.7,
+    MineralObtained = 0.3,
     Collect = 0.3,
     UiClick = 0.4,
 }
