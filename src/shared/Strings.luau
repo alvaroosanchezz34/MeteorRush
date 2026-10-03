@@ -22,8 +22,10 @@ local Strings = {
         ImpactLabel = "IMPACT IN %d",
     },
     Mining = {
-        -- %s = nombre completo del mineral, %d/%d = mochila
-        Obtained = "+1 %s (%d/%d)",
+        -- %s = nombre completo del mineral
+        Obtained = "+1 %s",
+        -- %d/%d = golpes que le quedan al meteorito
+        HitsLeft = "%d/%d",
         BackpackFull = "Backpack full! (%d/%d) Bring your minerals to your base.",
         -- %s = jugador, %s = nombre completo del mineral
         Announce = "%s found %s!",

@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MeteorController = require(script.Parent.MeteorController)
+local Sound = require(script.Parent.Parent.UI.Sound)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = Shared:WaitForChild("Config")
@@ -60,6 +61,7 @@ local function tryHit(): boolean
     if now - lastHitAttempt >= StealConfig.AttackerCooldown then
         lastHitAttempt = now
         Remotes.HitPlayer:FireServer(target)
+        Sound.Play("Hit")
     end
     return true
 end

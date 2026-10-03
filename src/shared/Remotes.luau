@@ -23,6 +23,7 @@ local Remotes = {
     MineStart = getOrCreateRemoteEvent("MineStart"),
     MineStop = getOrCreateRemoteEvent("MineStop"),
     MineState = getOrCreateRemoteEvent("MineState"),
+    MineReward = getOrCreateRemoteEvent("MineReward"),
     CarryUpdate = getOrCreateRemoteEvent("CarryUpdate"),
     HitPlayer = getOrCreateRemoteEvent("HitPlayer"),
     PlaceMineral = getOrCreateRemoteEvent("PlaceMineral"),

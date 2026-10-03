@@ -7,6 +7,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local CarryController = require(script.Parent.Parent.Controllers.CarryController)
@@ -200,11 +201,42 @@ function Hud.Mount()
     end
 
     -- Actualización de valores -------------------------------------------------
+    -- Texto "+$X" que sube y se desvanece junto al panel cada vez que entran monedas.
+    local lastCoins: number? = nil
+    local function showCoinGain(amount: number)
+        local popup = Components.Label({
+            text = string.format(Strings.Income.Collected, Format.Number(amount)),
+            size = UDim2.fromScale(0.14, 0.04),
+            position = UDim2.fromScale(0.24, 0.07),
+            color = Components.Colors.Gold,
+            alignment = Enum.TextXAlignment.Left,
+            parent = gui,
+        })
+        popup.TextStrokeTransparency = 0.3
+        local tween = TweenService:Create(
+            popup,
+            TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Position = UDim2.fromScale(0.24, 0.02),
+                TextTransparency = 1,
+                TextStrokeTransparency = 1,
+            }
+        )
+        tween.Completed:Connect(function()
+            popup:Destroy()
+        end)
+        tween:Play()
+    end
+
     local function updateStats()
         local data = DataController.GetData()
         if data == nil then
             return
         end
+        if lastCoins and data.coins - lastCoins >= 1 then
+            showCoinGain(data.coins - lastCoins)
+        end
+        lastCoins = data.coins
         coinsLabel.Text = string.format(Strings.Hud.Coins, Format.Number(data.coins))
         incomeLabel.Text = string.format(
             Strings.Hud.PerSecond,

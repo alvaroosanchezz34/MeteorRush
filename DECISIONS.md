@@ -148,6 +148,15 @@ Sustituyen a los bloques lisos. Siguen siendo el "placeholder": un modelo real e
 - **Interfaz:** fuente FredokaOne, botones con degradado, borde y respuesta al pasar el ratón y pulsar, barra lateral de botones cuadrados con icono (emoji) y color propio, ventanas con borde y animación al abrir.
 - **Game passes en Studio:** `Shop.IgnoreOwnedPassesInStudio`. El creador posee todos sus passes, así que en Studio se empieza sin ninguno para probar como un jugador normal.
 
+## Sensación de juego
+
+- **Sonidos provisionales:** `Config/Sounds.luau` usa los sonidos que trae el cliente de Roblox (`rbxasset://sounds/...`), que no necesitan ids de la Creator Store. Los nombres de archivo no se han podido comprobar; si alguno no existe, ese sonido no suena y Studio lo avisa en la Salida.
+- **Mineral obtenido:** remote extra `MineReward` (servidor → cliente) con la posición del meteorito y el mineral. El cliente lo muestra como texto flotante con chispas, en vez del aviso de pantalla de antes.
+- **Barra de golpes:** cada cliente dibuja sobre los meteoritos cuántos golpes les quedan, leyendo el atributo `HitsLeft`.
+- **Sacudida de cámara** al impactar un meteorito, según su tamaño y la distancia.
+- **Monedas:** texto "+$X" junto al panel cada vez que entran monedas.
+- **`LeaderboardService`:** `leaderstats` con Rebirths y Coins en la lista de jugadores.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

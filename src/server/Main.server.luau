@@ -11,6 +11,7 @@ local SERVICE_ORDER: { string } = {
     "MapService",
     "PlotService",
     "DataService",
+    "LeaderboardService",
     "TutorialService",
     "CarryService",
     "IncomeService",

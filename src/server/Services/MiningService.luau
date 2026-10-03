@@ -126,6 +126,7 @@ local function completeHit(player: Player, state: MiningState)
     end
     -- Se guarda el tipo antes de gastar el golpe: el último golpe elimina el meteorito.
     local meteorTypeId = meteor.typeId
+    local meteorPosition, meteorRadius = meteor.position, meteor.radius
     if not MeteorService.ConsumeHit(state.meteorId) then
         stopMining(player)
         return
@@ -142,16 +143,9 @@ local function completeHit(player: Player, state: MiningState)
     IndexService.Register(player, mineral.id, mutation.id)
     TutorialService.Advance(player, 1)
 
+    -- El cliente muestra el mineral obtenido como un texto flotante sobre el meteorito.
+    Remotes.MineReward:FireClient(player, meteorPosition, meteorRadius, mineral.id, mutation.id)
     local name = Strings.MineralName(mineral.id, mutation.id)
-    Remotes.Notify:FireClient(
-        player,
-        string.format(
-            Strings.Mining.Obtained,
-            name,
-            CarryService.GetCount(player),
-            CarryService.GetCapacity(player)
-        )
-    )
     if Minerals.GetRank(mineral.id) >= Minerals.AnnounceRank then
         Remotes.Notify:FireAllClients(
             string.format(Strings.Mining.Announce, player.DisplayName, name)

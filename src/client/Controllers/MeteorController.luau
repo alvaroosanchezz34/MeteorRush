@@ -12,6 +12,8 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = Shared:WaitForChild("Config")
 local MeteorsConfig = require(Config:WaitForChild("Meteors"))
+local Minerals = require(Config:WaitForChild("Minerals"))
+local Mutations = require(Config:WaitForChild("Mutations"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Strings = require(Shared:WaitForChild("Strings"))
 
@@ -22,6 +24,14 @@ local BEAM_HEIGHT = 200
 local FIREBALL_COLOR = Color3.fromRGB(255, 140, 40)
 local DUST_COLOR = Color3.fromRGB(150, 120, 100)
 local SPARK_COLOR = Color3.fromRGB(255, 220, 120)
+-- Sacudida de cámara: fuerza por stud de radio, alcance y duración.
+local SHAKE_PER_RADIUS = 0.18
+local SHAKE_RANGE = 250
+local SHAKE_DURATION = 0.6
+-- Texto flotante del mineral obtenido: segundos que dura y studs que sube.
+local POPUP_DURATION = 1.4
+local POPUP_RISE = 5
+local HITS_BAR_COLOR = Color3.fromRGB(255, 120, 50)
 
 local MeteorController = {}
 
@@ -140,6 +150,40 @@ local function burst(position: Vector3, color: Color3, count: number, speed: num
     end)
 end
 
+-- Sacude la cámara al caer un meteorito: más fuerte cuanto más grande y más cerca.
+local function shakeCamera(position: Vector3, radius: number)
+    local character = Players.LocalPlayer.Character
+    local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+    local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+    if humanoid == nil or root == nil or not root:IsA("BasePart") then
+        return
+    end
+    local distance = (root.Position - position).Magnitude
+    local strength = math.clamp(radius * SHAKE_PER_RADIUS * (1 - distance / SHAKE_RANGE), 0, 2)
+    if strength <= 0.02 then
+        return
+    end
+
+    local started = os.clock()
+    local connection: RBXScriptConnection? = nil
+    connection = RunService.RenderStepped:Connect(function()
+        local progress = (os.clock() - started) / SHAKE_DURATION
+        if progress >= 1 or humanoid.Parent == nil then
+            humanoid.CameraOffset = Vector3.zero
+            if connection then
+                connection:Disconnect()
+            end
+            return
+        end
+        local amount = strength * (1 - progress)
+        humanoid.CameraOffset = Vector3.new(
+            (math.random() - 0.5) * amount,
+            (math.random() - 0.5) * amount,
+            (math.random() - 0.5) * amount
+        )
+    end)
+end
+
 local function playFall(position: Vector3, radius: number)
     local start = position
         + Vector3.new(MeteorsConfig.FallHeight * 0.4, MeteorsConfig.FallHeight, 0)
@@ -165,6 +209,7 @@ local function playFall(position: Vector3, radius: number)
         fireball:Destroy()
         burst(position, DUST_COLOR, math.floor(radius * 10), radius * 6, radius)
         Sound.Play("MeteorImpact")
+        shakeCamera(position, radius)
         local explosion = Instance.new("Explosion")
         explosion.Position = position
         explosion.BlastRadius = radius * 3
@@ -328,9 +373,142 @@ function MeteorController.GetNearestMeteor(position: Vector3, range: number): (n
     return bestId, bestPosition
 end
 
+-- Texto flotante con el mineral conseguido, del color de su mutación o de su rareza.
+local function onMineReward(position: any, radius: any, mineralId: any, mutationId: any)
+    if
+        typeof(position) ~= "Vector3"
+        or type(radius) ~= "number"
+        or type(mineralId) ~= "string"
+        or type(mutationId) ~= "string"
+    then
+        return
+    end
+    local mineral = Minerals.ById[mineralId]
+    if mineral == nil then
+        return
+    end
+    local mutation = Mutations.ById[mutationId]
+    local color = (if mutation then mutation.color else nil)
+        or Minerals.Rarities[mineral.rarity].color
+
+    local character = Players.LocalPlayer.Character
+    local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+    local toward = if root and root:IsA("BasePart")
+        then (root.Position - position).Unit
+        else Vector3.yAxis
+    local origin = position + toward * radius + Vector3.new(0, 2, 0)
+
+    burst(origin, mineral.color, 10, 10, 0.5)
+    Sound.Play("MineralObtained")
+
+    local anchor = makeEffectPart({
+        name = "RewardPopup",
+        size = Vector3.one,
+        cframe = CFrame.new(origin),
+        color = color,
+        transparency = 1,
+    })
+    local billboard = Instance.new("BillboardGui")
+    billboard.AlwaysOnTop = true
+    billboard.LightInfluence = 0
+    billboard.Size = UDim2.fromScale(12, 1.6)
+    billboard.Parent = anchor
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.TextScaled = true
+    label.Font = Enum.Font.FredokaOne
+    label.TextColor3 = color
+    label.TextStrokeTransparency = 0.2
+    label.Text = string.format(Strings.Mining.Obtained, Strings.MineralName(mineralId, mutationId))
+    label.Parent = billboard
+
+    local info = TweenInfo.new(POPUP_DURATION, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    TweenService
+        :Create(anchor, info, { CFrame = CFrame.new(origin + Vector3.new(0, POPUP_RISE, 0)) })
+        :Play()
+    TweenService:Create(label, info, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+    task.delay(POPUP_DURATION, function()
+        anchor:Destroy()
+    end)
+end
+
+-- Barra con los golpes que le quedan a un meteorito, visible para todos.
+local function attachHitsBar(meteor: Instance)
+    local typeId = meteor:GetAttribute("MeteorType")
+    local radius = meteor:GetAttribute("Radius")
+    local meteorType = if type(typeId) == "string" then MeteorsConfig.Types[typeId] else nil
+    if meteorType == nil or type(radius) ~= "number" then
+        return
+    end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "HitsBar"
+    billboard.LightInfluence = 0
+    billboard.Size = UDim2.fromScale(math.max(radius * 1.6, 6), 1.3)
+    billboard.StudsOffsetWorldSpace = Vector3.new(0, radius + 4, 0)
+    billboard.MaxDistance = 250
+
+    local background = Instance.new("Frame")
+    background.Size = UDim2.fromScale(1, 1)
+    background.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    background.BackgroundTransparency = 0.25
+    background.BorderSizePixel = 0
+    background.Parent = billboard
+    local backgroundCorner = Instance.new("UICorner")
+    backgroundCorner.CornerRadius = UDim.new(0.4, 0)
+    backgroundCorner.Parent = background
+
+    local fill = Instance.new("Frame")
+    fill.BackgroundColor3 = HITS_BAR_COLOR
+    fill.BorderSizePixel = 0
+    fill.Parent = background
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0.4, 0)
+    fillCorner.Parent = fill
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.fromScale(1, 1)
+    label.BackgroundTransparency = 1
+    label.TextScaled = true
+    label.Font = Enum.Font.FredokaOne
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextStrokeTransparency = 0.3
+    label.Parent = background
+
+    local function update()
+        local hitsLeft = meteor:GetAttribute("HitsLeft")
+        local left = if type(hitsLeft) == "number" then hitsLeft else meteorType.hits
+        fill.Size = UDim2.fromScale(math.clamp(left / meteorType.hits, 0, 1), 1)
+        label.Text = string.format(Strings.Mining.HitsLeft, left, meteorType.hits)
+    end
+    meteor:GetAttributeChangedSignal("HitsLeft"):Connect(update)
+    update()
+
+    -- Dentro del meteorito: desaparece con él. En un modelo se engancha a su parte principal.
+    if meteor:IsA("Model") then
+        billboard.Adornee = meteor.PrimaryPart or meteor:FindFirstChildWhichIsA("BasePart", true)
+    end
+    billboard.Parent = meteor
+end
+
 function MeteorController.Init()
     Remotes.MeteorIncoming.OnClientEvent:Connect(onMeteorIncoming)
     Remotes.MineState.OnClientEvent:Connect(onMineState)
+    Remotes.MineReward.OnClientEvent:Connect(onMineReward)
+end
+
+function MeteorController.Start()
+    task.spawn(function()
+        local folder = Workspace:WaitForChild("Meteors")
+        folder.ChildAdded:Connect(function(child)
+            -- Se espera un instante a que lleguen sus atributos y sus partes.
+            task.defer(attachHitsBar, child)
+        end)
+        for _, child in folder:GetChildren() do
+            attachHitsBar(child)
+        end
+    end)
 end
 
 return MeteorController
