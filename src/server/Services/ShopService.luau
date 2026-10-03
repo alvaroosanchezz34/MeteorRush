@@ -8,6 +8,7 @@
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
@@ -45,6 +46,12 @@ local function setPass(player: Player, passKey: string, owned: boolean)
 end
 
 local function checkGamePasses(player: Player)
+    if RunService:IsStudio() and ShopConfig.IgnoreOwnedPassesInStudio then
+        for _, pass in ShopConfig.GamePasses do
+            setPass(player, pass.key, false)
+        end
+        return
+    end
     for _, pass in ShopConfig.GamePasses do
         if pass.id ~= 0 then
             local ok, owns = pcall(function(): boolean

@@ -17,6 +17,44 @@
         }
       }
     },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future",
+        "ClockTime": 0,
+        "Brightness": 2.5,
+        "Ambient": [0.27, 0.25, 0.4],
+        "OutdoorAmbient": [0.45, 0.43, 0.62],
+        "ExposureCompensation": 0.4,
+        "EnvironmentDiffuseScale": 1,
+        "EnvironmentSpecularScale": 1
+      },
+      "Sky": {
+        "$className": "Sky",
+        "$properties": {
+          "StarCount": 5000,
+          "MoonAngularSize": 14
+        }
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.25,
+          "Offset": 0.25,
+          "Color": [0.55, 0.45, 0.8],
+          "Decay": [0.25, 0.2, 0.45],
+          "Glare": 0,
+          "Haze": 1.2
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.6,
+          "Size": 24,
+          "Threshold": 1.1
+        }
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"

@@ -43,6 +43,11 @@ Shop.VipSpeedMultiplier = 1.1
 -- Efectos de los boosts.
 Shop.LuckBoostMultiplier = 2
 
+-- El creador de la experiencia posee todos sus game passes. Con esto a true, en Studio se
+-- empieza sin ninguno para probar el juego como un jugador normal; comprarlos en Studio
+-- (compra simulada) los activa durante esa partida.
+Shop.IgnoreOwnedPassesInStudio = true
+
 -- Máximo de ids de recibo guardados para la idempotencia de ProcessReceipt.
 Shop.MaxStoredPurchases = 100
 
