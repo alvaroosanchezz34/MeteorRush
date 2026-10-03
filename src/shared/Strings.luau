@@ -1,0 +1,242 @@
+--!strict
+
+-- Textos visibles para el jugador, centralizados para poder traducirlos.
+local Strings = {
+    Data = {
+        LoadFailed = "Your data could not be loaded. Please rejoin in a moment.",
+        SessionEnded = "Your data session ended (you may have joined another server). Please rejoin.",
+    },
+    Plot = {
+        FreeSign = "Free Plot",
+        OwnerSign = "%s's Base",
+        CollectPad = "COLLECT\n$%s",
+    },
+    Meteor = {
+        Incoming = {
+            normal = "A meteor is incoming!",
+            big = "A BIG meteor is incoming!",
+            giant = "GIANT METEOR EVENT! A giant meteor is incoming!",
+        } :: { [string]: string },
+        GiantLanded = "The GIANT meteor has landed! Rare minerals x5 for 3 minutes!",
+        ImpactLabel = "IMPACT IN %d",
+    },
+    Mining = {
+        -- %s = nombre completo del mineral, %d/%d = mochila
+        Obtained = "+1 %s (%d/%d)",
+        BackpackFull = "Backpack full! (%d/%d) Bring your minerals to your base.",
+        -- %s = jugador, %s = nombre completo del mineral
+        Announce = "%s found %s!",
+        MineButton = "Mine",
+    },
+    Carry = {
+        Deposited = "Deposited %d minerals in your base!",
+    },
+    Pedestal = {
+        NoFreePedestal = "No free pedestals. Remove a mineral or buy more pedestals.",
+        Placed = "Placed %s",
+        Removed = "Removed %s",
+        PerSecond = "$%s/s",
+    },
+    Income = {
+        Collected = "+$%s",
+        Offline = "While you were away your base earned $%s!",
+    },
+    Upgrades = {
+        Bought = "%s upgraded to level %d!",
+        NotEnoughCoins = "Not enough coins.",
+        MaxLevel = "Already at max level.",
+        Names = {
+            pickaxe = "Pickaxe",
+            backpack = "Backpack",
+            speed = "Speed",
+            pedestals = "Pedestals",
+            luck = "Luck",
+        } :: { [string]: string },
+        -- %s = valor actual, %s = valor siguiente
+        Effects = {
+            pickaxe = "Time per hit: %ss → %ss",
+            backpack = "Capacity: %s → %s",
+            speed = "Walk speed: %s → %s",
+            pedestals = "Pedestals: %s → %s",
+            luck = "Rare luck: x%s → x%s",
+        } :: { [string]: string },
+        Max = "MAX",
+        Level = "Lv. %d/%d",
+    },
+    Steal = {
+        YouHit = "You hit %s!",
+        YouWereHit = "%s hit you! You dropped %d minerals.",
+        Newbie = "New players are protected for their first 10 minutes.",
+        TargetSafe = "That player is safe in their base.",
+        TargetImmune = "That player is immune right now.",
+        TargetShielded = "That player has a carry shield.",
+        NothingToSteal = "That player isn't carrying anything.",
+        HitButton = "Hit",
+    },
+    Index = {
+        RowComplete = "Index row complete: %s! +$%s",
+        NewEntry = "New index entry: %s!",
+        Undiscovered = "???",
+        Progress = "%d/%d discovered",
+        Reward = "Row reward: $%s",
+    },
+    Daily = {
+        Claimed = "Day %d reward claimed: %s",
+        NotReady = "Come back in %s for your next reward.",
+        Day = "Day %d",
+        Claim = "Claim",
+        NextIn = "Next reward in %s",
+        Coins = "$%s",
+        MineralReward = "%s + Epic %s",
+        StreakReset = "Your streak was reset because more than 48 hours passed.",
+    },
+    Rebirth = {
+        Done = "Rebirth complete! You now earn +%s%% income.",
+        NotEnough = "You need $%s to rebirth.",
+        Info = "Rebirth resets your coins, upgrades and minerals.\nYou keep your index, cosmetics, game passes and daily streak.\n\nCost: $%s\nIncome bonus: +%s%% → +%s%%",
+        Confirm = "Rebirth",
+    },
+    Shop = {
+        ComingSoon = "Coming soon",
+        Owned = "Owned",
+        Equip = "Equip",
+        Equipped = "Equipped",
+        Buy = "R$ %d",
+        VipOnly = "VIP only",
+        Thanks = "Thank you for your purchase!",
+        BoostActive = "Active: %s",
+        Tabs = {
+            passes = "Passes",
+            boosts = "Boosts",
+            coins = "Coins",
+            cosmetics = "Cosmetics",
+        } :: { [string]: string },
+        Names = {
+            doubleCoins = "2x Coins",
+            vipBackpack = "VIP Backpack",
+            autoCollect = "Auto Collect",
+            extraPedestals = "+6 Pedestals",
+            vip = "VIP",
+            carryShield30 = "Carry Shield (30 min)",
+            magnet30 = "Magnet (30 min)",
+            luck30 = "2x Luck (30 min)",
+            coinsSmall = "Coin Pouch",
+            coinsMedium = "Coin Bag",
+            coinsLarge = "Coin Chest",
+            pickaxeGold = "Golden Pickaxe",
+            pickaxeCrystal = "Crystal Pickaxe",
+            trailFire = "Fire Trail",
+            trailCosmic = "Cosmic Trail",
+            trailVip = "VIP Gold Trail",
+            baseOcean = "Ocean Base",
+            baseForest = "Forest Base",
+        } :: { [string]: string },
+        Descriptions = {
+            doubleCoins = "Double income from all your pedestals.",
+            vipBackpack = "+10 backpack capacity.",
+            autoCollect = "Your base income is collected automatically.",
+            extraPedestals = "6 extra pedestals in your base.",
+            vip = "VIP chat tag, exclusive gold trail and +10% walk speed.",
+            carryShield30 = "Nobody can hit you while carrying for 30 minutes.",
+            magnet30 = "Pick up dropped minerals from 20 studs away for 30 minutes.",
+            luck30 = "Double rare luck for 30 minutes.",
+            -- %s = monedas que da ahora mismo
+            coins = "Get $%s instantly.",
+            pickaxe = "Pickaxe skin. Cosmetic only.",
+            trail = "Trail behind your character. Cosmetic only.",
+            baseColor = "Color for your base floor. Cosmetic only.",
+        } :: { [string]: string },
+    },
+    Trade = {
+        RequestSent = "Trade request sent to %s.",
+        RequestReceived = "%s wants to trade with you. Open Trade to answer.",
+        Declined = "%s declined your trade.",
+        Cancelled = "Trade cancelled.",
+        Completed = "Trade completed!",
+        Busy = "That player is busy with another trade.",
+        Failed = "Trade failed: an item is no longer available.",
+        Accept = "Accept",
+        Decline = "Decline",
+        Confirm = "Confirm",
+        Confirmed = "Confirmed",
+        Cancel = "Cancel",
+        YourOffer = "Your offer",
+        TheirOffer = "%s's offer",
+        Countdown = "Trading in %d...",
+        Request = "Trade",
+        Incoming = "%s wants to trade",
+        YourItems = "Your minerals (tap to add/remove)",
+        NoPlayers = "No other players in this server.",
+    },
+    Hud = {
+        Coins = "$%s",
+        PerSecond = "+$%s/s",
+        Backpack = "Backpack %d/%d",
+        NextMeteor = "Next meteor: %s",
+        MeteorDistance = "%d studs",
+        Buttons = {
+            inventory = "Base",
+            upgrades = "Upgrades",
+            shop = "Shop",
+            index = "Index",
+            daily = "Daily",
+            rebirth = "Rebirth",
+            trade = "Trade",
+        } :: { [string]: string },
+        Close = "X",
+    },
+    Inventory = {
+        Title = "Your Base",
+        Empty = "Your base inventory is empty. Mine meteors and deposit minerals here!",
+        Place = "Place",
+        Remove = "Remove",
+        OnPedestal = "On pedestal %d",
+        Pedestals = "Pedestals: %d/%d used",
+    },
+    Tutorial = {
+        Steps = {
+            "Step 1/3: Hold click (or tap Mine) next to a meteor to mine it.",
+            "Step 2/3: Bring your minerals to the green deposit zone in your base.",
+            "Step 3/3: Open Base and place a mineral on a pedestal. Then step on the gold pad to collect coins!",
+        },
+        Done = "Tutorial complete! Keep mining to grow your base.",
+    },
+    Network = {
+        RateLimitKick = "You were disconnected for sending too many requests.",
+    },
+    Minerals = {
+        stone = "Space Rock",
+        iron = "Stellar Iron",
+        copper = "Lunar Copper",
+        crystal = "Cosmic Crystal",
+        plasma = "Plasma Core",
+        nebula = "Nebula Gem",
+        darkmatter = "Dark Matter",
+        starheart = "Star Heart",
+    } :: { [string]: string },
+    Mutations = {
+        none = "Normal",
+        gold = "Golden",
+        radioactive = "Radioactive",
+        rainbow = "Rainbow",
+    } :: { [string]: string },
+    Rarities = {
+        common = "Common",
+        uncommon = "Uncommon",
+        rare = "Rare",
+        epic = "Epic",
+        legendary = "Legendary",
+        mythic = "Mythic",
+    } :: { [string]: string },
+}
+
+-- Nombre visible de un mineral con su mutación, p. ej. "Golden Plasma Core".
+function Strings.MineralName(mineralId: string, mutationId: string): string
+    local name = Strings.Minerals[mineralId] or mineralId
+    if mutationId == "none" then
+        return name
+    end
+    return `{Strings.Mutations[mutationId] or mutationId} {name}`
+end
+
+return Strings

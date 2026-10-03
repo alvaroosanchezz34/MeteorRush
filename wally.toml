@@ -1,0 +1,9 @@
+[package]
+name = "theal/meteor-rush"
+description = "Meteor Rush - juego multijugador de minado de meteoritos para Roblox"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[server-dependencies]
+ProfileStore = "lm-loleris/profilestore@1.0.3"

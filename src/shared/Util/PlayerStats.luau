@@ -1,0 +1,142 @@
+--!strict
+
+-- Estadísticas derivadas de los datos del jugador (mejoras, game passes, boosts y rebirths).
+-- Se comparten entre servidor y cliente para que la interfaz muestre exactamente lo mismo
+-- que calcula el servidor. `now` es la hora Unix del servidor (os.time() o GetServerTimeNow()).
+
+local Config = script.Parent.Parent.Config
+local Carry = require(Config.Carry)
+local Minerals = require(Config.Minerals)
+local Mutations = require(Config.Mutations)
+local Rebirth = require(Config.Rebirth)
+local Shop = require(Config.Shop)
+local Upgrades = require(Config.Upgrades)
+local Types = require(script.Parent.Parent.Types)
+
+local PlayerStats = {}
+
+-- Indica si el jugador tiene ese game pass (según la caché del perfil).
+function PlayerStats.HasPass(data: Types.Profile, passKey: string): boolean
+    return data.passes[passKey] == true
+end
+
+-- Indica si un boost temporal está activo.
+function PlayerStats.IsBoostActive(data: Types.Profile, boost: string, now: number): boolean
+    local expiresAt = data.boosts[boost]
+    return expiresAt ~= nil and expiresAt > now
+end
+
+-- Segundos que le quedan a un boost (0 si no está activo).
+function PlayerStats.GetBoostRemaining(data: Types.Profile, boost: string, now: number): number
+    local expiresAt = data.boosts[boost]
+    return if expiresAt then math.max(expiresAt - now, 0) else 0
+end
+
+function PlayerStats.GetBackpackCapacity(data: Types.Profile): number
+    local capacity = Upgrades.GetBackpackCapacity(data.upgrades.backpack)
+    if PlayerStats.HasPass(data, "vipBackpack") then
+        capacity += Shop.VipBackpackBonus
+    end
+    return capacity
+end
+
+function PlayerStats.GetPedestalCount(data: Types.Profile): number
+    local count = Upgrades.GetPedestalCount(data.upgrades.pedestals)
+    if PlayerStats.HasPass(data, "extraPedestals") then
+        count += Shop.ExtraPedestalsBonus
+    end
+    return count
+end
+
+function PlayerStats.GetMineTime(data: Types.Profile): number
+    return Upgrades.GetMineTime(data.upgrades.pickaxe)
+end
+
+-- WalkSpeed con la mejora, el pass vip y la penalización por carga.
+function PlayerStats.GetWalkSpeed(data: Types.Profile, carriedCount: number): number
+    local speed = Upgrades.GetWalkSpeed(data.upgrades.speed)
+    if PlayerStats.HasPass(data, "vip") then
+        speed *= Shop.VipSpeedMultiplier
+    end
+    local slowdown = math.min(carriedCount * Carry.SlowdownPerItem, Carry.MaxSlowdown)
+    return speed * (1 - slowdown)
+end
+
+-- Multiplicador de peso para minerales Raro o superior (mejora de suerte y boost).
+function PlayerStats.GetLuckMultiplier(data: Types.Profile, now: number): number
+    local luck = Upgrades.GetLuckMultiplier(data.upgrades.luck)
+    if PlayerStats.IsBoostActive(data, "luck", now) then
+        luck *= Shop.LuckBoostMultiplier
+    end
+    return luck
+end
+
+-- Multiplicador de ingresos (rebirths y pass doubleCoins).
+function PlayerStats.GetIncomeMultiplier(data: Types.Profile): number
+    local multiplier = Rebirth.GetIncomeMultiplier(data.rebirths)
+    if PlayerStats.HasPass(data, "doubleCoins") then
+        multiplier *= Shop.DoubleCoinsMultiplier
+    end
+    return multiplier
+end
+
+-- Monedas por segundo de un mineral concreto, sin multiplicadores del jugador.
+function PlayerStats.GetItemBaseIncome(item: Types.InventoryItem): number
+    local mineral = Minerals.ById[item.mineral]
+    local mutation = Mutations.ById[item.mutation]
+    if mineral == nil then
+        return 0
+    end
+    return mineral.coinsPerSecond * (if mutation then mutation.multiplier else 1)
+end
+
+-- Busca un objeto del inventario de la base por id.
+function PlayerStats.FindItem(data: Types.Profile, itemId: string): (Types.InventoryItem?, number?)
+    for index, item in data.inventory do
+        if item.id == itemId then
+            return item, index
+        end
+    end
+    return nil, nil
+end
+
+-- Devuelve el número de pedestal en el que está colocado el objeto, o nil.
+function PlayerStats.GetPedestalOf(data: Types.Profile, itemId: string): number?
+    for key, placedId in data.pedestals do
+        if placedId == itemId then
+            return tonumber(key)
+        end
+    end
+    return nil
+end
+
+-- Monedas por segundo que generan todos los pedestales del jugador.
+function PlayerStats.GetIncomePerSecond(data: Types.Profile): number
+    local unlocked = PlayerStats.GetPedestalCount(data)
+    local total = 0
+    for key, itemId in data.pedestals do
+        local number = tonumber(key)
+        if number and number <= unlocked then
+            local item = PlayerStats.FindItem(data, itemId)
+            if item then
+                total += PlayerStats.GetItemBaseIncome(item)
+            end
+        end
+    end
+    return total * PlayerStats.GetIncomeMultiplier(data)
+end
+
+-- Monedas que da un paquete de monedas: una fracción del coste del siguiente rebirth.
+function PlayerStats.GetCoinPackAmount(data: Types.Profile, product: Shop.Product): number
+    return math.floor(Rebirth.GetCost(data.rebirths) * (product.rebirthCostFraction or 0))
+end
+
+-- Indica si el jugador puede equipar un cosmético (comprado, o exclusivo vip con el pass).
+function PlayerStats.OwnsCosmetic(data: Types.Profile, cosmetic: Shop.Cosmetic): boolean
+    if cosmetic.vipOnly then
+        return PlayerStats.HasPass(data, "vip")
+    end
+    return table.find(data.cosmetics.owned, cosmetic.key) ~= nil
+end
+
+return PlayerStats
