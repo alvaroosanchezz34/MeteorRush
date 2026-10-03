@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 
+local Log = require(script.Parent.Log)
 local Network = require(script.Parent.Parent.Config.Network)
 local Strings = require(script.Parent.Parent.Strings)
 
@@ -22,6 +23,14 @@ local RateLimiter = {}
 -- Crea un limitador de ventana fija. Solo debe usarse en el servidor.
 function RateLimiter.new(limit: Network.RateLimit): RateLimiter
     local states: { [Player]: PlayerState } = {}
+
+    -- Nombre del límite en Config/Network, para los registros.
+    local name = "?"
+    for key, candidate in Network.RateLimits :: { [string]: Network.RateLimit } do
+        if candidate == limit then
+            name = key
+        end
+    end
 
     Players.PlayerRemoving:Connect(function(player: Player)
         states[player] = nil
@@ -51,7 +60,12 @@ function RateLimiter.new(limit: Network.RateLimit): RateLimiter
         state.violations += 1
         state.lastViolation = now
 
+        -- Se registra la primera infracción de cada racha y la expulsión, no cada petición.
+        if state.violations == 1 then
+            Log.Suspicious(player, "RateLimit", name)
+        end
         if state.violations >= Network.MaxViolations then
+            Log.Suspicious(player, "RateLimitKick", name)
             player:Kick(Strings.Network.RateLimitKick)
         end
         return false

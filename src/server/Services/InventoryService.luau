@@ -12,6 +12,7 @@ local IncomeService = require(script.Parent.IncomeService)
 local IndexService = require(script.Parent.IndexService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local Format = require(Shared.Util.Format)
 local Mutations = require(Shared.Config.Mutations)
 local Network = require(Shared.Config.Network)
@@ -45,6 +46,7 @@ local function onSellMineral(player: Player, itemId: unknown)
         return
     end
     if type(itemId) ~= "string" or #itemId > 64 then
+        Log.Suspicious(player, "Inventory", "tipo inválido")
         return
     end
     local data = DataService.GetData(player)
@@ -107,6 +109,7 @@ local function onFuseMineral(player: Player, itemId: unknown)
         return
     end
     if type(itemId) ~= "string" or #itemId > 64 then
+        Log.Suspicious(player, "Inventory", "tipo inválido")
         return
     end
     local data = DataService.GetData(player)

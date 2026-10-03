@@ -9,6 +9,7 @@ local DataService = require(script.Parent.DataService)
 local QuestService = require(script.Parent.QuestService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
@@ -25,6 +26,7 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
         return
     end
     if type(upgradeId) ~= "string" then
+        Log.Suspicious(player, "BuyUpgrade", "tipo inválido")
         return
     end
     local upgrade = Upgrades.ById[upgradeId]

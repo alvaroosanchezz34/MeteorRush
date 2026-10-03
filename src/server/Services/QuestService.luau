@@ -9,6 +9,7 @@ local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local Format = require(Shared.Util.Format)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
@@ -76,6 +77,7 @@ local function onClaimQuest(player: Player, questId: unknown)
         return
     end
     if type(questId) ~= "string" then
+        Log.Suspicious(player, "ClaimQuest", "tipo inválido")
         return
     end
     local quest = QuestsConfig.ById[questId]

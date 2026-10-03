@@ -16,6 +16,7 @@ local QuestService = require(script.Parent.QuestService)
 local TutorialService = require(script.Parent.TutorialService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local MeteorsConfig = require(Shared.Config.Meteors)
 local Minerals = require(Shared.Config.Minerals)
 local Mutations = require(Shared.Config.Mutations)
@@ -204,6 +205,7 @@ local function onMineStart(player: Player, meteorId: unknown)
         return
     end
     if type(meteorId) ~= "number" or meteorId ~= meteorId then
+        Log.Suspicious(player, "MineStart", "tipo inválido")
         return
     end
     local data = DataService.GetData(player)

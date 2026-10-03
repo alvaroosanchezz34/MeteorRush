@@ -14,6 +14,7 @@ local IndexService = require(script.Parent.IndexService)
 local PlotService = require(script.Parent.PlotService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local Assets = require(Shared.Util.Assets)
 local MineralVisual = require(Shared.Util.MineralVisual)
 local Network = require(Shared.Config.Network)
@@ -119,6 +120,7 @@ local function onHitPlayer(attacker: Player, target: unknown)
         return
     end
     if typeof(target) ~= "Instance" or not (target :: Instance):IsA("Player") then
+        Log.Suspicious(attacker, "HitPlayer", "tipo inválido")
         return
     end
     local victim = target :: Player

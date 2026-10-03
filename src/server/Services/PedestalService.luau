@@ -11,6 +11,7 @@ local PlotService = require(script.Parent.PlotService)
 local TutorialService = require(script.Parent.TutorialService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local Assets = require(Shared.Util.Assets)
 local Format = require(Shared.Util.Format)
 local MapConfig = require(Shared.Config.Map)
@@ -138,6 +139,7 @@ local function onPlaceMineral(player: Player, itemId: unknown, pedestalNumber: u
         return
     end
     if type(itemId) ~= "string" or #itemId > 64 then
+        Log.Suspicious(player, "PlaceMineral", "tipo inválido")
         return
     end
     if pedestalNumber ~= nil and (type(pedestalNumber) ~= "number" or pedestalNumber % 1 ~= 0) then

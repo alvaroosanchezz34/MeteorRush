@@ -26,6 +26,8 @@ local CarryService = {}
 local backpacks: { [Player]: { Types.InventoryItem } } = {}
 local stacks: { [Player]: Model } = {}
 local rng = Random.new()
+-- Segundos tras salir un jugador a los que se borra su mochila si nadie lo ha hecho antes.
+local CLEANUP_DELAY = 5
 
 local function getTorso(character: Model): BasePart?
     local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
@@ -234,6 +236,19 @@ function CarryService.Init()
             changed(player)
         end)
     end
+
+    -- Al cerrar el perfil se vacía la mochila. Si el jugador se va por su cuenta pierde lo que
+    -- llevaba (igual que si se lo roban, y así no sirve para esquivar un golpe); si es el
+    -- servidor el que se cierra no es culpa suya, así que se deposita en su base.
+    DataService.OnProfileReleasing(function(player: Player, data: Types.Profile)
+        local items = backpacks[player]
+        backpacks[player] = nil
+        if items and #items > 0 and DataService.IsShuttingDown() then
+            for _, item in items do
+                table.insert(data.inventory, item)
+            end
+        end
+    end)
 end
 
 function CarryService.Start()
@@ -250,7 +265,11 @@ function CarryService.Start()
     end
 
     Players.PlayerRemoving:Connect(function(player: Player)
-        backpacks[player] = nil
+        -- La mochila la vacía OnProfileReleasing (que necesita leerla antes); esto es solo
+        -- por si el perfil ya no estaba cargado y esa función no llega a ejecutarse.
+        task.delay(CLEANUP_DELAY, function()
+            backpacks[player] = nil
+        end)
         stacks[player] = nil
         local connection = connections[player]
         if connection then

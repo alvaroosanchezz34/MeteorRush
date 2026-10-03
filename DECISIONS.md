@@ -179,6 +179,15 @@ Sustituyen a los bloques lisos. Siguen siendo el "placeholder": un modelo real e
 - **Códigos (`CodeService`, `Config/Codes.luau`):** un uso por jugador, sin distinguir mayúsculas. Dan monedas o un mineral. La casilla está en el menú de misiones para no añadir un noveno botón al HUD.
 - **Clasificación global (`LeaderboardService`, `Config/Leaderboard.luau`):** `OrderedDataStore` con `totalCoinsEarned`. Se guarda al entrar, al salir y cada 5 minutos; se lee cada 2 minutos. Hay dos tableros en el mapa, justo fuera de la zona de impacto. En Studio también escribe en la clasificación real.
 
+## Roadmap de producción — Fase 0 (auditoría)
+
+A partir de aquí el trabajo sigue `ROADMAP.md`, una fase cada vez.
+
+- **Registro (`Util/Log.luau`):** `Log.Warn` para fallos de sistemas y `Log.Suspicious` para lo que un cliente legítimo nunca envía (tipos inválidos, exceso de peticiones). Solo deja constancia; no expulsa. El limitador de frecuencia registra la primera infracción de cada racha y la expulsión.
+- **Errores de guardado:** `DataService` escucha `ProfileStore.OnError`, `OnOverwrite` y `OnCriticalToggle`.
+- **Mochila al cerrarse el servidor:** si el jugador se va por su cuenta pierde lo que llevaba (así salir no sirve para esquivar un golpe); si es el servidor el que se cierra, se deposita en su base. Depende de que Roblox avise del cierre antes de sacar a los jugadores, así que es un "mejor esfuerzo".
+- **Riesgo anotado para la Fase 8:** `ProcessReceipt` confirma la compra en cuanto la aplica al perfil en memoria, sin esperar a que se guarde. Si el servidor se cae justo después, la compra se pierde.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

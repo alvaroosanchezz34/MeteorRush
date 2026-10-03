@@ -13,6 +13,7 @@ local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 
 local Shared = ReplicatedStorage.Shared
 local DataConfig = require(Shared.Config.Data)
+local Log = require(Shared.Util.Log)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
@@ -39,6 +40,7 @@ local loadedCallbacks: { ProfileCallback } = {}
 local releasingCallbacks: { ProfileCallback } = {}
 local fieldCallbacks: { [string]: { FieldCallback } } = {}
 local requestLimiter = RateLimiter.new(Network.RateLimits.DataRequest)
+local shuttingDown = false
 
 local function sendSnapshot(player: Player, data: Types.Profile)
     Remotes.DataUpdate:FireClient(player, "snapshot", data)
@@ -195,6 +197,11 @@ function DataService.Increment(player: Player, key: string, amount: number): boo
     end)
 end
 
+-- Indica si el servidor se está cerrando (los perfiles se están guardando por última vez).
+function DataService.IsShuttingDown(): boolean
+    return shuttingDown or ProfileStore.IsClosing == true
+end
+
 -- Segundos de juego totales, incluida la parte de la sesión actual que aún no se ha sumado.
 function DataService.GetPlaytime(player: Player): number
     local profile = profiles[player]
@@ -232,6 +239,22 @@ end
 function DataService.Init()
     playerStore = ProfileStore.New(DataConfig.StoreName, DataConfig.Template)
 
+    -- Registro de problemas de guardado.
+    ProfileStore.OnError:Connect(function(message: string, storeName: string, profileKey: string)
+        Log.Warn("DataStore", `Error en {storeName}/{profileKey}: {message}`)
+    end)
+    ProfileStore.OnOverwrite:Connect(function(storeName: string, profileKey: string)
+        Log.Warn("DataStore", `Datos inválidos sobrescritos en {storeName}/{profileKey}`)
+    end)
+    ProfileStore.OnCriticalToggle:Connect(function(isCritical: boolean)
+        Log.Warn(
+            "DataStore",
+            if isCritical
+                then "Estado crítico: muchos fallos de DataStore seguidos"
+                else "Fin del estado crítico"
+        )
+    end)
+
     Remotes.DataRequest.OnServerEvent:Connect(function(player: Player)
         if not requestLimiter.Check(player) then
             return
@@ -267,6 +290,7 @@ function DataService.Start()
     end
 
     game:BindToClose(function()
+        shuttingDown = true
         for player in profiles do
             releaseProfile(player)
         end
