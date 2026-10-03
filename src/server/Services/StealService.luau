@@ -163,7 +163,8 @@ local function onHitPlayer(attacker: Player, target: unknown)
     lastHitAt[attacker] = now
     immuneUntil[victim] = now + StealConfig.VictimImmunity
 
-    local dropCount = math.ceil(CarryService.GetCount(victim) * StealConfig.DropFraction)
+    local dropCount =
+        math.ceil(CarryService.GetCount(victim) * PlayerStats.GetDropFraction(victimData))
     local dropped = CarryService.RemoveRandom(victim, dropCount)
     spawnDrops(dropped, victimRoot.Position)
     showImmunity(victim)

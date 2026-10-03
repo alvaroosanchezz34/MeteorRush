@@ -17,6 +17,7 @@ local SERVICE_ORDER: { string } = {
     "IncomeService",
     "IndexService",
     "PedestalService",
+    "InventoryService",
     "MeteorService",
     "MiningService",
     "UpgradeService",

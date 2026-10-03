@@ -6,6 +6,7 @@
 
 local Config = script.Parent.Parent.Config
 local Carry = require(Config.Carry)
+local Income = require(Config.Income)
 local Minerals = require(Config.Minerals)
 local Mutations = require(Config.Mutations)
 local Rebirth = require(Config.Rebirth)
@@ -71,9 +72,31 @@ function PlayerStats.GetLuckMultiplier(data: Types.Profile, now: number): number
     return luck
 end
 
--- Multiplicador de ingresos (rebirths y pass doubleCoins).
+-- Nivel de una mejora. Los perfiles antiguos pueden no tener aún las mejoras nuevas.
+function PlayerStats.GetUpgradeLevel(data: Types.Profile, upgradeId: string): number
+    local level = (data.upgrades :: any)[upgradeId]
+    return if type(level) == "number" then level else 0
+end
+
+-- Probabilidad (0-1) de sacar un segundo mineral con el mismo golpe.
+function PlayerStats.GetExtraMineralChance(data: Types.Profile): number
+    return Upgrades.GetValue("fortune", PlayerStats.GetUpgradeLevel(data, "fortune"))
+end
+
+-- Multiplicador de la probabilidad de mutación.
+function PlayerStats.GetMutationMultiplier(data: Types.Profile): number
+    return Upgrades.GetValue("mutation", PlayerStats.GetUpgradeLevel(data, "mutation"))
+end
+
+-- Fracción de la mochila que suelta el jugador al recibir un golpe.
+function PlayerStats.GetDropFraction(data: Types.Profile): number
+    return Upgrades.GetValue("grip", PlayerStats.GetUpgradeLevel(data, "grip"))
+end
+
+-- Multiplicador de ingresos (rebirths, mejora de refinería y pass doubleCoins).
 function PlayerStats.GetIncomeMultiplier(data: Types.Profile): number
     local multiplier = Rebirth.GetIncomeMultiplier(data.rebirths)
+        * Upgrades.GetValue("refinery", PlayerStats.GetUpgradeLevel(data, "refinery"))
     if PlayerStats.HasPass(data, "doubleCoins") then
         multiplier *= Shop.DoubleCoinsMultiplier
     end
@@ -88,6 +111,16 @@ function PlayerStats.GetItemBaseIncome(item: Types.InventoryItem): number
         return 0
     end
     return mineral.coinsPerSecond * (if mutation then mutation.multiplier else 1)
+end
+
+-- Monedas que da vender un mineral.
+function PlayerStats.GetSellPrice(item: Types.InventoryItem): number
+    return math.floor(PlayerStats.GetItemBaseIncome(item) * Income.SellSeconds)
+end
+
+-- Indica si un mineral es "común": se vende con el botón de vender en bloque.
+function PlayerStats.IsJunk(item: Types.InventoryItem): boolean
+    return item.mutation == Mutations.NoneId and Minerals.GetRank(item.mineral) < Minerals.RareRank
 end
 
 -- Busca un objeto del inventario de la base por id.

@@ -24,8 +24,11 @@ local function formatValue(upgradeId: string, level: number): string
         return tostring(Upgrades.GetWalkSpeed(level))
     elseif upgradeId == "pedestals" then
         return tostring(Upgrades.GetPedestalCount(level))
+    elseif upgradeId == "fortune" or upgradeId == "grip" then
+        -- Son fracciones: se muestran como porcentaje.
+        return tostring(math.round(Upgrades.GetValue(upgradeId, level) * 100))
     end
-    return string.format("%.2f", Upgrades.GetLuckMultiplier(level))
+    return string.format("%.2f", Upgrades.GetValue(upgradeId, level))
 end
 
 function UpgradesMenu.Mount(window: Components.Window)
@@ -46,7 +49,7 @@ function UpgradesMenu.Mount(window: Components.Window)
         end
 
         for order, upgrade in Upgrades.List do
-            local level = (data.upgrades :: any)[upgrade.id] :: number
+            local level = ((data.upgrades :: any)[upgrade.id] or 0) :: number
             local isMax = level >= upgrade.maxLevel
             local cost = Upgrades.GetCost(upgrade.id, level)
 

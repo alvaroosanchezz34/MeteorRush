@@ -157,6 +157,21 @@ Sustituyen a los bloques lisos. Siguen siendo el "placeholder": un modelo real e
 - **Monedas:** texto "+$X" junto al panel cada vez que entran monedas.
 - **`LeaderboardService`:** `leaderstats` con Rebirths y Coins en la lista de jugadores.
 
+## Más contenido
+
+- **Cuatro mejoras nuevas** (con monedas, se reinician con el rebirth como las demás):
+  - `fortune`: +4 % por nivel de sacar un segundo mineral con el mismo golpe (máx. 40 %). El segundo no gasta golpe del meteorito.
+  - `mutation`: +10 % por nivel a la probabilidad de mutación (máx. x2), multiplicado por el del meteorito.
+  - `refinery`: +5 % por nivel a los ingresos de los pedestales (máx. x2), multiplicado por rebirths y passes.
+  - `grip`: al recibir un golpe se suelta un 3 % menos por nivel (del 50 % al 20 %).
+- **Campos nuevos en `upgrades`:** `Reconcile()` los añade a perfiles antiguos; además se leen con `PlayerStats.GetUpgradeLevel`, que devuelve 0 si faltan.
+- **`InventoryService`** (servicio extra): vender y fusionar. Solo actúa sobre minerales que no están en un pedestal.
+  - **Vender:** un mineral da lo que generaría en 90 s sin multiplicadores (`Income.SellSeconds`). "Sell Commons" vende de golpe los Comunes y Poco comunes sin mutación, para no vender algo valioso por error.
+  - **Fusionar:** 3 minerales iguales (mismo mineral y mutación) dan 1 con la mutación siguiente (Normal → Dorado → Radiactivo → Arcoíris). Registra la combinación en el índice.
+- **"Place Best":** recoloca todo poniendo en los pedestales los minerales que más generan (`PedestalService`).
+- **Meteoritos que se rompen:** al gastarse los golpes se le caen placas de la corteza (hasta quedarse con el 30 %), que saltan y desaparecen. Lo hace el servidor para que todos vean el mismo meteorito.
+- **Animación de picar:** `SwingController` gira el hombro derecho (`Motor6D.Transform`) de los personajes con el atributo `Mining`, que pone `MiningService`. Ritmo fijo, no sincronizado con cada golpe.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

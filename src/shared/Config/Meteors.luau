@@ -44,6 +44,11 @@ Meteors.OutcropCount = 6
 Meteors.CrystalCount = 3
 Meteors.RimRockCount = 9
 Meteors.GroundCrackCount = 6
+-- Al minarlo se le van cayendo placas: fracción que conserva con el último golpe, y velocidad
+-- (studs/s) y duración (s) de los trozos que saltan.
+Meteors.MinPlateFraction = 0.3
+Meteors.DebrisSpeed = 22
+Meteors.DebrisLifetime = 1.5
 
 -- Animación de picar (solo cliente): segundos por golpe de brazo, ángulo con el brazo
 -- levantado y bajado (radianes hacia delante) y parte del ciclo que dura la bajada.

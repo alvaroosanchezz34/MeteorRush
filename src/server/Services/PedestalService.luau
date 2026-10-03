@@ -35,6 +35,7 @@ local PedestalService = {}
 local displays: { [Player]: { [number]: Display } } = {}
 local placeLimiter = RateLimiter.new(Network.RateLimits.PlaceMineral)
 local removeLimiter = RateLimiter.new(Network.RateLimits.RemoveMineral)
+local placeBestLimiter = RateLimiter.new(Network.RateLimits.PlaceBest)
 
 local function clearDisplays(player: Player)
     local playerDisplays = displays[player]
@@ -209,6 +210,31 @@ local function onRemoveMineral(player: Player, pedestalNumber: unknown)
     end
 end
 
+-- Recoloca todo: los minerales que más generan ocupan los pedestales disponibles.
+local function onPlaceBest(player: Player)
+    if not placeBestLimiter.Check(player) then
+        return
+    end
+    local data = DataService.GetData(player)
+    if data == nil or #data.inventory == 0 then
+        return
+    end
+
+    local items = table.clone(data.inventory)
+    table.sort(items, function(a: Types.InventoryItem, b: Types.InventoryItem): boolean
+        return PlayerStats.GetItemBaseIncome(a) > PlayerStats.GetItemBaseIncome(b)
+    end)
+    local unlocked = math.min(PlayerStats.GetPedestalCount(data), MapConfig.MaxPedestals)
+    local pedestals: { [string]: string } = {}
+    for number = 1, math.min(unlocked, #items) do
+        pedestals[tostring(number)] = items[number].id
+    end
+
+    DataService.Set(player, "pedestals", pedestals)
+    Remotes.Notify:FireClient(player, Strings.Pedestal.PlacedBest)
+    TutorialService.Advance(player, 3)
+end
+
 -- Quita de los pedestales los objetos que ya no están en el inventario (tras un intercambio, por ejemplo).
 function PedestalService.CleanUp(player: Player)
     local data = DataService.GetData(player)
@@ -234,6 +260,7 @@ end
 function PedestalService.Init()
     Remotes.PlaceMineral.OnServerEvent:Connect(onPlaceMineral)
     Remotes.RemoveMineral.OnServerEvent:Connect(onRemoveMineral)
+    Remotes.PlaceBest.OnServerEvent:Connect(onPlaceBest)
 
     DataService.OnProfileLoaded(refresh)
     for _, key in { "pedestals", "inventory", "upgrades", "passes", "rebirths" } do

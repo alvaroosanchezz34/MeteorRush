@@ -39,10 +39,24 @@ Mutations.List = {
     },
 } :: { Mutation }
 
+-- Fusión: este número de minerales iguales (mismo mineral y misma mutación) se convierten
+-- en uno con la mutación siguiente de la lista.
+Mutations.FuseCount = 3
+
 local byId: { [string]: Mutation } = {}
 for _, mutation in Mutations.List do
     byId[mutation.id] = mutation
 end
 Mutations.ById = byId
+
+-- Devuelve la mutación siguiente a la indicada, o nil si ya es la última.
+function Mutations.GetNext(mutationId: string): Mutation?
+    for index, mutation in Mutations.List do
+        if mutation.id == mutationId then
+            return Mutations.List[index + 1]
+        end
+    end
+    return nil
+end
 
 return Mutations

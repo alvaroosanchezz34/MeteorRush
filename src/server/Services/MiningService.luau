@@ -107,8 +107,9 @@ local function rollMineral(meteorTypeId: string, data: Types.Profile): Minerals.
     return mineral or Minerals.List[1]
 end
 
-local function rollMutation(meteorTypeId: string): Mutations.Mutation
+local function rollMutation(meteorTypeId: string, data: Types.Profile): Mutations.Mutation
     local multiplier = MeteorsConfig.Types[meteorTypeId].mutationMultiplier
+        * PlayerStats.GetMutationMultiplier(data)
     local mutation = WeightedRandom.Pick(
         Mutations.List,
         function(candidate: Mutations.Mutation): number
@@ -120,6 +121,37 @@ local function rollMutation(meteorTypeId: string): Mutations.Mutation
         rng
     )
     return mutation or Mutations.ById[Mutations.NoneId]
+end
+
+-- Tira un mineral con su mutación, lo mete en la mochila y avisa.
+local function grantMineral(
+    player: Player,
+    data: Types.Profile,
+    meteorTypeId: string,
+    meteorPosition: Vector3,
+    meteorRadius: number
+)
+    local mineral = rollMineral(meteorTypeId, data)
+    local mutation = rollMutation(meteorTypeId, data)
+    local item: Types.InventoryItem = {
+        id = HttpService:GenerateGUID(false),
+        mineral = mineral.id,
+        mutation = mutation.id,
+    }
+    CarryService.Add(player, item)
+    IndexService.Register(player, mineral.id, mutation.id)
+
+    -- El cliente muestra el mineral obtenido como un texto flotante sobre el meteorito.
+    Remotes.MineReward:FireClient(player, meteorPosition, meteorRadius, mineral.id, mutation.id)
+    if Minerals.GetRank(mineral.id) >= Minerals.AnnounceRank then
+        Remotes.Notify:FireAllClients(
+            string.format(
+                Strings.Mining.Announce,
+                player.DisplayName,
+                Strings.MineralName(mineral.id, mutation.id)
+            )
+        )
+    end
 end
 
 local function completeHit(player: Player, state: MiningState)
@@ -142,24 +174,14 @@ local function completeHit(player: Player, state: MiningState)
         return
     end
 
-    local mineral = rollMineral(meteorTypeId, data)
-    local mutation = rollMutation(meteorTypeId)
-    local item: Types.InventoryItem = {
-        id = HttpService:GenerateGUID(false),
-        mineral = mineral.id,
-        mutation = mutation.id,
-    }
-    CarryService.Add(player, item)
-    IndexService.Register(player, mineral.id, mutation.id)
+    grantMineral(player, data, meteorTypeId, meteorPosition, meteorRadius)
     TutorialService.Advance(player, 1)
-
-    -- El cliente muestra el mineral obtenido como un texto flotante sobre el meteorito.
-    Remotes.MineReward:FireClient(player, meteorPosition, meteorRadius, mineral.id, mutation.id)
-    local name = Strings.MineralName(mineral.id, mutation.id)
-    if Minerals.GetRank(mineral.id) >= Minerals.AnnounceRank then
-        Remotes.Notify:FireAllClients(
-            string.format(Strings.Mining.Announce, player.DisplayName, name)
-        )
+    -- Mejora "fortune": a veces el mismo golpe da un segundo mineral, si cabe en la mochila.
+    if
+        CarryService.HasRoom(player)
+        and rng:NextNumber() < PlayerStats.GetExtraMineralChance(data)
+    then
+        grantMineral(player, data, meteorTypeId, meteorPosition, meteorRadius)
     end
 
     if MeteorService.GetMeteor(state.meteorId) == nil then

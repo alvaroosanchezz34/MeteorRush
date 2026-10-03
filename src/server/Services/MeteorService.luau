@@ -2,6 +2,7 @@
 
 -- Programa la caída de meteoritos de cada tipo, avisa a los clientes y gestiona su vida en el suelo.
 
+local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -22,6 +23,9 @@ export type Meteor = {
     radius: number,
     hitsLeft: number,
     model: Instance,
+    -- Placas de la corteza que quedan y cuántas había al caer: se van rompiendo al minarlo.
+    plates: { BasePart },
+    plateTotal: number,
 }
 
 type Schedule = {
@@ -42,6 +46,8 @@ local nextId = 0
 
 -- Tipo de meteorito que activa el evento (cielo especial en el cliente, aviso al caer).
 local GIANT_TYPE = "giant"
+-- Nombre de las placas de la corteza dentro del modelo generado.
+local PLATE_NAME = "Plate"
 -- Último impacto publicado en el atributo NextMeteorAt (se replica solo cuando cambia).
 local publishedImpact: number? = nil
 
@@ -149,6 +155,7 @@ local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Inst
             if rng:NextNumber() < 0.3 then Enum.Material.Slate else Enum.Material.Basalt
         )
         plate.CastShadow = false
+        plate.Name = PLATE_NAME
     end
 
     -- Salientes: unas cuantas cuñas grandes que rompen la silueta redonda.
@@ -284,6 +291,27 @@ local function removeMeteor(id: number)
     end
 end
 
+-- Rompe placas de la corteza según se gastan los golpes: saltan hacia fuera y desaparecen,
+-- dejando cada vez más núcleo a la vista.
+local function breakPlates(meteor: Meteor)
+    local maxHits = MeteorsConfig.Types[meteor.typeId].hits
+    local keep = MeteorsConfig.MinPlateFraction
+    local target =
+        math.ceil(meteor.plateTotal * (keep + (1 - keep) * math.max(meteor.hitsLeft, 0) / maxHits))
+    while #meteor.plates > target do
+        local plate = table.remove(meteor.plates, rng:NextInteger(1, #meteor.plates))
+        if plate and plate.Parent then
+            local outward = plate.Position - meteor.position
+            plate.Anchored = false
+            plate.CanCollide = false
+            plate.AssemblyLinearVelocity = outward.Unit * MeteorsConfig.DebrisSpeed
+                + Vector3.new(0, MeteorsConfig.DebrisSpeed * 0.6, 0)
+            plate.AssemblyAngularVelocity = rng:NextUnitVector() * 8
+            Debris:AddItem(plate, MeteorsConfig.DebrisLifetime)
+        end
+    end
+end
+
 local function spawnMeteor(id: number, typeId: string, position: Vector3)
     local meteorType = MeteorsConfig.Types[typeId]
     pendingImpacts[id] = nil
@@ -298,6 +326,13 @@ local function spawnMeteor(id: number, typeId: string, position: Vector3)
     model:SetAttribute("HitsLeft", meteorType.hits)
     model.Parent = meteorFolder
 
+    local plates: { BasePart } = {}
+    for _, child in model:GetChildren() do
+        if child.Name == PLATE_NAME and child:IsA("BasePart") then
+            table.insert(plates, child)
+        end
+    end
+
     meteors[id] = {
         id = id,
         typeId = typeId,
@@ -305,6 +340,8 @@ local function spawnMeteor(id: number, typeId: string, position: Vector3)
         radius = meteorType.radius,
         hitsLeft = meteorType.hits,
         model = model,
+        plates = plates,
+        plateTotal = #plates,
     }
 
     if typeId == GIANT_TYPE then
@@ -367,6 +404,7 @@ function MeteorService.ConsumeHit(id: number): boolean
     end
     meteor.hitsLeft -= 1
     meteor.model:SetAttribute("HitsLeft", meteor.hitsLeft)
+    breakPlates(meteor)
     if meteor.hitsLeft <= 0 then
         removeMeteor(id)
     end

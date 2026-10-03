@@ -32,7 +32,7 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
         return
     end
 
-    local level = (data.upgrades :: any)[upgradeId] :: number
+    local level = ((data.upgrades :: any)[upgradeId] or 0) :: number
     if level >= upgrade.maxLevel then
         Remotes.Notify:FireClient(player, Strings.Upgrades.MaxLevel)
         return

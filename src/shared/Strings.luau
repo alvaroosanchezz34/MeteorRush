@@ -38,6 +38,7 @@ local Strings = {
         NoFreePedestal = "No free pedestals. Remove a mineral or buy more pedestals.",
         Placed = "Placed %s",
         Removed = "Removed %s",
+        PlacedBest = "Placed your best minerals on your pedestals!",
         PerSecond = "$%s/s",
     },
     Income = {
@@ -54,6 +55,10 @@ local Strings = {
             speed = "Speed",
             pedestals = "Pedestals",
             luck = "Luck",
+            fortune = "Fortune",
+            mutation = "Mutagen",
+            refinery = "Refinery",
+            grip = "Grip",
         } :: { [string]: string },
         -- %s = valor actual, %s = valor siguiente
         Effects = {
@@ -62,6 +67,10 @@ local Strings = {
             speed = "Walk speed: %s → %s",
             pedestals = "Pedestals: %s → %s",
             luck = "Rare luck: x%s → x%s",
+            fortune = "Double mineral chance: %s%% → %s%%",
+            mutation = "Mutation chance: x%s → x%s",
+            refinery = "Pedestal income: x%s → x%s",
+            grip = "Dropped when hit: %s%% → %s%%",
         } :: { [string]: string },
         Max = "MAX",
         Level = "Lv. %d/%d",
@@ -204,6 +213,15 @@ local Strings = {
         Remove = "Remove",
         OnPedestal = "On pedestal %d",
         Pedestals = "Pedestals: %d/%d used",
+        PlaceBest = "Place Best",
+        SellJunk = "Sell Commons",
+        Sell = "Sell $%s",
+        Fuse = "Fuse x%d",
+        Sold = "Sold %s for $%s",
+        SoldMany = "Sold %d minerals for $%s",
+        NothingToSell = "No common minerals to sell.",
+        Fused = "Fused into %s!",
+        FuseNotEnough = "You need %d identical minerals off pedestals to fuse.",
     },
     Tutorial = {
         Steps = {

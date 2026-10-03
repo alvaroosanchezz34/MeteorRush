@@ -12,4 +12,7 @@ Income.CollectCheckInterval = 0.25
 Income.OfflineCapSeconds = 8 * 60 * 60
 Income.OfflineRate = 0.5
 
+-- Vender un mineral da lo que generaría en un pedestal durante estos segundos (sin multiplicadores).
+Income.SellSeconds = 90
+
 return Income

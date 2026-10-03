@@ -12,6 +12,10 @@ export type UpgradeLevels = {
     speed: number,
     pedestals: number,
     luck: number,
+    fortune: number,
+    mutation: number,
+    refinery: number,
+    grip: number,
 }
 
 export type DailyData = {
