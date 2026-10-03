@@ -63,6 +63,9 @@ local function createDisplay(plotPedestal: Instance, item: Types.InventoryItem):
     billboard.LightInfluence = 0
     billboard.MaxDistance = 80
     billboard.Parent = visual
+    if visual:IsA("Model") then
+        billboard.Adornee = visual.PrimaryPart
+    end
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.fromScale(1, 1)

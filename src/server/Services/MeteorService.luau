@@ -76,14 +76,106 @@ local function chooseImpactPosition(radius: number): Vector3
     return position
 end
 
+local function randomDirection(): Vector3
+    return rng:NextUnitVector()
+end
+
+-- Roca irregular con vetas brillantes, luz, ascuas y una marca quemada en el suelo.
+-- Se construye centrada en el origen; la parte principal es el núcleo.
 local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Instance
-    local part = Instance.new("Part")
-    part.Shape = Enum.PartType.Ball
-    part.Anchored = true
-    part.Size = Vector3.one * meteorType.radius * 2
-    part.Color = meteorType.color
-    part.Material = Enum.Material.Basalt
-    return part
+    local radius = meteorType.radius
+    local model = Instance.new("Model")
+
+    local function addPart(
+        shape: Enum.PartType,
+        size: Vector3,
+        cframe: CFrame,
+        color: Color3,
+        material: Enum.Material
+    ): Part
+        local part = Instance.new("Part")
+        part.Shape = shape
+        part.Anchored = true
+        part.Size = size
+        part.CFrame = cframe
+        part.Color = color
+        part.Material = material
+        part.TopSurface = Enum.SurfaceType.Smooth
+        part.BottomSurface = Enum.SurfaceType.Smooth
+        part.Parent = model
+        return part
+    end
+
+    local core = addPart(
+        Enum.PartType.Ball,
+        Vector3.one * radius * 1.85,
+        CFrame.identity,
+        meteorType.color,
+        Enum.Material.Basalt
+    )
+    model.PrimaryPart = core
+
+    -- Bultos de roca: no sobresalen del radio, que es el que se usa para medir la distancia de minado.
+    for _ = 1, MeteorsConfig.LumpCount do
+        local direction = randomDirection()
+        local size = radius * rng:NextNumber(0.4, 0.55)
+        local rotation = CFrame.Angles(
+            rng:NextNumber(0, math.pi),
+            rng:NextNumber(0, math.pi),
+            rng:NextNumber(0, math.pi)
+        )
+        local shade = meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.3))
+        addPart(
+            if rng:NextNumber() < 0.5 then Enum.PartType.Ball else Enum.PartType.Block,
+            Vector3.one * size,
+            CFrame.new(direction * radius * 0.6) * rotation,
+            shade,
+            Enum.Material.Basalt
+        )
+    end
+
+    for _ = 1, MeteorsConfig.VeinCount do
+        local direction = randomDirection()
+        local vein = addPart(
+            Enum.PartType.Ball,
+            Vector3.one * radius * rng:NextNumber(0.2, 0.35),
+            CFrame.new(direction * radius * 0.86),
+            meteorType.glowColor,
+            Enum.Material.Neon
+        )
+        vein.CanCollide = false
+    end
+
+    local scorch = addPart(
+        Enum.PartType.Cylinder,
+        Vector3.new(0.1, radius * 3.2, radius * 3.2),
+        -- El eje del cilindro es X; se gira para que quede tumbado sobre el suelo.
+        CFrame.new(0, -radius + 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)),
+        Color3.fromRGB(20, 16, 16),
+        Enum.Material.Slate
+    )
+    scorch.CanCollide = false
+    scorch.CanQuery = false
+
+    local light = Instance.new("PointLight")
+    light.Color = meteorType.glowColor
+    light.Brightness = 2
+    light.Range = math.min(radius * 4, 60)
+    light.Shadows = false
+    light.Parent = core
+
+    local embers = Instance.new("ParticleEmitter")
+    embers.Name = "Embers"
+    embers.Color = ColorSequence.new(meteorType.glowColor)
+    embers.LightEmission = 1
+    embers.Rate = radius * 2
+    embers.Lifetime = NumberRange.new(1.5, 3)
+    embers.Speed = NumberRange.new(radius * 0.3, radius * 0.6)
+    embers.SpreadAngle = Vector2.new(40, 40)
+    embers.Size = NumberSequence.new(radius * 0.12, 0)
+    embers.Parent = core
+
+    return model
 end
 
 local function removeMeteor(id: number)

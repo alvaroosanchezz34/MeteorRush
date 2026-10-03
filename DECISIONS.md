@@ -124,6 +124,19 @@ Decisiones tomadas donde el README no especifica, siguiendo la opción más simp
 - **Evento gigante:** aviso global al anunciarse y al caer, y el cielo se tiñe de morado en todos los clientes mientras el gigante está en el suelo (atributo `GiantActive` de `Workspace`).
 - **Herramientas de prueba solo en Studio:** `DebugService` (`SkipNewbie`, `ResetDaily`, `GiveMineral`), además de `DataService.DebugAddCoins` y `MeteorService.DebugSpawnMeteor`.
 
+## Modelos generados por código
+
+Sustituyen a los bloques lisos. Siguen siendo el "placeholder": un modelo real en `ReplicatedStorage/Assets/<Id>` tiene prioridad.
+
+- **Minerales:** cada uno tiene forma, material y color propios (`Minerals.List[].color` y la tabla de formas de `Util/MineralVisual.luau`), con 2-4 partes soldadas entre sí. De Raro en adelante llevan una luz. El color de rareza se sigue usando en la interfaz.
+- **Mutaciones:** campo `style` en `Config/Mutations.luau`. Dorado = metal dorado, Radiactivo = neón verde, Arcoíris = cada parte de un tono distinto. Todas añaden destellos y luz. Se quitó el contorno (`SelectionBox`).
+- **Meteoritos:** núcleo con bultos de roca al azar, vetas de neón, luz, ascuas y una marca quemada en el suelo. El color de brillo es `glowColor` en `Config/Meteors.luau`. Los bultos no sobresalen del radio, que es el que se usa para la distancia de minado.
+- **Pedestales:** base, columna, plato y filo luminoso; ocupan lo mismo que antes (`PedestalSize`).
+- **Parcelas:** bordillo, columnas con luz en las esquinas, arco verde sobre la zona de depósito y cartel con postes. El color de base cosmético sigue cambiando solo el suelo.
+- **Zona de impacto:** borde luminoso (64 tramos) y 16 cráteres decorativos sin colisión, con semilla fija para que el mapa sea siempre igual.
+- **Barras y etiquetas flotantes:** como ahora los meteoritos y minerales son `Model`, los `BillboardGui` se enganchan a su parte principal.
+- **Sin probar en Studio:** las proporciones están calculadas, no vistas. Puede hacer falta retocar tamaños o colores.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

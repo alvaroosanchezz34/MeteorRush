@@ -10,12 +10,24 @@ Map.GroundColor = Color3.fromRGB(60, 58, 70)
 
 Map.ImpactZoneRadius = 300
 Map.ImpactZoneColor = Color3.fromRGB(95, 70, 60)
+-- Borde luminoso de la zona de impacto (número de tramos) y cráteres decorativos.
+Map.ImpactRingSegments = 64
+Map.ImpactRingColor = Color3.fromRGB(255, 120, 60)
+Map.CraterCount = 16
+Map.CraterMinRadius = 8
+Map.CraterMaxRadius = 22
+Map.CraterColor = Color3.fromRGB(70, 52, 46)
 
 Map.PlotCount = 8
 Map.PlotRingRadius = 380
 Map.PlotSize = 60
 Map.PlotFloorThickness = 1
 Map.PlotFloorColor = Color3.fromRGB(110, 120, 140)
+-- Bordillo, columnas de las esquinas y arco de la entrada.
+Map.PlotTrimColor = Color3.fromRGB(55, 60, 75)
+Map.PlotAccentColor = Color3.fromRGB(90, 200, 255)
+Map.PlotPillarHeight = 6
+Map.PlotGateHeight = 8
 -- Altura sobre el suelo de la parcela que sigue contando como "dentro" (zona segura).
 Map.PlotSafeHeight = 50
 
@@ -40,6 +52,8 @@ Map.PedestalSpacing = 8
 Map.PedestalGridCenterZ = 0
 Map.PedestalSize = Vector3.new(4, 3, 4)
 Map.PedestalColor = Color3.fromRGB(180, 180, 195)
+Map.PedestalBaseColor = Color3.fromRGB(90, 92, 110)
+Map.PedestalAccentColor = Color3.fromRGB(90, 200, 255)
 
 -- Placa de cobro de ingresos, en la esquina del fondo.
 Map.CollectPadSize = 8

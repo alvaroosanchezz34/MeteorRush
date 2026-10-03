@@ -273,8 +273,13 @@ local function onMineState(state: any, meteorId: any, duration: any)
     end
 
     local radius = meteor:GetAttribute("Radius")
+    -- Un BillboardGui se engancha a una parte: en un modelo, a su parte principal.
+    local adornee: Instance = meteor
+    if meteor:IsA("Model") then
+        adornee = meteor.PrimaryPart or meteor:FindFirstChildWhichIsA("BasePart", true) or meteor
+    end
     -- Cada "start" después del primero significa que se completó un golpe.
-    if billboard.Enabled and billboard.Adornee == meteor then
+    if billboard.Enabled and billboard.Adornee == adornee then
         local character = Players.LocalPlayer.Character
         local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
         local origin = meteor:GetPivot().Position
@@ -285,7 +290,7 @@ local function onMineState(state: any, meteorId: any, duration: any)
         burst(surface, SPARK_COLOR, 12, 12, 0.4)
         Sound.Play("MineHit")
     end
-    billboard.Adornee = meteor
+    billboard.Adornee = adornee
     billboard.StudsOffsetWorldSpace =
         Vector3.new(0, (if type(radius) == "number" then radius else 4) + 2, 0)
     billboard.Enabled = true

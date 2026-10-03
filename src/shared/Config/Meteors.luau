@@ -15,6 +15,8 @@ export type MeteorType = {
     mutationMultiplier: number,
     radius: number,
     color: Color3,
+    -- Color de las vetas brillantes, la luz y las ascuas.
+    glowColor: Color3,
     -- Si true, se avisa a todo el servidor con un mensaje en pantalla.
     announce: boolean,
 }
@@ -36,6 +38,10 @@ Meteors.MinSeparation = 6
 -- Intentos de encontrar un punto libre antes de aceptar uno solapado.
 Meteors.PlacementAttempts = 10
 
+-- Modelo generado: bultos de roca y vetas brillantes por meteorito.
+Meteors.LumpCount = 10
+Meteors.VeinCount = 7
+
 -- Efecto visual de la caída (solo cliente).
 Meteors.FallHeight = 350
 Meteors.FallDuration = 1.5
@@ -51,6 +57,7 @@ Meteors.Types = {
         mutationMultiplier = 1,
         radius = 4,
         color = Color3.fromRGB(120, 90, 80),
+        glowColor = Color3.fromRGB(255, 150, 50),
         announce = false,
     },
     big = {
@@ -63,6 +70,7 @@ Meteors.Types = {
         mutationMultiplier = 1,
         radius = 7,
         color = Color3.fromRGB(150, 80, 60),
+        glowColor = Color3.fromRGB(255, 80, 40),
         announce = true,
     },
     giant = {
@@ -75,6 +83,7 @@ Meteors.Types = {
         mutationMultiplier = 3,
         radius = 14,
         color = Color3.fromRGB(110, 60, 140),
+        glowColor = Color3.fromRGB(210, 90, 255),
         announce = true,
     },
 } :: { [string]: MeteorType }

@@ -12,6 +12,8 @@ export type Mineral = {
     rarity: string,
     weight: number,
     coinsPerSecond: number,
+    -- Color del modelo generado (el de la rareza se usa en la interfaz).
+    color: Color3,
 }
 
 local Minerals = {}
@@ -32,14 +34,62 @@ Minerals.RareRank = 3
 Minerals.AnnounceRank = 5
 
 Minerals.List = {
-    { id = "stone", rarity = "common", weight = 5000, coinsPerSecond = 1 },
-    { id = "iron", rarity = "common", weight = 3000, coinsPerSecond = 3 },
-    { id = "copper", rarity = "uncommon", weight = 1200, coinsPerSecond = 8 },
-    { id = "crystal", rarity = "uncommon", weight = 500, coinsPerSecond = 20 },
-    { id = "plasma", rarity = "rare", weight = 200, coinsPerSecond = 60 },
-    { id = "nebula", rarity = "epic", weight = 70, coinsPerSecond = 250 },
-    { id = "darkmatter", rarity = "legendary", weight = 25, coinsPerSecond = 1200 },
-    { id = "starheart", rarity = "mythic", weight = 5, coinsPerSecond = 8000 },
+    {
+        id = "stone",
+        rarity = "common",
+        weight = 5000,
+        coinsPerSecond = 1,
+        color = Color3.fromRGB(130, 125, 120),
+    },
+    {
+        id = "iron",
+        rarity = "common",
+        weight = 3000,
+        coinsPerSecond = 3,
+        color = Color3.fromRGB(95, 105, 125),
+    },
+    {
+        id = "copper",
+        rarity = "uncommon",
+        weight = 1200,
+        coinsPerSecond = 8,
+        color = Color3.fromRGB(200, 115, 60),
+    },
+    {
+        id = "crystal",
+        rarity = "uncommon",
+        weight = 500,
+        coinsPerSecond = 20,
+        color = Color3.fromRGB(130, 225, 255),
+    },
+    {
+        id = "plasma",
+        rarity = "rare",
+        weight = 200,
+        coinsPerSecond = 60,
+        color = Color3.fromRGB(70, 150, 255),
+    },
+    {
+        id = "nebula",
+        rarity = "epic",
+        weight = 70,
+        coinsPerSecond = 250,
+        color = Color3.fromRGB(175, 90, 245),
+    },
+    {
+        id = "darkmatter",
+        rarity = "legendary",
+        weight = 25,
+        coinsPerSecond = 1200,
+        color = Color3.fromRGB(150, 60, 255),
+    },
+    {
+        id = "starheart",
+        rarity = "mythic",
+        weight = 5,
+        coinsPerSecond = 8000,
+        color = Color3.fromRGB(255, 110, 90),
+    },
 } :: { Mineral }
 
 local byId: { [string]: Mineral } = {}
