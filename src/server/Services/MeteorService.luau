@@ -82,7 +82,7 @@ local function randomDirection(): Vector3
     return rng:NextUnitVector()
 end
 
--- Roca irregular con vetas brillantes, luz, ascuas y una marca quemada en el suelo.
+-- Corteza de roca oscura agrietada sobre un núcleo incandescente, con cráter, ascuas y humo.
 -- Se construye centrada en el origen; la parte principal es el núcleo.
 local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Instance
     local radius = meteorType.radius
@@ -108,71 +108,103 @@ local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Inst
         return part
     end
 
+    -- Núcleo incandescente: solo se ve por las rendijas entre las placas de la corteza.
     local core = addPart(
         Enum.PartType.Ball,
-        Vector3.one * radius * 1.85,
+        Vector3.one * radius * 1.68,
         CFrame.identity,
-        meteorType.color,
-        Enum.Material.Basalt
+        meteorType.glowColor,
+        Enum.Material.Neon
     )
     model.PrimaryPart = core
 
-    -- Bultos de roca: no sobresalen del radio, que es el que se usa para medir la distancia de minado.
-    local shapes = { Enum.PartType.Block, Enum.PartType.Wedge, Enum.PartType.Ball }
-    for _ = 1, MeteorsConfig.LumpCount do
-        local direction = randomDirection()
-        local shape = shapes[rng:NextInteger(1, #shapes)]
-        local size = if shape == Enum.PartType.Ball
-            then Vector3.one * radius * rng:NextNumber(0.4, 0.6)
-            else Vector3.new(
-                radius * rng:NextNumber(0.35, 0.6),
-                radius * rng:NextNumber(0.3, 0.5),
-                radius * rng:NextNumber(0.35, 0.6)
-            )
-        local rotation = CFrame.Angles(
-            rng:NextNumber(0, math.pi),
-            rng:NextNumber(0, math.pi),
-            rng:NextNumber(0, math.pi)
-        )
-        local shade = meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.35))
-        addPart(
-            shape,
-            size,
-            CFrame.new(direction * radius * 0.6) * rotation,
-            shade,
+    -- Corteza: placas de roca oscura repartidas de forma uniforme por la esfera (espiral de
+    -- Fibonacci), cada una con su giro, tamaño y altura, para que queden juntas irregulares.
+    -- No sobresalen del radio, que es el que se usa para medir la distancia de minado.
+    local plateCount = math.round(MeteorsConfig.PlateCount * math.sqrt(radius / 4))
+    local plateSide = math.sqrt(4 * math.pi / plateCount) * radius * 0.83
+    local goldenAngle = math.pi * (3 - math.sqrt(5))
+    for index = 0, plateCount - 1 do
+        local y = 1 - 2 * (index + 0.5) / plateCount
+        local ring = math.sqrt(1 - y * y)
+        local theta = index * goldenAngle
+        local direction = Vector3.new(math.cos(theta) * ring, y, math.sin(theta) * ring)
+
+        local thickness = radius * rng:NextNumber(0.16, 0.3)
+        local distance = radius * rng:NextNumber(0.8, 0.86)
+        local plate = addPart(
+            Enum.PartType.Block,
+            Vector3.new(
+                plateSide * rng:NextNumber(0.8, 0.95),
+                plateSide * rng:NextNumber(0.8, 0.95),
+                thickness
+            ),
+            CFrame.lookAt(direction * distance, direction * radius * 2)
+                * CFrame.Angles(
+                    rng:NextNumber(-0.12, 0.12),
+                    rng:NextNumber(-0.12, 0.12),
+                    rng:NextNumber(0, math.pi)
+                ),
+            meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0, 0.4)),
             if rng:NextNumber() < 0.3 then Enum.Material.Slate else Enum.Material.Basalt
+        )
+        plate.CastShadow = false
+    end
+
+    -- Salientes: unas cuantas cuñas grandes que rompen la silueta redonda.
+    for _ = 1, MeteorsConfig.OutcropCount do
+        local direction = randomDirection()
+        addPart(
+            Enum.PartType.Wedge,
+            Vector3.new(
+                radius * rng:NextNumber(0.3, 0.45),
+                radius * rng:NextNumber(0.25, 0.4),
+                radius * rng:NextNumber(0.3, 0.45)
+            ),
+            CFrame.new(direction * radius * 0.82)
+                * CFrame.Angles(
+                    rng:NextNumber(0, math.pi),
+                    rng:NextNumber(0, math.pi),
+                    rng:NextNumber(0, math.pi)
+                ),
+            meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0.1, 0.4)),
+            Enum.Material.Basalt
         )
     end
 
-    -- Grietas: tiras de neón pegadas a la superficie, cada una con un giro distinto.
-    for _ = 1, MeteorsConfig.VeinCount do
+    -- Unos pocos cristales pequeños asomando por la mitad superior.
+    for _ = 1, MeteorsConfig.CrystalCount do
         local direction = randomDirection()
+        direction = Vector3.new(direction.X, math.abs(direction.Y) * 0.8 + 0.1, direction.Z).Unit
+        local base = direction * radius * 0.85
+        Kit.Crystal({
+            -- lookAt apunta -Z hacia fuera; el giro deja +Y (el eje del cristal) en esa dirección.
+            cframe = CFrame.lookAt(base, base + direction) * CFrame.Angles(-math.pi / 2, 0, 0),
+            height = radius * rng:NextNumber(0.3, 0.5),
+            width = radius * rng:NextNumber(0.08, 0.12),
+            color = meteorType.glowColor:Lerp(Color3.new(1, 1, 1), 0.35),
+            canCollide = false,
+            parent = model,
+        })
+    end
+
+    -- Grietas en el suelo que salen de la base.
+    for index = 1, MeteorsConfig.GroundCrackCount do
+        local angle = index / MeteorsConfig.GroundCrackCount * math.pi * 2
+            + rng:NextNumber(-0.3, 0.3)
+        local length = radius * rng:NextNumber(0.7, 1.4)
         local crack = addPart(
             Enum.PartType.Block,
-            Vector3.new(radius * rng:NextNumber(0.5, 0.9), radius * 0.12, radius * 0.08),
-            CFrame.lookAt(direction * radius * 0.93, direction * radius * 2)
-                * CFrame.Angles(0, 0, rng:NextNumber(0, math.pi)),
+            Vector3.new(radius * 0.07, 0.1, length),
+            CFrame.new(0, -radius + 0.32, 0)
+                * CFrame.Angles(0, angle, 0)
+                * CFrame.new(0, 0, -(radius * 0.7 + length / 2)),
             meteorType.glowColor,
             Enum.Material.Neon
         )
         crack.CanCollide = false
+        crack.CanQuery = false
         crack.CastShadow = false
-    end
-
-    -- Cristales que asoman por la mitad superior: lo que se mina.
-    for _ = 1, MeteorsConfig.CrystalCount do
-        local direction = randomDirection()
-        direction = Vector3.new(direction.X, math.abs(direction.Y) * 0.8 + 0.1, direction.Z).Unit
-        local base = direction * radius * 0.8
-        Kit.Crystal({
-            -- lookAt apunta -Z hacia fuera; el giro deja +Y (el eje del cristal) en esa dirección.
-            cframe = CFrame.lookAt(base, base + direction) * CFrame.Angles(-math.pi / 2, 0, 0),
-            height = radius * rng:NextNumber(0.5, 0.85),
-            width = radius * rng:NextNumber(0.12, 0.18),
-            color = meteorType.glowColor:Lerp(Color3.new(1, 1, 1), 0.25),
-            canCollide = false,
-            parent = model,
-        })
     end
 
     -- Borde del cráter: rocas sueltas alrededor de la base, sin colisión para no estorbar.
@@ -203,7 +235,7 @@ local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Inst
 
     local light = Instance.new("PointLight")
     light.Color = meteorType.glowColor
-    light.Brightness = 2
+    light.Brightness = 1.2
     light.Range = math.min(radius * 4, 60)
     light.Shadows = false
     light.Parent = core

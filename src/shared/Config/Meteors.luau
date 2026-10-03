@@ -38,11 +38,12 @@ Meteors.MinSeparation = 6
 -- Intentos de encontrar un punto libre antes de aceptar uno solapado.
 Meteors.PlacementAttempts = 10
 
--- Modelo generado: bultos de roca y vetas brillantes por meteorito.
-Meteors.LumpCount = 14
-Meteors.VeinCount = 9
-Meteors.CrystalCount = 5
+-- Modelo generado. PlateCount es para un radio de 4; los más grandes llevan más placas.
+Meteors.PlateCount = 46
+Meteors.OutcropCount = 6
+Meteors.CrystalCount = 3
 Meteors.RimRockCount = 9
+Meteors.GroundCrackCount = 6
 
 -- Efecto visual de la caída (solo cliente).
 Meteors.FallHeight = 350
@@ -58,8 +59,8 @@ Meteors.Types = {
         rareWeightMultiplier = 1,
         mutationMultiplier = 1,
         radius = 4,
-        color = Color3.fromRGB(120, 90, 80),
-        glowColor = Color3.fromRGB(255, 150, 50),
+        color = Color3.fromRGB(58, 50, 50),
+        glowColor = Color3.fromRGB(255, 95, 30),
         announce = false,
     },
     big = {
@@ -71,8 +72,8 @@ Meteors.Types = {
         rareWeightMultiplier = 2,
         mutationMultiplier = 1,
         radius = 7,
-        color = Color3.fromRGB(150, 80, 60),
-        glowColor = Color3.fromRGB(255, 80, 40),
+        color = Color3.fromRGB(50, 40, 42),
+        glowColor = Color3.fromRGB(255, 50, 35),
         announce = true,
     },
     giant = {
@@ -84,8 +85,8 @@ Meteors.Types = {
         rareWeightMultiplier = 5,
         mutationMultiplier = 3,
         radius = 14,
-        color = Color3.fromRGB(110, 60, 140),
-        glowColor = Color3.fromRGB(210, 90, 255),
+        color = Color3.fromRGB(42, 34, 54),
+        glowColor = Color3.fromRGB(180, 80, 255),
         announce = true,
     },
 } :: { [string]: MeteorType }
