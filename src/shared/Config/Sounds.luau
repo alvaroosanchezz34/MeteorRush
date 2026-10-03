@@ -12,6 +12,8 @@ local Sounds = {
     -- "gem collect", de la Creator Store.
     MineralObtained = "rbxassetid://11439707919",
     Deposit = "rbxasset://sounds/unsheath.wav",
+    -- "bling_diamond_pickup_2", de la Creator Store: al colocar un mineral en un pedestal.
+    Place = "rbxassetid://4612374393",
     Collect = "rbxasset://sounds/clickfast.wav",
     Hit = "rbxasset://sounds/swordslash.wav",
     Purchase = "rbxasset://sounds/victory.wav",
@@ -24,6 +26,7 @@ local Volume: { [string]: number } = {
     MineHit = 0.7,
     MineralObtained = 0.3,
     Collect = 0.3,
+    Place = 0.4,
     UiClick = 0.4,
 }
 

@@ -25,11 +25,11 @@ Pruebas: reiniciar el servidor minando/transportando · intentar cambiar monedas
 
 - [x] Aviso de meteorito 10 s antes
 - [x] Feedback al golpear: sonido, partículas, texto del mineral y barra de progreso
-- [~] Feedback visual al llenar la mochila (solo un aviso de texto)
-- [~] Efecto de transporte y penalización de velocidad (hay penalización y minerales en la espalda)
-- [ ] Indicador de distancia a la base
-- [~] Zona de seguridad en la base (funciona, pero no se ve)
-- [~] Feedback al colocar minerales (solo un aviso de texto)
+- [x] Feedback visual al llenar la mochila (contador en rojo y flecha a la base parpadeando)
+- [x] Efecto de transporte y penalización de velocidad (minerales en la espalda y porcentaje de freno en el HUD)
+- [x] Indicador de distancia a la base (flecha y distancia al llevar minerales; baliza propia en verde)
+- [x] Zona de seguridad en la base (aviso SAFE ZONE en el HUD)
+- [x] Feedback al colocar minerales (aparece creciendo, con destello y sonido)
 - [x] Panel de ingresos por segundo
 - [x] Guardado de minerales colocados y producción offline
 - [x] Tutorial de 3 pasos

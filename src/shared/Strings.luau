@@ -184,6 +184,11 @@ local Strings = {
         Coins = "💰 $%s",
         PerSecond = "📈 +$%s/s",
         Backpack = "🎒 Backpack %d/%d",
+        -- %d/%d = mochila, %d = porcentaje de velocidad que resta la carga
+        BackpackSlow = "🎒 Backpack %d/%d  (-%d%% speed)",
+        BaseDistance = "🏠 Base: %d studs",
+        BaseDistanceFull = "🏠 FULL! Base: %d studs",
+        SafeZone = "🛡️ SAFE ZONE",
         NextMeteor = "☄️ Next meteor: %s",
         MeteorDistance = "%d studs",
         Buttons = {

@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local BaseController = require(script.Parent.Parent.Controllers.BaseController)
 local CarryController = require(script.Parent.Parent.Controllers.CarryController)
 local Components = require(script.Parent.Components)
 local DailyMenu = require(script.Parent.DailyMenu)
@@ -25,6 +26,7 @@ local TradeMenu = require(script.Parent.TradeMenu)
 local UpgradesMenu = require(script.Parent.UpgradesMenu)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local CarryConfig = require(Shared:WaitForChild("Config"):WaitForChild("Carry"))
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Strings = require(Shared:WaitForChild("Strings"))
@@ -137,6 +139,39 @@ function Hud.Mount()
     })
     distanceLabel.TextStrokeTransparency = 0.4
 
+    -- Flecha de vuelta a la base: aparece al llevar minerales fuera de la base.
+    local baseArrow = Components.Label({
+        text = "▲",
+        size = UDim2.fromScale(0.04, 0.06),
+        position = UDim2.fromScale(0.6, 0.065),
+        color = Components.Colors.Success,
+        parent = gui,
+    })
+    baseArrow.Visible = false
+    local baseArrowAspect = Instance.new("UIAspectRatioConstraint")
+    baseArrowAspect.AspectRatio = 1
+    baseArrowAspect.Parent = baseArrow
+    local baseDistanceLabel = Components.Label({
+        text = "",
+        size = UDim2.fromScale(0.16, 0.03),
+        position = UDim2.fromScale(0.54, 0.13),
+        color = Components.Colors.Success,
+        parent = gui,
+    })
+    baseDistanceLabel.TextStrokeTransparency = 0.4
+    baseDistanceLabel.Visible = false
+
+    -- Aviso de zona segura: dentro de la base propia nadie puede robarte.
+    local safeLabel = Components.Label({
+        text = Strings.Hud.SafeZone,
+        size = UDim2.fromScale(0.2, 0.04),
+        position = UDim2.fromScale(0.4, 0.17),
+        color = Components.Colors.Success,
+        parent = gui,
+    })
+    safeLabel.TextStrokeTransparency = 0.3
+    safeLabel.Visible = false
+
     -- Tutorial (abajo en el centro) --------------------------------------------
     local tutorialLabel = Components.Label({
         text = "",
@@ -247,12 +282,44 @@ function Hud.Mount()
         )
     end
 
+    -- Mochila: recuento, cuánto frena la carga y color de aviso al llenarse.
+    local carried = 0
+    local backpackFull = false
     local function updateBackpack()
-        backpackLabel.Text = string.format(
-            Strings.Hud.Backpack,
-            #CarryController.GetItems(),
-            CarryController.GetCapacity()
-        )
+        local capacity = CarryController.GetCapacity()
+        carried = #CarryController.GetItems()
+        backpackFull = capacity > 0 and carried >= capacity
+
+        local slowdown = math.min(carried * CarryConfig.SlowdownPerItem, CarryConfig.MaxSlowdown)
+        backpackLabel.Text = if carried > 0
+            then string.format(
+                Strings.Hud.BackpackSlow,
+                carried,
+                capacity,
+                math.round(slowdown * 100)
+            )
+            else string.format(Strings.Hud.Backpack, carried, capacity)
+        backpackLabel.TextColor3 = if backpackFull
+            then Components.Colors.Danger
+            else Components.Colors.Text
+    end
+
+    -- Gira una flecha del HUD hacia un punto del mundo y devuelve la distancia en el plano.
+    local function pointArrow(label: TextLabel, from: Vector3, target: Vector3): number?
+        local camera = Workspace.CurrentCamera
+        if camera == nil then
+            return nil
+        end
+        local look = camera.CFrame.LookVector * Vector3.new(1, 0, 1)
+        local direction = (target - from) * Vector3.new(1, 0, 1)
+        if look.Magnitude < 1e-3 or direction.Magnitude < 1e-3 then
+            return nil
+        end
+        local unit = direction.Unit
+        local forward = look.Unit
+        -- Ángulo en pantalla: 0 = hacia delante, positivo = a la derecha.
+        label.Rotation = -math.deg(math.atan2(forward:Cross(unit).Y, forward:Dot(unit)))
+        return direction.Magnitude
     end
 
     local function updateBoosts()
@@ -304,33 +371,45 @@ function Hud.Mount()
 
         local character = Players.LocalPlayer.Character
         local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
-        local camera = Workspace.CurrentCamera
         local position = if root and root:IsA("BasePart") then root.Position else nil
-        local meteorPosition: Vector3? = nil
+
+        -- Flecha al meteorito activo más cercano.
+        local meteorDistance: number? = nil
         if position then
             local _, nearest = MeteorController.GetNearestMeteor(position, math.huge)
-            meteorPosition = nearest
+            if nearest then
+                meteorDistance = pointArrow(arrow, position, nearest)
+            end
         end
-        if position == nil or meteorPosition == nil or camera == nil then
-            arrow.Visible = false
-            distanceLabel.Visible = false
-            return
+        arrow.Visible = meteorDistance ~= nil
+        distanceLabel.Visible = meteorDistance ~= nil
+        if meteorDistance then
+            distanceLabel.Text =
+                string.format(Strings.Hud.MeteorDistance, math.floor(meteorDistance))
         end
 
-        local look = camera.CFrame.LookVector * Vector3.new(1, 0, 1)
-        local direction = (meteorPosition - position) * Vector3.new(1, 0, 1)
-        if look.Magnitude < 1e-3 or direction.Magnitude < 1e-3 then
-            return
+        -- Flecha a la base (al llevar minerales) y aviso de zona segura.
+        local inside = position ~= nil and BaseController.IsInside(position)
+        safeLabel.Visible = inside
+        local basePosition = BaseController.GetPosition()
+        local baseDistance: number? = nil
+        if position and basePosition and carried > 0 and not inside then
+            baseDistance = pointArrow(baseArrow, position, basePosition)
         end
-        look = look.Unit
-        local unit = direction.Unit
-        -- Ángulo en pantalla: 0 = hacia delante, positivo = a la derecha.
-        local angle = -math.deg(math.atan2(look:Cross(unit).Y, look:Dot(unit)))
-        arrow.Rotation = angle
-        arrow.Visible = true
-        distanceLabel.Visible = true
-        distanceLabel.Text =
-            string.format(Strings.Hud.MeteorDistance, math.floor(direction.Magnitude))
+        baseArrow.Visible = baseDistance ~= nil
+        baseDistanceLabel.Visible = baseDistance ~= nil
+        if baseDistance then
+            baseDistanceLabel.Text = string.format(
+                if backpackFull then Strings.Hud.BaseDistanceFull else Strings.Hud.BaseDistance,
+                math.floor(baseDistance)
+            )
+            -- Con la mochila llena parpadea para llamar la atención.
+            local color = if backpackFull and now % 0.8 < 0.4
+                then Components.Colors.Gold
+                else Components.Colors.Success
+            baseArrow.TextColor3 = color
+            baseDistanceLabel.TextColor3 = color
+        end
     end)
 
     gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")

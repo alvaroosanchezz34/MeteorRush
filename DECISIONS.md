@@ -188,6 +188,16 @@ A partir de aquí el trabajo sigue `ROADMAP.md`, una fase cada vez.
 - **Mochila al cerrarse el servidor:** si el jugador se va por su cuenta pierde lo que llevaba (así salir no sirve para esquivar un golpe); si es el servidor el que se cierra, se deposita en su base. Depende de que Roblox avise del cierre antes de sacar a los jugadores, así que es un "mejor esfuerzo".
 - **Riesgo anotado para la Fase 8:** `ProcessReceipt` confirma la compra en cuanto la aplica al perfil en memoria, sin esperar a que se guarde. Si el servidor se cae justo después, la compra se pierde.
 
+## Roadmap de producción — Fase 1 (core gameplay)
+
+- **`BaseController` (cliente):** localiza la parcela del jugador por el atributo `OwnerUserId`. Solo informa a la interfaz; la zona segura y el depósito los sigue decidiendo el servidor.
+- **Base propia resaltada:** cada jugador ve la baliza y las luces de su base en verde (cambio local, los demás no lo ven).
+- **Flecha a la base:** aparece solo al llevar minerales fuera de la base. Con la mochila llena parpadea y el contador se pone en rojo.
+- **Freno por carga:** el HUD muestra el porcentaje de velocidad que resta la carga.
+- **Zona segura:** aviso en el HUD mientras se está dentro de la base propia.
+- **Colocar minerales:** el mineral aparece creciendo, con un destello y un sonido (como mucho uno cada 0,25 s, para que `Place Best` no suene treinta veces).
+- **Mochila al desconectarse:** se mantiene la decisión de que se pierde si el jugador se va por su cuenta.
+
 ### Revisión de equilibrio
 
 - **Valor esperado de un mineral minado:** 13,3 monedas/s de media (sin mutación). La mayor parte viene de la cola rara; la mediana es Roca o Hierro (1-3/s). Con mutaciones la media sube un 12 %.

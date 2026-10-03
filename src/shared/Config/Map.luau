@@ -26,6 +26,8 @@ Map.PlotFloorColor = Color3.fromRGB(110, 120, 140)
 -- Bordillo, columnas de las esquinas y arco de la entrada.
 Map.PlotTrimColor = Color3.fromRGB(55, 60, 75)
 Map.PlotAccentColor = Color3.fromRGB(90, 200, 255)
+-- Color con el que cada jugador ve la baliza y las luces de su propia base.
+Map.OwnBaseColor = Color3.fromRGB(110, 255, 140)
 Map.PlotPillarHeight = 6
 Map.PlotGateHeight = 8
 Map.PlotFenceSegments = 5
@@ -65,6 +67,11 @@ Map.SpinTag = "SpinDisplay"
 Map.SpinPeriod = 6
 Map.SpinBobHeight = 0.25
 Map.SpinMaxDistance = 140
+-- Al colocar un mineral: segundos que tarda en crecer, partículas del destello y distancia
+-- máxima a la que se oye.
+Map.PlaceGrowSeconds = 0.35
+Map.PlaceBurstCount = 24
+Map.PlaceSoundDistance = 120
 
 -- Placa de cobro de ingresos, en la esquina del fondo.
 Map.CollectPadSize = 8
