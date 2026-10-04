@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Components = require(script.Parent.Components)
 local DataController = require(script.Parent.Parent.Controllers.DataController)
+local RarityStyle = require(script.Parent.RarityStyle)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = Shared:WaitForChild("Config")
@@ -60,9 +61,9 @@ function IndexMenu.Mount(window: Components.Window)
                     color = if found then Components.Colors.Panel else Components.Colors.Background,
                     parent = list,
                 })
-                Components.Label({
+                local nameLabel = Components.Label({
                     text = if found
-                        then Strings.MineralName(mineral.id, mutation.id)
+                        then RarityStyle.Text(mineral.id, mutation.id)
                         else Strings.Index.Undiscovered,
                     size = UDim2.fromScale(0.9, 0.8),
                     position = UDim2.fromScale(0.05, 0.1),
@@ -71,6 +72,9 @@ function IndexMenu.Mount(window: Components.Window)
                         else Components.Colors.Muted,
                     parent = cell,
                 })
+                if found then
+                    RarityStyle.Apply(nameLabel, mineral.id, mutation.id)
+                end
             end
 
             order += 1

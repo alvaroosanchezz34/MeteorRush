@@ -7,8 +7,34 @@
 local Assets = require(script.Parent.Assets)
 local Minerals = require(script.Parent.Parent.Config.Minerals)
 local Mutations = require(script.Parent.Parent.Config.Mutations)
+local Strings = require(script.Parent.Parent.Strings)
 
 local MineralVisual = {}
+
+-- Etiqueta de CollectionService de todos los minerales del mundo: el cliente les pone sus
+-- efectos de rareza, mutación e identidad (RarityVisualController).
+MineralVisual.Tag = "MineralVisual"
+-- Etiqueta de los carteles flotantes: el cliente anima sus degradados (DisplayController).
+MineralVisual.SignTag = "MineralSign"
+
+-- Presencia ---------------------------------------------------------------------------------
+-- Cuánto crece un mineral expuesto por cada rango de rareza por encima de Común, y cuánto
+-- más por su mutación. Solo es tamaño visual: no cambia lo que vale.
+MineralVisual.RankScale = 0.1
+MineralVisual.MutationScale = {
+    gold = 1.1,
+    radioactive = 1.2,
+    rainbow = 1.35,
+} :: { [string]: number }
+-- Rango desde el que un mineral es "especial" aunque no tenga mutación: su cartel se ve
+-- desde algo más lejos.
+MineralVisual.SpecialRank = 5
+-- Distancia (studs) a la que se lee el cartel de un mineral normal y de uno especial.
+MineralVisual.SignDistance = 45
+MineralVisual.SpecialSignDistance = 90
+local SIGN_LINE_HEIGHT = 0.62
+local SIGN_WIDTH = 5.5
+local INCOME_COLOR = Color3.fromRGB(120, 255, 140)
 
 type PartSpec = {
     shape: Enum.PartType,
@@ -287,27 +313,6 @@ do
     )
 end
 
-local RAINBOW_SEQUENCE = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 0.8, 1)),
-    ColorSequenceKeypoint.new(0.25, Color3.fromHSV(0.2, 0.8, 1)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.45, 0.8, 1)),
-    ColorSequenceKeypoint.new(0.75, Color3.fromHSV(0.7, 0.8, 1)),
-    ColorSequenceKeypoint.new(1, Color3.fromHSV(0.9, 0.8, 1)),
-})
-
-local function addSparkles(parent: Instance, name: string, color: ColorSequence, size: number)
-    local sparkles = Instance.new("ParticleEmitter")
-    sparkles.Name = name
-    sparkles.Color = color
-    sparkles.LightEmission = 1
-    sparkles.Rate = 6
-    sparkles.Lifetime = NumberRange.new(0.6, 1)
-    sparkles.Speed = NumberRange.new(size * 0.5, size)
-    sparkles.SpreadAngle = Vector2.new(180, 180)
-    sparkles.Size = NumberSequence.new(size * 0.3, 0)
-    sparkles.Parent = parent
-end
-
 local function makePlaceholder(mineralId: string, size: number): Model
     local mineral = Minerals.ById[mineralId]
     local baseColor = if mineral then mineral.color else FALLBACK_COLOR
@@ -343,18 +348,6 @@ local function makePlaceholder(mineralId: string, size: number): Model
     end
     model.PrimaryPart = primary
 
-    local rank = Minerals.GetRank(mineralId)
-    if primary and mineral and rank >= Minerals.RareRank then
-        local light = Instance.new("PointLight")
-        light.Color = baseColor
-        light.Brightness = 1
-        light.Range = size * 4
-        light.Shadows = false
-        light.Parent = primary
-    end
-    if primary and mineral and rank >= Minerals.AnnounceRank then
-        addSparkles(primary, "RaritySparkles", ColorSequence.new(baseColor), size)
-    end
     return model
 end
 
@@ -381,18 +374,18 @@ local function configureParts(parts: { BasePart })
     end
 end
 
-local function applyMutation(parts: { BasePart }, mutation: Mutations.Mutation, size: number)
+-- Material y color de la mutación. Las partículas, la luz y las animaciones las pone cada
+-- cliente según la distancia (RarityVisualController), para que los minerales lejanos sean baratos.
+local function applyMutation(parts: { BasePart }, mutation: Mutations.Mutation)
     local color = mutation.color
-    local main = parts[1]
-    if color == nil or main == nil then
+    if color == nil then
         return
     end
-
     for index, part in parts do
         if mutation.style == "metal" then
             part.Material = Enum.Material.Metal
             part.Color = color
-            part.Reflectance = 0.35
+            part.Reflectance = 0.5
         elseif mutation.style == "rainbow" then
             part.Material = Enum.Material.Neon
             part.Color = Color3.fromHSV((index - 1) / #parts, 0.75, 1)
@@ -401,21 +394,108 @@ local function applyMutation(parts: { BasePart }, mutation: Mutations.Mutation, 
             part.Color = color
         end
     end
+end
 
-    addSparkles(
-        main,
-        "MutationSparkles",
-        if mutation.style == "rainbow" then RAINBOW_SEQUENCE else ColorSequence.new(color),
-        size
-    )
+-- Indica si el mineral es especial: tiene mutación o es de los más raros.
+function MineralVisual.IsSpecial(mineralId: string, mutationId: string): boolean
+    return mutationId ~= Mutations.NoneId
+        or Minerals.GetRank(mineralId) >= MineralVisual.SpecialRank
+end
 
-    local light = Instance.new("PointLight")
-    light.Name = "MutationLight"
-    light.Color = color
-    light.Brightness = 1.5
-    light.Range = size * 5
-    light.Shadows = false
-    light.Parent = main
+-- Factor de tamaño de un mineral expuesto: más grande cuanto más raro y con mejor mutación.
+function MineralVisual.GetDisplayScale(mineralId: string, mutationId: string): number
+    local rank = math.max(Minerals.GetRank(mineralId), 1)
+    return (1 + (rank - 1) * MineralVisual.RankScale)
+        * (MineralVisual.MutationScale[mutationId] or 1)
+end
+
+-- Cartel flotante apilado sobre un mineral, legible desde lejos: mutación (si la tiene), nombre,
+-- rareza y, si se pide, ingresos. Devuelve la etiqueta de ingresos (nil sin `withIncome`),
+-- para que quien lo crea vaya actualizando su texto.
+-- `height` es la altura del mineral en studs: el cartel se coloca por encima.
+function MineralVisual.AddSign(
+    visual: Instance,
+    mineralId: string,
+    mutationId: string,
+    height: number,
+    withIncome: boolean
+): TextLabel?
+    local mineral = Minerals.ById[mineralId]
+    if mineral == nil then
+        return nil
+    end
+    local mutation = Mutations.ById[mutationId]
+    local mutationColor = if mutation then mutation.color else nil
+    local rarity = Minerals.Rarities[mineral.rarity]
+    local special = MineralVisual.IsSpecial(mineralId, mutationId)
+
+    type Line = { name: string, text: string, color: Color3, heavy: boolean }
+    local lines: { Line } = {}
+    if mutation and mutationColor then
+        table.insert(lines, {
+            name = "Mutation",
+            text = string.upper(Strings.Mutations[mutationId] or mutationId),
+            color = mutationColor,
+            heavy = true,
+        })
+    end
+    table.insert(lines, {
+        name = "MineralName",
+        text = Strings.Minerals[mineralId] or mineralId,
+        color = Color3.new(1, 1, 1),
+        heavy = true,
+    })
+    table.insert(lines, {
+        name = "Rarity",
+        text = Strings.Rarities[mineral.rarity] or mineral.rarity,
+        color = rarity.color,
+        heavy = rarity.rank >= MineralVisual.SpecialRank,
+    })
+    if withIncome then
+        table.insert(lines, { name = "Income", text = "", color = INCOME_COLOR, heavy = false })
+    end
+
+    -- Los especiales llevan el cartel algo más grande.
+    local scale = if special then 1.12 else 1
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "MineralSign"
+    billboard.Size = UDim2.fromScale(SIGN_WIDTH * scale, #lines * SIGN_LINE_HEIGHT * scale)
+    billboard.StudsOffsetWorldSpace =
+        Vector3.new(0, height / 2 + #lines * SIGN_LINE_HEIGHT * scale / 2 + 0.4, 0)
+    billboard.LightInfluence = 0
+    billboard.MaxDistance = if special
+        then MineralVisual.SpecialSignDistance
+        else MineralVisual.SignDistance
+    billboard:SetAttribute("Mineral", mineralId)
+    billboard:SetAttribute("Mutation", mutationId)
+    if visual:IsA("Model") then
+        billboard.Adornee = visual.PrimaryPart
+    end
+
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = billboard
+    local income: TextLabel? = nil
+    for order, line in lines do
+        local label = Instance.new("TextLabel")
+        label.Name = line.name
+        label.LayoutOrder = order
+        label.Size = UDim2.fromScale(1, 1 / #lines)
+        label.BackgroundTransparency = 1
+        label.TextScaled = true
+        label.Font = if line.heavy then Enum.Font.GothamBlack else Enum.Font.GothamBold
+        label.Text = line.text
+        label.TextColor3 = line.color
+        label.TextStrokeColor3 = Color3.new(0, 0, 0)
+        label.TextStrokeTransparency = 0
+        label.Parent = billboard
+        if line.name == "Income" then
+            income = label
+        end
+    end
+    billboard:AddTag(MineralVisual.SignTag)
+    billboard.Parent = visual
+    return income
 end
 
 -- Devuelve un Model o BasePart anclado, sin colisión, listo para colocar con Assets.PlaceAt.
@@ -427,8 +507,9 @@ function MineralVisual.Create(mineralId: string, mutationId: string, size: numbe
 
     local mutation = Mutations.ById[mutationId]
     if mutation then
-        applyMutation(parts, mutation, size)
+        applyMutation(parts, mutation)
     end
+    visual:AddTag(MineralVisual.Tag)
 
     visual:SetAttribute("Mineral", mineralId)
     visual:SetAttribute("Mutation", mutationId)

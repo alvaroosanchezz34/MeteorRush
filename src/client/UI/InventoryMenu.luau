@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Components = require(script.Parent.Components)
 local DataController = require(script.Parent.Parent.Controllers.DataController)
+local RarityStyle = require(script.Parent.RarityStyle)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
@@ -105,14 +106,15 @@ function InventoryMenu.Mount(window: Components.Window)
                 then Minerals.Rarities[mineral.rarity].color
                 else Components.Colors.Text
 
-            Components.Label({
-                text = Strings.MineralName(item.mineral, item.mutation),
+            local nameLabel = Components.Label({
+                text = RarityStyle.Text(item.mineral, item.mutation),
                 size = UDim2.fromScale(0.32, 0.5),
                 position = UDim2.fromScale(0.03, 0.08),
                 alignment = Enum.TextXAlignment.Left,
                 color = rarityColor,
                 parent = row,
             })
+            RarityStyle.Apply(nameLabel, item.mineral, item.mutation)
             Components.Label({
                 text = string.format(
                     Strings.Pedestal.PerSecond,
@@ -148,7 +150,10 @@ function InventoryMenu.Mount(window: Components.Window)
                 local key = `{item.mineral}:{item.mutation}`
                 if (fusable[key] or 0) >= Mutations.FuseCount then
                     Components.Button({
-                        text = string.format(Strings.Inventory.Fuse, Mutations.FuseCount),
+                        text = string.format(
+                            Strings.Inventory.Fuse,
+                            Format.Number(PlayerStats.GetFuseCost(item))
+                        ),
                         size = UDim2.fromScale(0.14, 0.7),
                         position = UDim2.fromScale(0.36, 0.15),
                         color = Components.Colors.Primary,
@@ -186,7 +191,7 @@ function InventoryMenu.Mount(window: Components.Window)
     end
 
     window.OnOpened(refresh)
-    for _, key in { "inventory", "pedestals", "upgrades", "passes", "rebirths" } do
+    for _, key in { "inventory", "pedestals", "upgrades", "passes", "rebirths", "friendsOnline" } do
         DataController.OnChanged(key, refresh)
     end
 end

@@ -12,6 +12,7 @@ local Components = require(script.Parent.Components)
 local DataController = require(script.Parent.Parent.Controllers.DataController)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Equipment = require(Shared:WaitForChild("Config"):WaitForChild("Equipment"))
 local Minerals = require(Shared:WaitForChild("Config"):WaitForChild("Minerals"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -29,7 +30,22 @@ type TradeState = {
 
 local TradeMenu = {}
 
+-- Prefijo de los picos y armas en una oferta (el mismo que usa TradeService).
+local GEAR_PREFIX = "gear:"
+
+local function itemName(item: Types.InventoryItem): string
+    local gear = item.gear
+    if gear then
+        return `⚒ {Strings.Equipment.Names[gear] or gear}`
+    end
+    return Strings.MineralName(item.mineral, item.mutation)
+end
+
 local function itemColor(item: Types.InventoryItem): Color3
+    local gear = if item.gear then Equipment.ById[item.gear] else nil
+    if gear then
+        return Equipment.Rarities[gear.rarity].color
+    end
     local mineral = Minerals.ById[item.mineral]
     return if mineral then Minerals.Rarities[mineral.rarity].color else Components.Colors.Text
 end
@@ -46,7 +62,7 @@ function TradeMenu.Mount(window: Components.Window)
     )
         for order, item in items do
             Components.Button({
-                text = Strings.MineralName(item.mineral, item.mutation),
+                text = itemName(item),
                 size = UDim2.new(),
                 color = Components.Colors.Panel,
                 layoutOrder = order,
@@ -209,6 +225,22 @@ function TradeMenu.Mount(window: Components.Window)
                     table.insert(available, item)
                 end
             end
+            -- Picos y armas que se pueden ofrecer: los que no lleva puestos ni son iniciales
+            -- y que el otro jugador puede recibir lo decide el servidor al añadirlos.
+            for _, gear in Equipment.List do
+                local id = GEAR_PREFIX .. gear.id
+                if
+                    Equipment.Owns(data, gear.id)
+                    and Equipment.IsTradeable(gear)
+                    and Equipment.GetEquipped(data, gear.kind).id ~= gear.id
+                    and not table.find(myOfferIds, id)
+                then
+                    table.insert(
+                        available,
+                        { id = id, mineral = "", mutation = "", gear = gear.id }
+                    )
+                end
+            end
         end
         local inventory = Components.ScrollList({
             size = UDim2.fromScale(1, 0.32),
@@ -318,6 +350,7 @@ function TradeMenu.Mount(window: Components.Window)
 
     window.OnOpened(refresh)
     DataController.OnChanged("inventory", refresh)
+    DataController.OnChanged("equipment", refresh)
     Players.PlayerAdded:Connect(refresh)
     Players.PlayerRemoving:Connect(function(player: Player)
         local index = table.find(incoming, player)

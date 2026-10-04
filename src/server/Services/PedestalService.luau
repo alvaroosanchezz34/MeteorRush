@@ -16,6 +16,8 @@ local Assets = require(Shared.Util.Assets)
 local Format = require(Shared.Util.Format)
 local MapConfig = require(Shared.Config.Map)
 local MineralVisual = require(Shared.Util.MineralVisual)
+local Minerals = require(Shared.Config.Minerals)
+local Mutations = require(Shared.Config.Mutations)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
@@ -28,7 +30,8 @@ local DISPLAY_SIZE = 2
 type Display = {
     itemId: string,
     instance: Instance,
-    label: TextLabel,
+    -- Línea de ingresos del cartel.
+    label: TextLabel?,
 }
 
 local PedestalService = {}
@@ -38,47 +41,35 @@ local placeLimiter = RateLimiter.new(Network.RateLimits.PlaceMineral)
 local removeLimiter = RateLimiter.new(Network.RateLimits.RemoveMineral)
 local placeBestLimiter = RateLimiter.new(Network.RateLimits.PlaceBest)
 
+local function destroyDisplay(display: Display)
+    display.instance:Destroy()
+end
+
 local function clearDisplays(player: Player)
     local playerDisplays = displays[player]
     if playerDisplays == nil then
         return
     end
     for _, display in playerDisplays do
-        display.instance:Destroy()
+        destroyDisplay(display)
     end
     displays[player] = nil
 end
 
+-- Mineral expuesto: más grande cuanto más raro y con mejor mutación, con su cartel apilado
+-- (mutación, nombre, rareza e ingresos).
 local function createDisplay(plotPedestal: Instance, item: Types.InventoryItem): Display
-    local visual = MineralVisual.Create(item.mineral, item.mutation, DISPLAY_SIZE)
+    local size = DISPLAY_SIZE * MineralVisual.GetDisplayScale(item.mineral, item.mutation)
+    local visual = MineralVisual.Create(item.mineral, item.mutation, size)
     local pivot = if plotPedestal:IsA("PVInstance")
         then plotPedestal:GetPivot()
         else CFrame.identity
-    Assets.PlaceAt(
-        visual,
-        pivot * CFrame.new(0, MapConfig.PedestalSize.Y / 2 + DISPLAY_SIZE / 2 + 0.3, 0)
-    )
+    local cframe = pivot * CFrame.new(0, MapConfig.PedestalSize.Y / 2 + size / 2 + 0.3, 0)
+    Assets.PlaceAt(visual, cframe)
 
-    local billboard = Instance.new("BillboardGui")
-    billboard.Size = UDim2.fromScale(5, 1.5)
-    billboard.StudsOffsetWorldSpace = Vector3.new(0, DISPLAY_SIZE + 0.5, 0)
-    billboard.LightInfluence = 0
-    billboard.MaxDistance = 80
-    billboard.Parent = visual
-    if visual:IsA("Model") then
-        billboard.Adornee = visual.PrimaryPart
-    end
+    local label = MineralVisual.AddSign(visual, item.mineral, item.mutation, size, true)
     -- El cliente hace girar y flotar los minerales expuestos (DisplayController).
     visual:AddTag(MapConfig.SpinTag)
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromScale(1, 1)
-    label.BackgroundTransparency = 1
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextStrokeTransparency = 0.3
-    label.Parent = billboard
 
     return { itemId = item.id, instance = visual, label = label }
 end
@@ -101,13 +92,16 @@ local function refresh(player: Player)
     end
 
     local multiplier = PlayerStats.GetIncomeMultiplier(data)
+    -- Lo más raro que hay expuesto: da "presencia" a la base (BaseController tiñe su baliza).
+    local prestige = 0
+    local prestigeMutation: string? = nil
     for number = 1, MapConfig.MaxPedestals do
         local itemId = if number <= unlocked then data.pedestals[tostring(number)] else nil
         local item = if itemId then PlayerStats.FindItem(data, itemId) else nil
         local current: Display? = playerDisplays[number]
 
         if current and (item == nil or current.itemId ~= item.id) then
-            current.instance:Destroy()
+            destroyDisplay(current)
             playerDisplays[number] = nil
             current = nil
         end
@@ -119,9 +113,19 @@ local function refresh(player: Player)
         end
         if item and current then
             local income = PlayerStats.GetItemBaseIncome(item) * multiplier
-            current.label.Text = string.format(Strings.Pedestal.PerSecond, Format.Number(income))
+            if current.label then
+                current.label.Text =
+                    string.format(Strings.Pedestal.PerSecond, Format.Number(income))
+            end
+            local rank = Minerals.GetRank(item.mineral)
+            if rank > prestige then
+                prestige = rank
+                prestigeMutation = if item.mutation ~= Mutations.NoneId then item.mutation else nil
+            end
         end
     end
+    plot.model:SetAttribute("Prestige", prestige)
+    plot.model:SetAttribute("PrestigeMutation", prestigeMutation)
 end
 
 local function findFreePedestal(data: Types.Profile): number?

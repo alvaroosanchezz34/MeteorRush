@@ -7,10 +7,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local MomentService = require(script.Parent.MomentService)
 
 local Shared = ReplicatedStorage.Shared
 local Format = require(Shared.Util.Format)
 local IndexConfig = require(Shared.Config.Index)
+local Minerals = require(Shared.Config.Minerals)
 local Mutations = require(Shared.Config.Mutations)
 local Remotes = require(Shared.Remotes)
 local Strings = require(Shared.Strings)
@@ -33,7 +35,7 @@ local function checkRow(player: Player, mineralId: string)
         return rewards
     end)
     local reward = IndexConfig.GetRowReward(mineralId)
-    IncomeService.AddCoins(player, reward)
+    IncomeService.AddCoins(player, reward, "index")
     Remotes.Notify:FireClient(
         player,
         string.format(
@@ -55,11 +57,18 @@ function IndexService.Register(player: Player, mineralId: string, mutationId: st
         index[key] = true
         return index
     end)
-    Remotes.Notify:FireClient(
-        player,
-        string.format(Strings.Index.NewEntry, Strings.MineralName(mineralId, mutationId))
-    )
+    -- El cliente lo muestra como un aviso grande de NUEVO DESCUBRIMIENTO.
+    Remotes.IndexDiscovered:FireClient(player, mineralId, mutationId)
     checkRow(player, mineralId)
+
+    -- Índice completo: un momento legendario para todo el servidor.
+    local discovered = 0
+    for _ in data.index do
+        discovered += 1
+    end
+    if discovered >= #Minerals.List * #Mutations.List then
+        MomentService.Announce(player, "collection")
+    end
 end
 
 return IndexService

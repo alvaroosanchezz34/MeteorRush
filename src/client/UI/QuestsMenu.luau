@@ -36,25 +36,12 @@ function QuestsMenu.Mount(window: Components.Window)
     })
 
     -- Códigos -------------------------------------------------------------------
-    local codeBox = Instance.new("TextBox")
-    codeBox.Size = UDim2.fromScale(0.62, 0.14)
-    codeBox.Position = UDim2.fromScale(0, 0.82)
-    codeBox.BackgroundColor3 = Components.Colors.Panel
-    codeBox.TextColor3 = Components.Colors.Text
-    codeBox.PlaceholderText = Strings.Codes.Placeholder
-    codeBox.PlaceholderColor3 = Components.Colors.Muted
-    codeBox.Text = ""
-    codeBox.ClearTextOnFocus = false
-    codeBox.TextScaled = true
-    codeBox.Font = Enum.Font.FredokaOne
-    codeBox.Parent = window.content
-    local codeCorner = Instance.new("UICorner")
-    codeCorner.CornerRadius = UDim.new(0.25, 0)
-    codeCorner.Parent = codeBox
-    local codePadding = Instance.new("UIPadding")
-    codePadding.PaddingTop = UDim.new(0.18, 0)
-    codePadding.PaddingBottom = UDim.new(0.18, 0)
-    codePadding.Parent = codeBox
+    local codeBox = Components.Input({
+        placeholder = Strings.Codes.Placeholder,
+        size = UDim2.fromScale(0.62, 0.14),
+        position = UDim2.fromScale(0, 0.82),
+        parent = window.content,
+    })
 
     Components.Button({
         text = Strings.Codes.Redeem,

@@ -5,7 +5,9 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AchievementService = require(script.Parent.AchievementService)
 local DataService = require(script.Parent.DataService)
+local IncomeService = require(script.Parent.IncomeService)
 local QuestService = require(script.Parent.QuestService)
 
 local Shared = ReplicatedStorage.Shared
@@ -41,12 +43,11 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
         return
     end
     local cost = Upgrades.GetCost(upgradeId, level)
-    if data.coins < cost then
+    if not IncomeService.SpendCoins(player, cost, "upgrades") then
         Remotes.Notify:FireClient(player, Strings.Upgrades.NotEnoughCoins)
         return
     end
 
-    DataService.Increment(player, "coins", -cost)
     DataService.Update(player, "upgrades", function(upgrades: Types.UpgradeLevels)
         (upgrades :: any)[upgradeId] = level + 1
         return upgrades
@@ -56,6 +57,7 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
         string.format(Strings.Upgrades.Bought, Strings.Upgrades.Names[upgradeId], level + 1)
     )
     QuestService.Progress(player, "upgrade", 1)
+    AchievementService.AddStat(player, "upgradesBought", 1)
 end
 
 function UpgradeService.Init()

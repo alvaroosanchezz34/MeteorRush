@@ -128,9 +128,9 @@ Los modelos son placeholders (bloques de color según rareza). Deja el código p
 | `copper` | Cobre Lunar | Poco común | 1200 | 8 |
 | `crystal` | Cristal Cósmico | Poco común | 500 | 20 |
 | `plasma` | Núcleo de Plasma | Raro | 200 | 60 |
-| `nebula` | Gema Nebulosa | Épico | 70 | 250 |
-| `darkmatter` | Materia Oscura | Legendario | 25 | 1200 |
-| `starheart` | Corazón de Estrella | Mítico | 5 | 8000 |
+| `nebula` | Gema Nebulosa | Épico | 50 | 250 |
+| `darkmatter` | Materia Oscura | Legendario | 8 | 1200 |
+| `starheart` | Corazón de Estrella | Mítico | 1 | 8000 |
 
 ### 4.3 Mutaciones (`Config/Mutations.luau`)
 
@@ -185,7 +185,7 @@ Coste de cada nivel: `costeBase * factor ^ nivel`, redondeado.
 
 ### 4.8 Rebirth (`Config/Rebirth.luau`)
 
-- Requisito: `1.000.000 * 5 ^ rebirths` monedas.
+- Requisito: `2.000.000 * 2,5 ^ rebirths` monedas (redondeado).
 - Reinicia monedas, mejoras y minerales del inventario y de los pedestales.
 - Conserva: índice, rebirths, cosméticos, game passes y racha diaria.
 - Recompensa: +50 % de ingresos permanente por rebirth (acumulativo de forma aditiva).

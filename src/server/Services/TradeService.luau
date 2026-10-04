@@ -14,8 +14,11 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local AchievementService = require(script.Parent.AchievementService)
 local DataService = require(script.Parent.DataService)
+local EquipmentService = require(script.Parent.EquipmentService)
 local IndexService = require(script.Parent.IndexService)
+local LiveOpsService = require(script.Parent.LiveOpsService)
 
 local Shared = ReplicatedStorage.Shared
 local Network = require(Shared.Config.Network)
@@ -50,6 +53,18 @@ local limiters = {
     cancel = RateLimiter.new(Network.RateLimits.TradeCancel),
 }
 
+-- Los picos y las armas van en la misma lista de la oferta, con este prefijo delante de
+-- su id, así el resto del flujo (confirmaciones, cuenta atrás, validación) es el mismo.
+local GEAR_PREFIX = "gear:"
+
+-- Id del pico o arma de una entrada de la oferta, o nil si es un mineral.
+local function gearOf(itemId: string): string?
+    if string.sub(itemId, 1, #GEAR_PREFIX) == GEAR_PREFIX then
+        return string.sub(itemId, #GEAR_PREFIX + 1)
+    end
+    return nil
+end
+
 local function isPlayer(value: unknown): boolean
     return typeof(value) == "Instance" and (value :: Instance):IsA("Player")
 end
@@ -65,8 +80,11 @@ local function getOfferItems(player: Player, itemIds: { string }): { Types.Inven
         return items
     end
     for _, itemId in itemIds do
+        local gear = gearOf(itemId)
         local item = PlayerStats.FindItem(data, itemId)
-        if item then
+        if gear then
+            table.insert(items, { id = itemId, mineral = "", mutation = "", gear = gear })
+        elseif item then
             table.insert(items, item)
         end
     end
@@ -103,14 +121,26 @@ local function closeTrade(trade: Trade, message: string?)
     end
 end
 
--- Comprueba que todos los objetos siguen en el inventario y no están en un pedestal.
-local function isOfferValid(player: Player, itemIds: { string }): boolean
+-- Comprueba que todos los minerales siguen en el inventario y no están en un pedestal, y
+-- que los picos y armas se pueden entregar (los tiene, no los lleva puestos, se pueden
+-- intercambiar) y `receiver` no los tiene ya.
+local function isOfferValid(player: Player, itemIds: { string }, receiver: Player): boolean
     local data = DataService.GetData(player)
     if data == nil then
         return false
     end
     for _, itemId in itemIds do
-        if PlayerStats.FindItem(data, itemId) == nil or PlayerStats.GetPedestalOf(data, itemId) then
+        local gear = gearOf(itemId)
+        if gear then
+            if
+                not EquipmentService.CanTrade(player, gear)
+                or not EquipmentService.CanReceive(receiver, gear)
+            then
+                return false
+            end
+        elseif
+            PlayerStats.FindItem(data, itemId) == nil or PlayerStats.GetPedestalOf(data, itemId)
+        then
             return false
         end
     end
@@ -121,6 +151,12 @@ local function transfer(from: Player, to: Player, itemIds: { string })
     local fromData = DataService.GetData(from)
     if fromData == nil or #itemIds == 0 then
         return
+    end
+    for _, itemId in itemIds do
+        local gear = gearOf(itemId)
+        if gear then
+            EquipmentService.Move(from, to, gear)
+        end
     end
     local moved: { Types.InventoryItem } = {}
     DataService.Update(from, "inventory", function(inventory: { Types.InventoryItem })
@@ -148,7 +184,7 @@ end
 local function execute(trade: Trade)
     local offerA = trade.offers[trade.a]
     local offerB = trade.offers[trade.b]
-    if not (isOfferValid(trade.a, offerA) and isOfferValid(trade.b, offerB)) then
+    if not (isOfferValid(trade.a, offerA, trade.b) and isOfferValid(trade.b, offerB, trade.a)) then
         closeTrade(trade, Strings.Trade.Failed)
         return
     end
@@ -160,6 +196,8 @@ local function execute(trade: Trade)
     transfer(trade.a, trade.b, offerA)
     transfer(trade.b, trade.a, offerB)
     closeTrade(trade, Strings.Trade.Completed)
+    AchievementService.AddStat(trade.a, "tradesCompleted", 1)
+    AchievementService.AddStat(trade.b, "tradesCompleted", 1)
 end
 
 local function changed(trade: Trade)
@@ -177,6 +215,10 @@ local function onRequest(player: Player, target: unknown)
         return
     end
     if DataService.GetData(player) == nil or DataService.GetData(other) == nil then
+        return
+    end
+    if not LiveOpsService.IsEnabled("trading") then
+        Remotes.Notify:FireClient(player, Strings.LiveOps.Disabled)
         return
     end
     if trades[player] or trades[other] then
@@ -260,7 +302,7 @@ local function onUpdateOffer(player: Player, itemIds: unknown)
         seen[itemId] = true
         table.insert(offer, itemId)
     end
-    if not isOfferValid(player, offer) then
+    if not isOfferValid(player, offer, partnerOf(trade, player)) then
         return
     end
 
@@ -313,11 +355,22 @@ function TradeService.Init()
 
     -- Si un objeto ofrecido se coloca en un pedestal o desaparece, la oferta deja de ser válida:
     -- se quitan las confirmaciones para que nadie confirme algo que ya no se puede entregar.
-    for _, key in { "inventory", "pedestals" } do
+    -- Con el equipamiento pasa lo mismo, y además la oferta del otro puede dejar de valer
+    -- (si este jugador consigue por su cuenta el objeto que le ofrecían).
+    for _, key in { "inventory", "pedestals", "equipment" } do
         DataService.OnFieldChanged(key, function(player: Player)
             local trade = trades[player]
-            if trade and not isOfferValid(player, trade.offers[player]) then
-                trade.offers[player] = {}
+            if trade == nil then
+                return
+            end
+            local invalid = false
+            for _, owner in { trade.a, trade.b } do
+                if not isOfferValid(owner, trade.offers[owner], partnerOf(trade, owner)) then
+                    trade.offers[owner] = {}
+                    invalid = true
+                end
+            end
+            if invalid then
                 trade.confirmed = {}
                 changed(trade)
             end

@@ -17,13 +17,20 @@ local plots: { MapService.PlotLayout } = {}
 local plotOwners: { [number]: Player } = {}
 local playerPlots: { [Player]: number } = {}
 local characterConnections: { [Player]: RBXScriptConnection } = {}
+local titleConnections: { [Player]: RBXScriptConnection } = {}
 
 local function setSign(plot: MapService.PlotLayout, owner: Player?)
     local label = plot.signLabel
     if label then
-        label.Text = if owner
-            then string.format(Strings.Plot.OwnerSign, owner.DisplayName)
-            else Strings.Plot.FreeSign
+        -- AchievementService pone el título equipado en el atributo `Title` del jugador.
+        local title = if owner then owner:GetAttribute("Title") else nil
+        if owner and type(title) == "string" then
+            label.Text = string.format(Strings.Plot.OwnerSignTitle, owner.DisplayName, title)
+        elseif owner then
+            label.Text = string.format(Strings.Plot.OwnerSign, owner.DisplayName)
+        else
+            label.Text = Strings.Plot.FreeSign
+        end
     end
 end
 
@@ -78,6 +85,11 @@ local function assignPlot(player: Player)
     setSign(plot, player)
     setUnlockedPedestals(plot, MapConfig.InitialPedestals)
 
+    local assigned = plot
+    titleConnections[player] = player:GetAttributeChangedSignal("Title"):Connect(function()
+        setSign(assigned, player)
+    end)
+
     player.RespawnLocation = plot.spawnLocation
     characterConnections[player] = player.CharacterAdded:Connect(function(character: Model)
         moveCharacterToPlot(player, character)
@@ -87,11 +99,37 @@ local function assignPlot(player: Player)
     end
 end
 
+-- Pinta el suelo de una parcela: las losas en dos tonos de ese color y el suelo de debajo
+-- (la junta) más oscuro. nil = colores por defecto.
+local function paintFloor(plot: MapService.PlotLayout, color: Color3?)
+    plot.floor.Color = if color
+        then color:Lerp(Color3.new(0, 0, 0), 0.55)
+        else MapConfig.PlotFloorColor
+    local main = color or MapConfig.PlotTileColor
+    local alt = if color then color:Lerp(Color3.new(0, 0, 0), 0.18) else MapConfig.PlotTileAltColor
+    local index = 0
+    for _, descendant in plot.model:GetDescendants() do
+        if descendant:IsA("BasePart") and descendant.Name == "Tile" then
+            -- Las losas se crean por filas: con un número par por lado, el damero alterna
+            -- según fila y columna.
+            local row = index // MapConfig.PlotTiles
+            local column = index % MapConfig.PlotTiles
+            descendant.Color = if (row + column) % 2 == 0 then main else alt
+            index += 1
+        end
+    end
+end
+
 local function releasePlot(player: Player)
     local connection = characterConnections[player]
     if connection then
         connection:Disconnect()
         characterConnections[player] = nil
+    end
+    local titleConnection = titleConnections[player]
+    if titleConnection then
+        titleConnection:Disconnect()
+        titleConnections[player] = nil
     end
 
     local index = playerPlots[player]
@@ -103,7 +141,9 @@ local function releasePlot(player: Player)
 
     local plot = plots[index]
     plot.model:SetAttribute("OwnerUserId", nil)
-    plot.floor.Color = MapConfig.PlotFloorColor
+    plot.model:SetAttribute("Prestige", nil)
+    plot.model:SetAttribute("PrestigeMutation", nil)
+    paintFloor(plot, nil)
     plot.collectLabel.Text = ""
     setSign(plot, nil)
     setUnlockedPedestals(plot, MapConfig.InitialPedestals)
@@ -170,7 +210,7 @@ end
 function PlotService.SetFloorColor(player: Player, color: Color3?)
     local plot = PlotService.GetPlot(player)
     if plot then
-        plot.floor.Color = color or MapConfig.PlotFloorColor
+        paintFloor(plot, color)
     end
 end
 

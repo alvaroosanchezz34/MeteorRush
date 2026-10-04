@@ -22,7 +22,16 @@ Map.PlotCount = 8
 Map.PlotRingRadius = 380
 Map.PlotSize = 60
 Map.PlotFloorThickness = 1
-Map.PlotFloorColor = Color3.fromRGB(110, 120, 140)
+-- El suelo hace de junta entre las losas, así que es oscuro.
+Map.PlotFloorColor = Color3.fromRGB(52, 58, 76)
+-- Losas del suelo de la base: cuántas por lado, hueco entre ellas, altura y sus dos tonos.
+Map.PlotTiles = 6
+Map.PlotTileGap = 0.5
+Map.PlotTileHeight = 0.05
+-- Tacos de Roblox sobre las losas (aspecto de bloques). false = losas lisas.
+Map.PlotTileStuds = true
+Map.PlotTileColor = Color3.fromRGB(128, 138, 160)
+Map.PlotTileAltColor = Color3.fromRGB(108, 118, 142)
 -- Bordillo, columnas de las esquinas y arco de la entrada.
 Map.PlotTrimColor = Color3.fromRGB(55, 60, 75)
 Map.PlotAccentColor = Color3.fromRGB(90, 200, 255)
@@ -109,6 +118,16 @@ Map.Scenery = {
 
     LavaPoolCount = 10,
     LavaColor = Color3.fromRGB(255, 120, 40),
+
+    -- Zona central: rocas sin colisión en el borde del cráter, vetas de energía que salen del
+    -- centro, cristales cerca del borde, rocas flotando alrededor y polvo luminoso en el aire.
+    RimRockCount = 48,
+    EnergyVeinCount = 9,
+    EnergyColor = Color3.fromRGB(255, 120, 60),
+    ZoneCrystalCount = 12,
+    FloatingRockCount = 14,
+    -- Partículas por segundo en toda la zona de impacto.
+    ZoneDustRate = 14,
 
     PlanetPosition = Vector3.new(-900, 520, -1300),
     PlanetSize = 520,

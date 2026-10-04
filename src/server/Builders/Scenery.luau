@@ -499,6 +499,10 @@ local function buildSky(rng: Random, parent: Instance)
     })
     ring.CanQuery = false
 
+    -- En su propia carpeta: el cliente los hace derivar despacio (SkyController).
+    local asteroids = Instance.new("Folder")
+    asteroids.Name = "Asteroids"
+    asteroids.Parent = parent
     for _ = 1, Config.AsteroidCount do
         local position = polar(
             rng:NextNumber(0, math.pi * 2),
@@ -512,7 +516,7 @@ local function buildSky(rng: Random, parent: Instance)
             color = Config.RockColor,
             rng = rng,
             canCollide = false,
-            parent = parent,
+            parent = asteroids,
         })
         for _, part in asteroid:GetChildren() do
             if part:IsA("BasePart") then
@@ -521,6 +525,141 @@ local function buildSky(rng: Random, parent: Instance)
             end
         end
     end
+end
+
+-- Quita la colisión y los raycasts a todo lo que hay dentro: decorado que no debe estorbar.
+local function makeGhost(root: Instance)
+    for _, descendant in root:GetDescendants() do
+        if descendant:IsA("BasePart") then
+            descendant.CanCollide = false
+            descendant.CanQuery = false
+            descendant.CanTouch = false
+            descendant.CastShadow = false
+        end
+    end
+end
+
+-- Zona central: el punto más vistoso del mapa. Nada tiene colisión, para no estorbar a los
+-- meteoritos ni a los jugadores.
+local function buildImpactZone(rng: Random, parent: Instance)
+    local zone = Instance.new("Folder")
+    zone.Name = "ImpactZone"
+    zone.Parent = parent
+    local radius = MapConfig.ImpactZoneRadius
+
+    -- Borde del cráter: rocas bajas alrededor, dejando libres los caminos de las parcelas.
+    for index = 1, Config.RimRockCount do
+        local angle = index / Config.RimRockCount * math.pi * 2 + rng:NextNumber(-0.03, 0.03)
+        local distance = radius + rng:NextNumber(3, 12)
+        if not isReserved(angle, distance) then
+            Kit.Rock({
+                cframe = CFrame.new(polar(angle, distance)),
+                size = rng:NextNumber(5, 11),
+                color = MapConfig.CraterColor:Lerp(Config.RockColor, rng:NextNumber(0, 0.6)),
+                rng = rng,
+                material = Enum.Material.Basalt,
+                canCollide = false,
+                parent = zone,
+            })
+        end
+    end
+
+    -- Vetas de energía: grietas luminosas que salen del centro.
+    for index = 1, Config.EnergyVeinCount do
+        local angle = index / Config.EnergyVeinCount * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+        local length = rng:NextNumber(radius * 0.35, radius * 0.85)
+        Kit.Part({
+            name = "EnergyVein",
+            size = Vector3.new(rng:NextNumber(1, 2.2), 0.1, length),
+            cframe = CFrame.new(0, 0.27, 0)
+                * CFrame.Angles(0, angle, 0)
+                * CFrame.new(0, 0, -(18 + length / 2)),
+            color = Config.EnergyColor,
+            material = Enum.Material.Neon,
+            transparency = 0.45,
+            canCollide = false,
+            castShadow = false,
+            parent = zone,
+        })
+    end
+
+    -- Cristales cerca del borde, donde menos estorban a la vista de los meteoritos.
+    for _ = 1, Config.ZoneCrystalCount do
+        local angle = rng:NextNumber(0, math.pi * 2)
+        Kit.CrystalCluster({
+            cframe = CFrame.new(polar(angle, rng:NextNumber(radius * 0.8, radius * 0.97))),
+            height = rng:NextNumber(5, 10),
+            count = 4,
+            color = Config.CrystalColors[rng:NextInteger(1, #Config.CrystalColors)],
+            rockColor = MapConfig.CraterColor,
+            rng = rng,
+            parent = zone,
+        })
+    end
+    makeGhost(zone)
+
+    -- Rocas flotando alrededor del cráter; el cliente las hace subir y bajar (SkyController).
+    local floating = Instance.new("Folder")
+    floating.Name = "FloatingRocks"
+    floating.Parent = parent
+    for index = 1, Config.FloatingRockCount do
+        local angle = index / Config.FloatingRockCount * math.pi * 2 + rng:NextNumber(-0.15, 0.15)
+        local rock = Kit.Rock({
+            cframe = CFrame.new(
+                polar(angle, radius + rng:NextNumber(14, 50), rng:NextNumber(20, 48))
+            )
+                * CFrame.Angles(rng:NextNumber(0, 3), rng:NextNumber(0, 3), rng:NextNumber(0, 3)),
+            size = rng:NextNumber(6, 14),
+            color = Config.RockColor,
+            rng = rng,
+            canCollide = false,
+            parent = floating,
+        })
+        -- Un resplandor de energía debajo de cada una.
+        local glow = Kit.Part({
+            name = "Glow",
+            shape = Enum.PartType.Ball,
+            size = Vector3.one * 2.5,
+            cframe = rock:GetPivot() * CFrame.new(0, -3, 0),
+            color = Config.EnergyColor,
+            material = Enum.Material.Neon,
+            transparency = 0.3,
+            canCollide = false,
+            castShadow = false,
+            parent = rock,
+        })
+        glow.CanQuery = false
+    end
+    makeGhost(floating)
+
+    -- Polvo luminoso que sube despacio por toda la zona: pocas partículas y muy repartidas.
+    local dust = Kit.Part({
+        name = "ZoneDust",
+        size = Vector3.new(radius * 1.6, 1, radius * 1.6),
+        cframe = CFrame.new(0, 1, 0),
+        color = Config.EnergyColor,
+        transparency = 1,
+        canCollide = false,
+        castShadow = false,
+        parent = zone,
+    })
+    dust.CanQuery = false
+    dust.CanTouch = false
+    local emitter = Instance.new("ParticleEmitter")
+    emitter.Color = ColorSequence.new(Config.EnergyColor, Color3.fromRGB(255, 220, 160))
+    emitter.Size = NumberSequence.new(0.9, 0)
+    emitter.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.2, 0.3),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    emitter.Lifetime = NumberRange.new(6, 10)
+    emitter.Speed = NumberRange.new(1.5, 4)
+    emitter.EmissionDirection = Enum.NormalId.Top
+    emitter.SpreadAngle = Vector2.new(20, 20)
+    emitter.LightEmission = 1
+    emitter.Rate = Config.ZoneDustRate
+    emitter.Parent = dust
 end
 
 -- Construye todo el decorado dentro de `parent`.
@@ -537,6 +676,8 @@ function Scenery.Build(parent: Instance)
     folder.Parent = parent
 
     buildMountains(rng)
+    -- Lo último, para no cambiar la posición del resto del decorado (misma semilla).
+    buildImpactZone(rng, folder)
 end
 
 return Scenery

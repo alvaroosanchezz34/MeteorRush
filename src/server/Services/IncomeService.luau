@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local DataService = require(script.Parent.DataService)
+local EconomyService = require(script.Parent.EconomyService)
 local PlotService = require(script.Parent.PlotService)
 
 local Shared = ReplicatedStorage.Shared
@@ -29,12 +30,28 @@ local function updatePadLabel(player: Player, data: Types.Profile)
 end
 
 -- Añade monedas al jugador y al total histórico. Devuelve false si el perfil no está cargado.
-function IncomeService.AddCoins(player: Player, amount: number): boolean
+-- `source` dice de dónde salen ("pedestals", "sell", "quests"...) para las estadísticas.
+function IncomeService.AddCoins(player: Player, amount: number, source: string): boolean
     if amount <= 0 or DataService.GetData(player) == nil then
         return false
     end
     DataService.Increment(player, "coins", amount)
     DataService.Increment(player, "totalCoinsEarned", amount)
+    EconomyService.RecordEarned(player, source, amount)
+    return true
+end
+
+-- Cobra monedas al jugador. Devuelve false, sin cobrar nada, si no tiene suficientes.
+-- `sink` dice en qué se gastan ("upgrades", "fuse"...) para las estadísticas.
+function IncomeService.SpendCoins(player: Player, amount: number, sink: string): boolean
+    local data = DataService.GetData(player)
+    if data == nil or amount ~= amount or amount < 0 or data.coins < amount then
+        return false
+    end
+    if amount > 0 then
+        DataService.Increment(player, "coins", -amount)
+        EconomyService.RecordSpent(player, sink, amount)
+    end
     return true
 end
 
@@ -49,7 +66,7 @@ function IncomeService.Collect(player: Player, silent: boolean?)
         return
     end
     DataService.Set(player, "pendingIncome", data.pendingIncome - amount)
-    IncomeService.AddCoins(player, amount)
+    IncomeService.AddCoins(player, amount, "pedestals")
     updatePadLabel(player, data)
     if not silent then
         Remotes.Notify:FireClient(
@@ -90,7 +107,7 @@ local function grantOfflineIncome(player: Player, data: Types.Profile)
         return
     end
     local elapsed = math.clamp(os.time() - data.lastSeen, 0, IncomeConfig.OfflineCapSeconds)
-    local amount = PlayerStats.GetIncomePerSecond(data) * elapsed * IncomeConfig.OfflineRate
+    local amount = PlayerStats.GetIncomePerSecond(data) * elapsed * PlayerStats.GetOfflineRate(data)
     if amount < 1 then
         return
     end

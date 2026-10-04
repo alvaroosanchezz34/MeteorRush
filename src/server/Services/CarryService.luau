@@ -7,13 +7,17 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
+local AchievementService = require(script.Parent.AchievementService)
 local DataService = require(script.Parent.DataService)
 local PlotService = require(script.Parent.PlotService)
 local QuestService = require(script.Parent.QuestService)
 local TutorialService = require(script.Parent.TutorialService)
 
 local Shared = ReplicatedStorage.Shared
+local AchievementsConfig = require(Shared.Config.Achievements)
+local Minerals = require(Shared.Config.Minerals)
 local CarryConfig = require(Shared.Config.Carry)
 local MineralVisual = require(Shared.Util.MineralVisual)
 local PlayerStats = require(Shared.Util.PlayerStats)
@@ -28,6 +32,8 @@ local stacks: { [Player]: Model } = {}
 local rng = Random.new()
 -- Segundos tras salir un jugador a los que se borra su mochila si nadie lo ha hecho antes.
 local CLEANUP_DELAY = 5
+-- Aturdimientos y ralentizaciones del robo: factor de velocidad y hasta cuándo dura.
+local speedModifiers: { [Player]: { factor: number, untilTime: number } } = {}
 
 local function getTorso(character: Model): BasePart?
     local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
@@ -94,6 +100,35 @@ local function updateStack(player: Player)
             visual:Destroy()
         end
     end
+    -- Mochila llena: la carga brilla, para que se note desde lejos que va hasta arriba.
+    local data = DataService.GetData(player)
+    if data and #items >= PlayerStats.GetBackpackCapacity(data) then
+        local glow = Instance.new("PointLight")
+        glow.Name = "FullGlow"
+        glow.Color = CarryConfig.FullGlowColor
+        glow.Range = CarryConfig.FullGlowRange
+        glow.Brightness = 1.5
+        glow.Shadows = false
+        local sparks = Instance.new("ParticleEmitter")
+        sparks.Name = "FullSparks"
+        sparks.Color = ColorSequence.new(CarryConfig.FullGlowColor)
+        sparks.Size = NumberSequence.new(0.3, 0)
+        sparks.Lifetime = NumberRange.new(0.5, 0.9)
+        sparks.Speed = NumberRange.new(2, 4)
+        sparks.SpreadAngle = Vector2.new(60, 60)
+        sparks.LightEmission = 1
+        sparks.Rate = CarryConfig.FullGlowRate
+        -- Dentro de la pila, así desaparecen con ella.
+        local holder = stack:FindFirstChildWhichIsA("BasePart", true)
+        if holder then
+            glow.Parent = holder
+            sparks.Parent = holder
+        else
+            glow:Destroy()
+            sparks:Destroy()
+        end
+    end
+
     stack.Parent = character
     stacks[player] = stack
 end
@@ -106,7 +141,28 @@ function CarryService.RefreshSpeed(player: Player)
     if data == nil or humanoid == nil then
         return
     end
-    humanoid.WalkSpeed = PlayerStats.GetWalkSpeed(data, CarryService.GetCount(player))
+    local speed = PlayerStats.GetWalkSpeed(data, CarryService.GetCount(player))
+    local modifier = speedModifiers[player]
+    if modifier and os.clock() < modifier.untilTime then
+        speed *= modifier.factor
+    end
+    humanoid.WalkSpeed = speed
+end
+
+-- Multiplica la velocidad del jugador durante unos segundos (0 = aturdido). Después vuelve
+-- sola a la normal. Un modificador nuevo sustituye al anterior.
+function CarryService.SetSpeedModifier(player: Player, factor: number, seconds: number)
+    local modifier = { factor = math.clamp(factor, 0, 1), untilTime = os.clock() + seconds }
+    speedModifiers[player] = modifier
+    CarryService.RefreshSpeed(player)
+    task.delay(seconds + 0.05, function()
+        if speedModifiers[player] == modifier then
+            speedModifiers[player] = nil
+            if player.Parent == Players then
+                CarryService.RefreshSpeed(player)
+            end
+        end
+    end)
 end
 
 local function changed(player: Player)
@@ -200,6 +256,26 @@ local function deposit(player: Player)
     Remotes.Notify:FireClient(player, string.format(Strings.Carry.Deposited, #items))
     TutorialService.Advance(player, 2)
     QuestService.Progress(player, "deposit", #items)
+    -- Objetivos secretos: llegar a la base poco después de un robo, y depositar una mochila
+    -- llena en la que todo es Raro o superior.
+    local lastHit = player:GetAttribute("LastHitAt")
+    local escaped = type(lastHit) == "number"
+        and Workspace:GetServerTimeNow() - lastHit <= AchievementsConfig.EscapeSeconds
+    if escaped then
+        player:SetAttribute("LastHitAt", nil)
+    end
+    local data = DataService.GetData(player)
+    local allRare = data ~= nil and #items >= PlayerStats.GetBackpackCapacity(data)
+    for _, item in items do
+        if Minerals.GetRank(item.mineral) < Minerals.RareRank then
+            allRare = false
+        end
+    end
+    AchievementService.AddStats(player, {
+        deposited = #items,
+        escapes = if escaped then 1 else 0,
+        rareBackpacks = if allRare then 1 else 0,
+    })
 end
 
 local function checkDeposits()
@@ -231,7 +307,7 @@ function CarryService.Init()
     DataService.OnProfileLoaded(function(player: Player)
         changed(player)
     end)
-    for _, key in { "upgrades", "passes" } do
+    for _, key in { "upgrades", "passes", "permanent" } do
         DataService.OnFieldChanged(key, function(player: Player)
             changed(player)
         end)
@@ -271,6 +347,7 @@ function CarryService.Start()
             backpacks[player] = nil
         end)
         stacks[player] = nil
+        speedModifiers[player] = nil
         local connection = connections[player]
         if connection then
             connection:Disconnect()

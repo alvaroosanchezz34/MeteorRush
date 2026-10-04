@@ -8,6 +8,8 @@ export type Mutation = {
     color: Color3?,
     -- Aspecto del mineral mutado: "metal" (metálico), "neon" (brillante) o "rainbow" (multicolor).
     style: string?,
+    -- Si true, cuando alguien la consigue lo ve y lo lee todo el servidor.
+    announce: boolean?,
 }
 
 local Mutations = {}
@@ -36,12 +38,17 @@ Mutations.List = {
         multiplier = 15,
         color = Color3.fromRGB(255, 120, 230),
         style = "rainbow",
+        announce = true,
     },
 } :: { Mutation }
 
 -- Fusión: este número de minerales iguales (mismo mineral y misma mutación) se convierten
 -- en uno con la mutación siguiente de la lista.
 Mutations.FuseCount = 3
+
+-- Fusionar cuesta lo que generaría el mineral resultante en un pedestal durante estos segundos
+-- (sin multiplicadores). Es un gasto de monedas que crece con el valor del mineral; 0 = gratis.
+Mutations.FuseCostSeconds = 60
 
 local byId: { [string]: Mutation } = {}
 for _, mutation in Mutations.List do

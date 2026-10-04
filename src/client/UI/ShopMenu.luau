@@ -13,6 +13,7 @@ local DataController = require(script.Parent.Parent.Controllers.DataController)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
+local LiveOps = require(Shared:WaitForChild("Config"):WaitForChild("LiveOps"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local ShopConfig = require(Shared:WaitForChild("Config"):WaitForChild("Shop"))
@@ -20,6 +21,8 @@ local Strings = require(Shared:WaitForChild("Strings"))
 local Types = require(Shared:WaitForChild("Types"))
 
 local TABS = { "passes", "boosts", "coins", "cosmetics" }
+-- Segundos que un botón queda en espera tras pulsarlo (mientras responde Roblox o el servidor).
+local BUSY_SECONDS = 2
 
 type Entry = {
     key: string,
@@ -114,6 +117,13 @@ local function buildEntries(tab: string, data: Types.Profile): { Entry }
                 end
             elseif cosmetic.vipOnly then
                 text, color = Strings.Shop.VipOnly, Components.Colors.Disabled
+            elseif cosmetic.crate then
+                text, color = Strings.Shop.CrateOnly, Components.Colors.Disabled
+            elseif cosmetic.season then
+                text, color = Strings.Shop.SeasonOnly, Components.Colors.Disabled
+            elseif cosmetic.rebirthsRequired then
+                text = string.format(Strings.Shop.RebirthOnly, cosmetic.rebirthsRequired)
+                color = Components.Colors.Disabled
             else
                 text, color = priceButton(cosmetic.id, cosmetic.price)
                 if cosmetic.id ~= 0 then
@@ -122,15 +132,22 @@ local function buildEntries(tab: string, data: Types.Profile): { Entry }
                     end
                 end
             end
-            table.insert(entries, {
-                key = cosmetic.key,
-                name = Strings.Shop.Names[cosmetic.key],
-                description = Strings.Shop.Descriptions[cosmetic.kind],
-                swatch = cosmetic.color,
-                buttonText = text,
-                buttonColor = color,
-                onClick = onClick,
-            })
+            -- Los cosméticos de una temporada que ya pasó solo los ve quien los consiguió.
+            local season = LiveOps.GetSeason(Workspace:GetServerTimeNow())
+            local expired = cosmetic.season ~= nil
+                and not owned
+                and (season == nil or season.id ~= cosmetic.season)
+            if not expired then
+                table.insert(entries, {
+                    key = cosmetic.key,
+                    name = Strings.Shop.Names[cosmetic.key],
+                    description = Strings.Shop.Descriptions[cosmetic.kind],
+                    swatch = cosmetic.color,
+                    buttonText = text,
+                    buttonColor = color,
+                    onClick = onClick,
+                })
+            end
         end
     end
     return entries
@@ -216,13 +233,20 @@ function ShopMenu.Mount(window: Components.Window)
                 color = Components.Colors.Muted,
                 parent = row,
             })
-            Components.Button({
+            local onClick = entry.onClick
+            local button: TextButton
+            button = Components.Button({
                 text = entry.buttonText,
                 size = UDim2.fromScale(0.3, 0.66),
                 position = UDim2.fromScale(0.67, 0.17),
                 color = entry.buttonColor,
                 parent = row,
-                onClick = entry.onClick,
+                onClick = function()
+                    if onClick and not button:GetAttribute("Busy") then
+                        Components.SetBusy(button, BUSY_SECONDS)
+                        onClick()
+                    end
+                end,
             })
         end
     end

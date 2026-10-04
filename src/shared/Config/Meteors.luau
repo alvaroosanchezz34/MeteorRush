@@ -19,6 +19,15 @@ export type MeteorType = {
     glowColor: Color3,
     -- Si true, se avisa a todo el servidor con un mensaje en pantalla.
     announce: boolean,
+    -- Meteorito especial: no cae por su cuenta, solo en eventos (Config/Events). No usa
+    -- `interval` ni `firstImpact`.
+    special: boolean?,
+    -- Mutación mínima de todo lo que sale de él.
+    minMutation: string?,
+    -- Multiplicador del tiempo por golpe (más de 1 = se mina más despacio).
+    mineTimeMultiplier: number?,
+    -- Minerales que da cada golpe (por defecto 1).
+    mineralsPerHit: number?,
 }
 
 local Meteors = {}
@@ -100,6 +109,84 @@ Meteors.Types = {
         color = Color3.fromRGB(42, 34, 54),
         glowColor = Color3.fromRGB(180, 80, 255),
         announce = true,
+    },
+    -- Dorado: todo lo que sale de él es, como poco, Dorado.
+    golden = {
+        id = "golden",
+        interval = 0,
+        firstImpact = 0,
+        hits = 60,
+        duration = 120,
+        rareWeightMultiplier = 1.5,
+        mutationMultiplier = 1,
+        radius = 6,
+        color = Color3.fromRGB(120, 95, 30),
+        glowColor = Color3.fromRGB(255, 205, 60),
+        announce = true,
+        special = true,
+        minMutation = "gold",
+    },
+    -- Corrupto: muchas mutaciones y más raros, pero se mina más despacio.
+    corrupt = {
+        id = "corrupt",
+        interval = 0,
+        firstImpact = 0,
+        hits = 60,
+        duration = 120,
+        rareWeightMultiplier = 3,
+        mutationMultiplier = 5,
+        radius = 6,
+        color = Color3.fromRGB(45, 25, 55),
+        glowColor = Color3.fromRGB(120, 255, 80),
+        announce = true,
+        special = true,
+        mineTimeMultiplier = 1.5,
+    },
+    -- Negro: pocos golpes y poco tiempo, pero casi todo lo bueno sale de aquí.
+    black = {
+        id = "black",
+        interval = 0,
+        firstImpact = 0,
+        hits = 25,
+        duration = 75,
+        rareWeightMultiplier = 12,
+        mutationMultiplier = 1,
+        radius = 5,
+        color = Color3.fromRGB(15, 15, 20),
+        glowColor = Color3.fromRGB(235, 235, 255),
+        announce = true,
+        special = true,
+    },
+    -- Arcoíris: casi la mitad de lo que sale lleva mutación.
+    rainbow = {
+        id = "rainbow",
+        interval = 0,
+        firstImpact = 0,
+        hits = 60,
+        duration = 120,
+        rareWeightMultiplier = 1.5,
+        mutationMultiplier = 12,
+        radius = 6,
+        color = Color3.fromRGB(70, 50, 80),
+        glowColor = Color3.fromRGB(255, 120, 230),
+        announce = true,
+        special = true,
+    },
+    -- Alienígena: cada golpe da dos minerales.
+    alien = {
+        id = "alien",
+        interval = 0,
+        firstImpact = 0,
+        hits = 50,
+        duration = 120,
+        rareWeightMultiplier = 3,
+        mutationMultiplier = 2,
+        radius = 6,
+        color = Color3.fromRGB(30, 60, 50),
+        glowColor = Color3.fromRGB(60, 255, 190),
+        announce = true,
+        special = true,
+        mineralsPerHit = 2,
     },
 } :: { [string]: MeteorType }
 

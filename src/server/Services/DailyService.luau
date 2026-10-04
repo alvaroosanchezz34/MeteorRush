@@ -49,7 +49,7 @@ local function onClaimDaily(player: Player)
     local reward = DailyConfig.Rewards[day]
     DataService.Set(player, "daily", { streak = day, lastClaim = now })
 
-    IncomeService.AddCoins(player, reward.coins)
+    IncomeService.AddCoins(player, reward.coins, "daily")
     local rewardText = string.format(Strings.Daily.Coins, Format.Number(reward.coins))
 
     local mineralId = reward.mineral

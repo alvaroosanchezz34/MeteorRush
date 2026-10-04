@@ -12,6 +12,7 @@ local Kit = require(script.Parent.Parent.Builders.Kit)
 local Shared = ReplicatedStorage.Shared
 local Assets = require(Shared.Util.Assets)
 local MapConfig = require(Shared.Config.Map)
+local MeteorFx = require(Shared.Config.MeteorFx)
 local MeteorsConfig = require(Shared.Config.Meteors)
 local Remotes = require(Shared.Remotes)
 local Strings = require(Shared.Strings)
@@ -177,6 +178,78 @@ local function makeMeteorPlaceholder(meteorType: MeteorsConfig.MeteorType): Inst
             meteorType.color:Lerp(Color3.new(0, 0, 0), rng:NextNumber(0.1, 0.4)),
             Enum.Material.Basalt
         )
+    end
+
+    -- Detalle según el nivel del meteorito (Config/MeteorFx): cuanto más grande, más cráteres,
+    -- más zonas incandescentes y más fuego.
+    local tier = MeteorFx.GetTier(meteorType.id)
+    local function decorate(part: BasePart, name: string)
+        part.Name = name
+        part.CanCollide = false
+        part.CanQuery = false
+        part.CastShadow = false
+    end
+    -- Cráteres: discos oscuros en la corteza.
+    for _ = 1, tier.craters do
+        local direction = randomDirection()
+        local diameter = radius * rng:NextNumber(0.28, 0.5)
+        decorate(
+            addPart(
+                Enum.PartType.Cylinder,
+                Vector3.new(radius * 0.05, diameter, diameter),
+                -- El eje del cilindro es X: se gira para que mire hacia fuera.
+                CFrame.lookAt(direction * radius * 0.94, direction * radius * 2)
+                    * CFrame.Angles(0, math.pi / 2, 0),
+                Color3.fromRGB(14, 12, 12),
+                Enum.Material.Slate
+            ),
+            "Crater"
+        )
+    end
+    -- Zonas incandescentes: roca al rojo que asoma entre las placas.
+    for _ = 1, tier.hotSpots do
+        local direction = randomDirection()
+        local side = radius * rng:NextNumber(0.1, 0.2)
+        decorate(
+            addPart(
+                Enum.PartType.Block,
+                Vector3.new(side, side, radius * 0.1),
+                CFrame.lookAt(direction * radius * 0.9, direction * radius * 2)
+                    * CFrame.Angles(0, 0, rng:NextNumber(0, math.pi)),
+                meteorType.glowColor:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.3)),
+                Enum.Material.Neon
+            ),
+            "HotSpot"
+        )
+    end
+    -- Púas de energía (solo los de evento): cristales grandes del color del núcleo.
+    for _ = 1, tier.spikes do
+        local direction = randomDirection()
+        direction = Vector3.new(direction.X, math.abs(direction.Y) * 0.7 + 0.2, direction.Z).Unit
+        local base = direction * radius * 0.8
+        Kit.Crystal({
+            cframe = CFrame.lookAt(base, base + direction) * CFrame.Angles(-math.pi / 2, 0, 0),
+            height = radius * rng:NextNumber(0.55, 0.85),
+            width = radius * rng:NextNumber(0.12, 0.18),
+            color = meteorType.glowColor,
+            canCollide = false,
+            parent = model,
+        })
+    end
+    -- Llamas que suben de la parte de arriba.
+    if tier.flameRate > 0 then
+        local flames = Instance.new("ParticleEmitter")
+        flames.Name = "Flames"
+        flames.Color = ColorSequence.new(Color3.new(1, 1, 1), meteorType.glowColor)
+        flames.LightEmission = 1
+        flames.Rate = tier.flameRate
+        flames.Lifetime = NumberRange.new(0.5, 1.1)
+        flames.Speed = NumberRange.new(radius * 0.8, radius * 1.6)
+        flames.EmissionDirection = Enum.NormalId.Top
+        flames.SpreadAngle = Vector2.new(30, 30)
+        flames.Size = NumberSequence.new(radius * 0.45, 0)
+        flames.Transparency = NumberSequence.new(0.3, 1)
+        flames.Parent = core
     end
 
     -- Unos pocos cristales pequeños asomando por la mitad superior.
@@ -352,11 +425,14 @@ local function spawnMeteor(id: number, typeId: string, position: Vector3)
     task.delay(meteorType.duration, removeMeteor, id)
 end
 
-local function announceMeteor(typeId: string, impactIn: number)
+local function announceMeteor(typeId: string, impactIn: number, at: Vector3?)
     local meteorType = MeteorsConfig.Types[typeId]
     nextId += 1
     local id = nextId
-    local position = chooseImpactPosition(meteorType.radius)
+    -- Con un punto pedido, cae ahí (apoyado en el suelo); si no, donde haya sitio.
+    local position = if at
+        then Vector3.new(at.X, meteorType.radius, at.Z)
+        else chooseImpactPosition(meteorType.radius)
     pendingImpacts[id] = { position = position, radius = meteorType.radius }
 
     local impactAt = Workspace:GetServerTimeNow() + impactIn
@@ -388,6 +464,27 @@ local function updateSchedules()
         publishedImpact = soonest
         Workspace:SetAttribute("NextMeteorAt", Workspace:GetServerTimeNow() + (soonest - now))
     end
+end
+
+-- Hace caer un meteorito de ese tipo dentro de `impactIn` segundos, con su aviso.
+-- Lo usan los eventos (EventService) para los meteoritos especiales y las lluvias, y el
+-- panel de administración, que además puede elegir el punto (`position`).
+function MeteorService.Spawn(typeId: string, impactIn: number, position: Vector3?)
+    announceMeteor(typeId, impactIn, position)
+end
+
+-- Todos los meteoritos que hay ahora en el suelo.
+function MeteorService.GetAll(): { Meteor }
+    local list: { Meteor } = {}
+    for _, meteor in meteors do
+        table.insert(list, meteor)
+    end
+    return list
+end
+
+-- Quita un meteorito del suelo sin dar nada (panel de administración).
+function MeteorService.Remove(id: number)
+    removeMeteor(id)
 end
 
 -- Devuelve el meteorito activo con ese id, o nil si no existe o ya desapareció.
@@ -436,11 +533,14 @@ end
 function MeteorService.Start()
     local now = os.clock()
     for typeId, meteorType in MeteorsConfig.Types do
-        table.insert(schedules, {
-            typeId = typeId,
-            nextImpact = now + meteorType.firstImpact,
-            announced = false,
-        })
+        -- Los especiales no tienen calendario propio: solo caen en eventos.
+        if not meteorType.special then
+            table.insert(schedules, {
+                typeId = typeId,
+                nextImpact = now + meteorType.firstImpact,
+                announced = false,
+            })
+        end
     end
 
     task.spawn(function()

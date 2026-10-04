@@ -5,6 +5,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AchievementService = require(script.Parent.AchievementService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 
@@ -95,7 +96,8 @@ local function onClaimQuest(player: Player, questId: unknown)
         quests.claimed[questId] = true
         return quests
     end)
-    IncomeService.AddCoins(player, reward)
+    IncomeService.AddCoins(player, reward, "quests")
+    AchievementService.AddStat(player, "questsClaimed", 1)
     Remotes.Notify:FireClient(
         player,
         string.format(Strings.Quests.RewardClaimed, Format.Number(reward))

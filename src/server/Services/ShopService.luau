@@ -2,7 +2,7 @@
 
 -- Tienda: game passes, productos de desarrollador (boosts y monedas) y cosméticos.
 -- ProcessReceipt es idempotente: guarda el PurchaseId y solo devuelve PurchaseGranted
--- después de aplicar la recompensa en el perfil.
+-- cuando la compra está entregada y el perfil, guardado en el DataStore.
 -- No hay compras aleatorias: todo lo que se compra con Robux es concreto y visible antes de pagar.
 
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -15,10 +15,13 @@ local IncomeService = require(script.Parent.IncomeService)
 local PlotService = require(script.Parent.PlotService)
 
 local Shared = ReplicatedStorage.Shared
+local Log = require(Shared.Util.Log)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
+local Equipment = require(Shared.Config.Equipment)
+local EquipmentVisual = require(Shared.Util.EquipmentVisual)
 local ShopConfig = require(Shared.Config.Shop)
 local Strings = require(Shared.Strings)
 local Types = require(Shared.Types)
@@ -61,7 +64,7 @@ local function checkGamePasses(player: Player)
                 setPass(player, pass.key, owns)
             else
                 -- Si la comprobación falla se mantiene lo que había en la caché.
-                warn(`[ShopService] No se pudo comprobar el pass {pass.key}: {owns}`)
+                Log.Warn("Shop", `No se pudo comprobar el pass {pass.key}: {owns}`)
             end
         end
     end
@@ -78,48 +81,29 @@ local function getEquipped(data: Types.Profile, kind: string): ShopConfig.Cosmet
     return nil
 end
 
-local function applyPickaxe(character: Model, color: Color3)
+-- El pico que lleva el personaje en la mano: el modelo del pico equipado (Config/Equipment)
+-- y, si tiene un cosmético de pico puesto, con su color en la cabeza.
+local function applyPickaxe(character: Model, itemId: string, color: Color3?)
+    local signature = `{itemId}:{if color then color:ToHex() else ""}`
     local old = character:FindFirstChild("PickaxeVisual")
     if old then
+        if old:GetAttribute("Signature") == signature then
+            return
+        end
         old:Destroy()
     end
     local hand = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
-    if hand == nil or not hand:IsA("BasePart") then
+    local model = EquipmentVisual.Create(itemId, color)
+    if model == nil or hand == nil or not hand:IsA("BasePart") then
         return
     end
-
-    local model = Instance.new("Model")
     model.Name = "PickaxeVisual"
-    local handle = Instance.new("Part")
-    handle.Name = "Handle"
-    handle.Size = Vector3.new(0.3, 3, 0.3)
-    handle.Color = Color3.fromRGB(110, 80, 50)
-    handle.Material = Enum.Material.Wood
-    local head = Instance.new("Part")
-    head.Name = "Head"
-    head.Size = Vector3.new(2.2, 0.4, 0.4)
-    head.Color = color
-    head.Material = Enum.Material.Metal
-    for _, part in { handle, head } do
-        part.CanCollide = false
-        part.CanQuery = false
-        part.CanTouch = false
-        part.Massless = true
-        part.Parent = model
-    end
-
-    handle.CFrame = hand.CFrame
-        * CFrame.new(0, -hand.Size.Y / 2, -0.6)
-        * CFrame.Angles(math.rad(90), 0, 0)
-    head.CFrame = handle.CFrame * CFrame.new(0, 1.5, 0)
-    local headWeld = Instance.new("WeldConstraint")
-    headWeld.Part0 = handle
-    headWeld.Part1 = head
-    headWeld.Parent = head
-    local handWeld = Instance.new("WeldConstraint")
-    handWeld.Part0 = hand
-    handWeld.Part1 = handle
-    handWeld.Parent = handle
+    model:SetAttribute("Signature", signature)
+    EquipmentVisual.Attach(
+        model,
+        hand,
+        CFrame.new(0, -hand.Size.Y / 2, -0.6) * CFrame.Angles(math.rad(90), 0, 0)
+    )
     model.Parent = character
 end
 
@@ -171,7 +155,11 @@ local function applyCosmetics(player: Player)
         return
     end
     local pickaxe = getEquipped(data, "pickaxe")
-    applyPickaxe(character, if pickaxe then pickaxe.color else ShopConfig.DefaultPickaxeColor)
+    applyPickaxe(
+        character,
+        Equipment.GetEquipped(data, "pickaxe").id,
+        if pickaxe then pickaxe.color else nil
+    )
     local trail = getEquipped(data, "trail")
     applyTrail(character, if trail then trail.color else nil)
 end
@@ -227,7 +215,7 @@ local function grantProduct(player: Player, data: Types.Profile, product: ShopCo
             return boosts
         end)
     elseif product.kind == "coins" then
-        IncomeService.AddCoins(player, PlayerStats.GetCoinPackAmount(data, product))
+        IncomeService.AddCoins(player, PlayerStats.GetCoinPackAmount(data, product), "shop")
     end
 end
 
@@ -241,45 +229,70 @@ local function grantCosmetic(player: Player, cosmetic: ShopConfig.Cosmetic)
     end)
 end
 
+-- Entrega una compra exactamente una vez y solo la da por buena cuando está guardada:
+--   1. Si el PurchaseId no está en el perfil, se entrega y se apunta, sin ceder el hilo entre
+--      las dos cosas.
+--   2. Se guarda el perfil y se espera a ver el PurchaseId en los datos guardados.
+-- Si el servidor se cae antes del guardado, Roblox vuelve a enviar el recibo y, como el
+-- PurchaseId no llegó a guardarse, se entrega entonces. Si el jugador se va antes de
+-- confirmarlo, el recibo vuelve al entrar y el PurchaseId ya guardado evita entregarlo dos veces.
 local function processReceipt(receiptInfo: { [string]: any }): Enum.ProductPurchaseDecision
     local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
-    local data = if player then DataService.GetData(player) else nil
+    local data = if player then DataService.WaitForData(player) else nil
     if player == nil or data == nil then
         return Enum.ProductPurchaseDecision.NotProcessedYet
     end
 
     local purchaseId = tostring(receiptInfo.PurchaseId)
-    if table.find(data.purchases, purchaseId) then
-        return Enum.ProductPurchaseDecision.PurchaseGranted
-    end
-
-    local product, cosmetic = findProductById(receiptInfo.ProductId)
-    if product == nil and cosmetic == nil then
-        warn(`[ShopService] Producto desconocido: {receiptInfo.ProductId}`)
-        return Enum.ProductPurchaseDecision.NotProcessedYet
-    end
-
-    local ok, err = pcall(function()
-        if product then
-            grantProduct(player, data, product)
-        elseif cosmetic then
-            grantCosmetic(player, cosmetic)
+    if not table.find(data.purchases, purchaseId) then
+        local product, cosmetic = findProductById(receiptInfo.ProductId)
+        if product == nil and cosmetic == nil then
+            Log.Warn("Shop", `Producto desconocido: {receiptInfo.ProductId}`)
+            return Enum.ProductPurchaseDecision.NotProcessedYet
         end
-        DataService.Update(player, "purchases", function(purchases: { string })
-            table.insert(purchases, purchaseId)
-            while #purchases > ShopConfig.MaxStoredPurchases do
-                table.remove(purchases, 1)
+
+        local ok, err = pcall(function()
+            if product then
+                grantProduct(player, data, product)
+            elseif cosmetic then
+                grantCosmetic(player, cosmetic)
             end
-            return purchases
+            DataService.Update(player, "purchases", function(purchases: { string })
+                table.insert(purchases, purchaseId)
+                while #purchases > ShopConfig.MaxStoredPurchases do
+                    table.remove(purchases, 1)
+                end
+                return purchases
+            end)
         end)
-    end)
-    if not ok then
-        warn(`[ShopService] Error al entregar la compra {purchaseId}: {err}`)
-        return Enum.ProductPurchaseDecision.NotProcessedYet
+        if not ok then
+            Log.Warn("Shop", `Error al entregar la compra {purchaseId}: {err}`)
+            return Enum.ProductPurchaseDecision.NotProcessedYet
+        end
+        Remotes.Notify:FireClient(player, Strings.Shop.Thanks)
     end
 
-    Remotes.Notify:FireClient(player, Strings.Shop.Thanks)
+    local saved = DataService.SaveAndWait(player, function(savedData: Types.Profile): boolean
+        return table.find(savedData.purchases or {}, purchaseId) ~= nil
+    end)
+    if not saved then
+        Log.Warn("Shop", `Compra {purchaseId} entregada pero sin confirmar el guardado`)
+        return Enum.ProductPurchaseDecision.NotProcessedYet
+    end
     return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+
+-- Solo para pruebas: procesa un recibo inventado de ese producto o cosmético. Repetir el
+-- mismo `purchaseId` permite comprobar que no se entrega dos veces.
+function ShopService.DebugProcessReceipt(player: Player, key: string, purchaseId: string): string
+    local product = ShopConfig.ProductsByKey[key]
+    local cosmetic = ShopConfig.CosmeticsByKey[key]
+    local productId = if product then product.id elseif cosmetic then cosmetic.id else 0
+    return processReceipt({
+        PlayerId = player.UserId,
+        ProductId = productId,
+        PurchaseId = purchaseId,
+    }).Name
 end
 
 function ShopService.Init()
@@ -287,7 +300,7 @@ function ShopService.Init()
         checkGamePasses(player)
         applyCosmetics(player)
     end)
-    for _, key in { "cosmetics", "passes" } do
+    for _, key in { "cosmetics", "passes", "equipment" } do
         DataService.OnFieldChanged(key, function(player: Player)
             applyCosmetics(player)
         end)

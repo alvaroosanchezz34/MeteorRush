@@ -10,6 +10,10 @@ Data.StoreName = "PlayerData"
 -- Cada cuántos segundos se suma el tiempo de juego de la sesión al perfil.
 Data.PlaytimeFlushInterval = 60
 
+-- Al confirmar una compra se espera a que el perfil esté guardado: segundos entre reintentos
+-- de guardado si el anterior no ha incluido la compra.
+Data.SaveRetrySeconds = 10
+
 local template: Types.Profile = {
     version = 1,
     coins = 0,
@@ -41,6 +45,29 @@ local template: Types.Profile = {
     tutorialStep = 0,
     quests = { day = 0, progress = {}, claimed = {} },
     codes = {},
+    stats = {},
+    achievements = {},
+    title = "",
+    friendsOnline = 0,
+    shards = 0,
+    permanent = {},
+    rebirthInfo = { lastPlaytime = 0, fastest = 0 },
+    decor = { slots = {}, effect = "" },
+    season = { id = "", points = 0, progress = {}, done = {}, claimed = {} },
+    seenVersion = "",
+    social = { visits = 0, likes = 0, liked = {} },
+    -- Los perfiles anteriores al equipamiento reciben estos valores al cargar (Reconcile):
+    -- el pico y el arma iniciales, sin cajas.
+    equipment = {
+        owned = { rustedPick = true, rustyBat = true },
+        pickaxe = "rustedPick",
+        weapon = "rustyBat",
+        crates = {},
+        pity = {},
+        collection = { rustedPick = true, rustyBat = true },
+        dust = 0,
+        opened = 0,
+    },
 }
 
 Data.Template = template

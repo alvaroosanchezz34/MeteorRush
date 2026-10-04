@@ -176,14 +176,39 @@ local function makeSignPlaceholder(): Instance
     gui.PixelsPerStud = 40
     gui.Parent = board
 
+    gui.LightInfluence = 0
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    -- Fondo con degradado y un marco del color de la base.
+    local background = Instance.new("Frame")
+    background.Size = UDim2.fromScale(1, 1)
+    background.BackgroundColor3 = MapConfig.SignColor
+    background.BorderSizePixel = 0
+    background.Parent = gui
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 90
+    gradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(0.55, 0.55, 0.7))
+    gradient.Parent = background
+    local frame = Instance.new("UIStroke")
+    frame.Color = MapConfig.PlotAccentColor
+    frame.Thickness = 6
+    frame.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    frame.Parent = background
+
     local label = Instance.new("TextLabel")
     label.Name = "OwnerText"
-    label.Size = UDim2.fromScale(1, 1)
+    label.Size = UDim2.fromScale(0.92, 0.84)
+    label.Position = UDim2.fromScale(0.04, 0.08)
     label.BackgroundTransparency = 1
     label.TextScaled = true
     label.Font = Enum.Font.GothamBold
     label.TextColor3 = Color3.new(1, 1, 1)
-    label.Parent = gui
+    label.Parent = background
+    local textStroke = Instance.new("UIStroke")
+    textStroke.Color = Color3.new(0, 0, 0)
+    textStroke.Thickness = 2
+    textStroke.Transparency = 0.4
+    textStroke.Parent = label
 
     return model
 end
@@ -278,6 +303,31 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
     addTrim(-(gateHalf + frontLength / 2), -edge, frontLength, trim)
     addTrim(gateHalf + frontLength / 2, -edge, frontLength, trim)
 
+    -- Borde de energía: una línea de luz a ras de suelo por dentro del bordillo. Cada jugador
+    -- ve la de su propia base en verde (BaseController).
+    local function addGlow(centerX: number, centerZ: number, sizeX: number, sizeZ: number)
+        local glow = makePart({
+            name = "EdgeGlow",
+            size = Vector3.new(sizeX, 0.1, sizeZ),
+            cframe = cframe * CFrame.new(centerX, 0.06, centerZ),
+            color = MapConfig.PlotAccentColor,
+            material = Enum.Material.Neon,
+            canCollide = false,
+            transparency = 0.6,
+            parent = parent,
+        })
+        glow.CanQuery = false
+        glow.CastShadow = false
+    end
+    local inner = half - trim - 0.5
+    local glowLength = MapConfig.PlotSize - 2 * trim - 1
+    addGlow(-inner, 0, 0.4, glowLength)
+    addGlow(inner, 0, 0.4, glowLength)
+    addGlow(0, inner, glowLength, 0.4)
+    local frontGlow = frontLength - trim - 0.5
+    addGlow(-(gateHalf + frontGlow / 2), -inner, frontGlow, 0.4)
+    addGlow(gateHalf + frontGlow / 2, -inner, frontGlow, 0.4)
+
     local pillarHeight = MapConfig.PlotPillarHeight
     for _, x in { -1, 1 } do
         for _, z in { -1, 1 } do
@@ -301,8 +351,8 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
             })
             local light = Instance.new("PointLight")
             light.Color = MapConfig.PlotAccentColor
-            light.Range = 18
-            light.Brightness = 1
+            light.Range = 10
+            light.Brightness = 0.4
             light.Shadows = false
             light.Parent = cap
         end
@@ -349,7 +399,7 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
         label.Size = UDim2.fromScale(1, 1)
         label.BackgroundTransparency = 1
         label.TextScaled = true
-        label.Font = Enum.Font.FredokaOne
+        label.Font = Enum.Font.GothamBold
         label.TextColor3 = MapConfig.DepositZoneColor
         label.Text = Strings.Plot.Deposit
         label.Parent = gui
@@ -467,8 +517,8 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
     beam.CanQuery = false
     local beaconLight = Instance.new("PointLight")
     beaconLight.Color = MapConfig.PlotAccentColor
-    beaconLight.Range = 30
-    beaconLight.Brightness = 1.5
+    beaconLight.Range = 14
+    beaconLight.Brightness = 0.5
     beaconLight.Shadows = false
     beaconLight.Parent = emitter
 
@@ -576,6 +626,40 @@ local function buildPlot(index: number, parent: Instance): PlotLayout
     local decoration = Instance.new("Folder")
     decoration.Name = "Decoration"
     decoration.Parent = model
+
+    -- Suelo de losas: grandes baldosas en dos tonos sobre el suelo, que hace de junta. Da
+    -- cuerpo a la base sin una sola luz. No tienen colisión (se pisa el suelo de debajo).
+    local tiles = MapConfig.PlotTiles
+    local tileSize = MapConfig.PlotSize / tiles
+    for row = 1, tiles do
+        for column = 1, tiles do
+            local tile = makePart({
+                name = "Tile",
+                size = Vector3.new(
+                    tileSize - MapConfig.PlotTileGap,
+                    MapConfig.PlotTileHeight,
+                    tileSize - MapConfig.PlotTileGap
+                ),
+                cframe = cframe * CFrame.new(
+                    -half + (column - 0.5) * tileSize,
+                    MapConfig.PlotTileHeight / 2,
+                    -half + (row - 0.5) * tileSize
+                ),
+                color = if (row + column) % 2 == 0
+                    then MapConfig.PlotTileColor
+                    else MapConfig.PlotTileAltColor,
+                canCollide = false,
+                parent = decoration,
+            })
+            tile.CanQuery = false
+            tile.CastShadow = false
+            -- Tacos: los que trae Roblox (solo se dibujan sobre plástico). Sin assets.
+            if MapConfig.PlotTileStuds then
+                tile.Material = Enum.Material.Plastic
+                tile.TopSurface = Enum.SurfaceType.Studs
+            end
+        end
+    end
     buildPlotDecoration(cframe, decoration)
 
     local depositZone = makePart({

@@ -1,19 +1,22 @@
 --!strict
 
 -- Gestión del inventario de la base más allá de los pedestales: vender minerales por monedas
--- y fusionar varios iguales en uno con la mutación siguiente. Solo afecta a minerales que no
+-- y fusionar varios iguales (pagando monedas) en uno con la mutación siguiente. Solo afecta a minerales que no
 -- están colocados en un pedestal.
 
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AchievementService = require(script.Parent.AchievementService)
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local IndexService = require(script.Parent.IndexService)
+local MomentService = require(script.Parent.MomentService)
 
 local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local Format = require(Shared.Util.Format)
+local MomentsConfig = require(Shared.Config.Moments)
 local Mutations = require(Shared.Config.Mutations)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
@@ -60,7 +63,8 @@ local function onSellMineral(player: Player, itemId: unknown)
 
     local price = PlayerStats.GetSellPrice(item)
     removeItems(player, { [itemId] = true })
-    IncomeService.AddCoins(player, price)
+    IncomeService.AddCoins(player, price, "sell")
+    AchievementService.AddStat(player, "sold", 1)
     Remotes.Notify:FireClient(
         player,
         string.format(
@@ -97,7 +101,8 @@ local function onSellJunk(player: Player)
     end
 
     removeItems(player, ids)
-    IncomeService.AddCoins(player, total)
+    IncomeService.AddCoins(player, total, "sell")
+    AchievementService.AddStat(player, "sold", count)
     Remotes.Notify:FireClient(
         player,
         string.format(Strings.Inventory.SoldMany, count, Format.Number(total))
@@ -150,6 +155,16 @@ local function onFuseMineral(player: Player, itemId: unknown)
         return
     end
 
+    -- La fusión cuesta monedas. Se cobra antes de tocar el inventario: si no llega, no pasa nada.
+    local cost = PlayerStats.GetFuseCost(item)
+    if not IncomeService.SpendCoins(player, cost, "fuse") then
+        Remotes.Notify:FireClient(
+            player,
+            string.format(Strings.Inventory.FuseNotEnoughCoins, Format.Number(cost))
+        )
+        return
+    end
+
     local fused: Types.InventoryItem = {
         id = HttpService:GenerateGUID(false),
         mineral = item.mineral,
@@ -167,6 +182,13 @@ local function onFuseMineral(player: Player, itemId: unknown)
         return kept
     end)
     IndexService.Register(player, fused.mineral, fused.mutation)
+    if MomentsConfig.IsDiscovery(fused.mineral, fused.mutation) then
+        MomentService.Announce(player, "discovery", fused.mineral, fused.mutation)
+    end
+    AchievementService.AddStats(player, {
+        fused = 1,
+        rainbowFused = if Mutations.GetNext(fused.mutation) == nil then 1 else 0,
+    })
     Remotes.Notify:FireClient(
         player,
         string.format(Strings.Inventory.Fused, Strings.MineralName(fused.mineral, fused.mutation))

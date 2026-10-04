@@ -36,4 +36,13 @@ function Format.Duration(seconds: number): string
     return string.format("%dh %dm", total // 3600, (total % 3600) // 60)
 end
 
+-- Duración larga, con días: "12d 3h". Por debajo de un día, igual que Duration.
+function Format.LongDuration(seconds: number): string
+    local total = math.max(math.floor(seconds), 0)
+    if total < 86400 then
+        return Format.Duration(total)
+    end
+    return string.format("%dd %dh", total // 86400, (total % 86400) // 3600)
+end
+
 return Format

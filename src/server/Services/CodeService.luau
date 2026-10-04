@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
 local IndexService = require(script.Parent.IndexService)
+local LiveOpsService = require(script.Parent.LiveOpsService)
 
 local Shared = ReplicatedStorage.Shared
 local CodesConfig = require(Shared.Config.Codes)
@@ -34,12 +35,21 @@ local function onRedeemCode(player: Player, text: unknown)
     if data == nil then
         return
     end
+    if not LiveOpsService.IsEnabled("codes") then
+        Remotes.Notify:FireClient(player, Strings.LiveOps.Disabled)
+        return
+    end
 
     -- Sin espacios alrededor y en mayúsculas, que es como están en la lista.
     local key = string.upper((string.gsub(text, "^%s*(.-)%s*$", "%1")))
     local code = CodesConfig.List[key]
     if code == nil then
         Remotes.Notify:FireClient(player, Strings.Codes.Invalid)
+        return
+    end
+    local expiresAt = code.expiresAt
+    if expiresAt and os.time() >= expiresAt then
+        Remotes.Notify:FireClient(player, Strings.Codes.Expired)
         return
     end
     if data.codes[key] then
@@ -55,7 +65,7 @@ local function onRedeemCode(player: Player, text: unknown)
     local rewards: { string } = {}
     local coins = code.coins
     if coins and coins > 0 then
-        IncomeService.AddCoins(player, coins)
+        IncomeService.AddCoins(player, coins, "codes")
         table.insert(rewards, string.format(Strings.Daily.Coins, Format.Number(coins)))
     end
     local mineralId = code.mineral

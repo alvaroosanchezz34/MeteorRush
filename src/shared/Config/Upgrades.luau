@@ -77,10 +77,11 @@ Upgrades.List = {
         baseValue = 1,
         perLevel = 0.1,
     },
-    -- Multiplicador de los ingresos de los pedestales.
+    -- Multiplicador de los ingresos de los pedestales. Es la mejora larga: sus últimos niveles
+    -- son el gasto de monedas del final de cada rebirth.
     {
         id = "refinery",
-        maxLevel = 20,
+        maxLevel = 40,
         baseCost = 3000,
         costFactor = 1.8,
         baseValue = 1,

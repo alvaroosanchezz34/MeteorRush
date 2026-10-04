@@ -15,4 +15,7 @@ Income.OfflineRate = 0.5
 -- Vender un mineral da lo que generaría en un pedestal durante estos segundos (sin multiplicadores).
 Income.SellSeconds = 90
 
+-- Segundos entre envíos de las estadísticas económicas al panel de pruebas (solo en Studio).
+Income.StatsInterval = 2
+
 return Income

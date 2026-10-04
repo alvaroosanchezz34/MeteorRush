@@ -22,6 +22,11 @@ local Types = require(Shared.Types)
 
 type StoreProfile = {
     Data: Types.Profile,
+    -- Copia de los datos tal y como quedaron en el último guardado correcto.
+    LastSavedData: Types.Profile,
+    Save: (self: StoreProfile) -> (),
+    IsActive: (self: StoreProfile) -> boolean,
+    OnAfterSave: { Wait: (self: any) -> any },
     AddUserId: (self: StoreProfile, userId: number) -> (),
     Reconcile: (self: StoreProfile) -> (),
     EndSession: (self: StoreProfile) -> (),
@@ -161,6 +166,46 @@ end
 function DataService.GetData(player: Player): Types.Profile?
     local profile = profiles[player]
     return if profile then profile.Data else nil
+end
+
+-- Espera a que el perfil del jugador esté cargado y devuelve sus datos, o nil si el jugador
+-- se va antes.
+function DataService.WaitForData(player: Player): Types.Profile?
+    while profiles[player] == nil and player.Parent == Players do
+        task.wait()
+    end
+    return DataService.GetData(player)
+end
+
+-- Guarda el perfil ya y espera hasta que `isSaved` sea cierto sobre los datos guardados en el
+-- DataStore. Devuelve false si la sesión termina antes de poder confirmarlo (el guardado final
+-- puede haberlo incluido igualmente). Se usa para no dar por entregada una compra hasta que
+-- esté a salvo de una caída del servidor.
+function DataService.SaveAndWait(
+    player: Player,
+    isSaved: (saved: Types.Profile) -> boolean
+): boolean
+    local profile = profiles[player]
+    if profile == nil then
+        return false
+    end
+    if isSaved(profile.LastSavedData) then
+        return true
+    end
+    while profile:IsActive() do
+        local before = profile.LastSavedData
+        profile:Save()
+        if profile.LastSavedData == before then
+            profile.OnAfterSave:Wait()
+        end
+        if isSaved(profile.LastSavedData) then
+            return true
+        end
+        if profile:IsActive() then
+            task.wait(DataConfig.SaveRetrySeconds)
+        end
+    end
+    return false
 end
 
 -- Sustituye un campo de primer nivel y lo replica. Devuelve false si el perfil no está cargado.

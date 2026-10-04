@@ -1,20 +1,27 @@
 --!strict
 
 -- Monta el HUD cuando llegan los datos del jugador, añade la etiqueta [VIP] en el chat
--- y activa el cielo especial durante el evento del meteorito gigante.
+-- y pone los sonidos que dependen de cambios de datos. El ambiente del cielo lo lleva
+-- AmbienceController.
 
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local TextChatService = game:GetService("TextChatService")
-local TweenService = game:GetService("TweenService")
-local Workspace = game:GetService("Workspace")
 
 local DataController = require(script.Parent.DataController)
+local Effects = require(script.Parent.Parent.UI.Effects)
+local EconomyPanel = require(script.Parent.Parent.UI.EconomyPanel)
 local Hud = require(script.Parent.Parent.UI.Hud)
+local InspectBase = require(script.Parent.Parent.UI.InspectBase)
 local Sound = require(script.Parent.Parent.UI.Sound)
+local UpdateNotes = require(script.Parent.Parent.UI.UpdateNotes)
+
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local QuestsConfig = require(Shared:WaitForChild("Config"):WaitForChild("Quests"))
+local Types = require(Shared:WaitForChild("Types"))
 
 local VIP_TAG = "<font color='#FFD700'>[VIP]</font> "
-local GIANT_TINT = Color3.fromRGB(205, 170, 255)
+local REBIRTH_COLOR = Color3.fromRGB(255, 200, 60)
 
 local UIController = {}
 
@@ -36,23 +43,6 @@ local function setupVipTag()
     end
 end
 
-local function setupGiantSky()
-    local effect = Instance.new("ColorCorrectionEffect")
-    effect.Name = "GiantMeteorTint"
-    effect.TintColor = Color3.new(1, 1, 1)
-    effect.Parent = Lighting
-
-    local function update()
-        local active = Workspace:GetAttribute("GiantActive") == true
-        TweenService:Create(effect, TweenInfo.new(2), {
-            TintColor = if active then GIANT_TINT else Color3.new(1, 1, 1),
-            Saturation = if active then 0.2 else 0,
-        }):Play()
-    end
-    Workspace:GetAttributeChangedSignal("GiantActive"):Connect(update)
-    update()
-end
-
 local function setupDataSounds()
     local lastCoins: number? = nil
     local lastInventory: number? = nil
@@ -68,19 +58,65 @@ local function setupDataSounds()
         end
         lastInventory = #inventory
     end)
+    -- Rebirth: sonido propio, destello dorado y una sacudida corta.
+    local lastRebirths: number? = nil
+    DataController.OnChanged("rebirths", function(rebirths: number)
+        if lastRebirths and rebirths > lastRebirths then
+            Sound.Play("Rebirth", { duck = true })
+            Effects.Flash(REBIRTH_COLOR, 0.35, 1.2)
+            Effects.Shake(0.5, 0.5)
+        end
+        lastRebirths = rebirths
+    end)
+
+    -- Misión diaria completada: suena cuando una misión llega a su objetivo.
+    local function completedQuests(quests: Types.QuestData): number
+        local count = 0
+        for _, quest in QuestsConfig.List do
+            if (quests.progress[quest.id] or 0) >= quest.goal then
+                count += 1
+            end
+        end
+        return count
+    end
+    local lastQuests: number? = nil
+    DataController.OnChanged("quests", function(quests: Types.QuestData)
+        local count = completedQuests(quests)
+        if lastQuests and count > lastQuests then
+            Sound.Play("QuestComplete")
+        end
+        lastQuests = count
+    end)
+
+    -- Compra entregada (producto o pass).
+    local lastPurchases: number? = nil
+    DataController.OnChanged("purchases", function(purchases: { string })
+        if lastPurchases and #purchases > lastPurchases then
+            Sound.Play("Purchase", { duck = true })
+        end
+        lastPurchases = #purchases
+    end)
+
     DataController.OnReady(function(data)
         lastCoins = data.coins
         lastInventory = #data.inventory
+        lastRebirths = data.rebirths
+        lastQuests = completedQuests(data.quests)
+        lastPurchases = #data.purchases
     end)
 end
 
 function UIController.Start()
     setupDataSounds()
     setupVipTag()
-    setupGiantSky()
     Sound.StartMusic()
-    DataController.OnReady(function()
+    DataController.OnReady(function(data)
         Hud.Mount()
+        InspectBase.Mount()
+        UpdateNotes.Show(data)
+        if RunService:IsStudio() then
+            EconomyPanel.Mount()
+        end
     end)
 end
 

@@ -132,7 +132,7 @@ local function buildBoard(gap: number): { TextLabel }
         label.Position = UDim2.fromScale(0.04, y)
         label.BackgroundTransparency = 1
         label.TextScaled = true
-        label.Font = Enum.Font.FredokaOne
+        label.Font = Enum.Font.GothamBold
         label.TextColor3 = color
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.Text = text

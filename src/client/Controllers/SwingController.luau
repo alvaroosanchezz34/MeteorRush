@@ -3,15 +3,26 @@
 -- Animación de picar: mueve el brazo derecho de cualquier personaje que esté minando.
 -- El servidor marca el personaje con el atributo "Mining" y cada cliente anima a todos los
 -- que ve, así no hacen falta animaciones subidas a Roblox.
+-- Cada pico se mueve a su ritmo (los más rápidos pican más deprisa, según su estadística de
+-- velocidad) y `PlayHit` da el golpe de arma: un movimiento corto y seco.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Equipment = require(Shared:WaitForChild("Config"):WaitForChild("Equipment"))
 local MeteorsConfig = require(Shared:WaitForChild("Config"):WaitForChild("Meteors"))
 
+-- Segundos que dura el movimiento de un golpe de arma.
+local HIT_SECONDS = 0.32
+-- Cuánto acelera el ritmo de picar la estadística de velocidad del pico (solo visual).
+local SPEED_VISUAL = 2
+
 local SwingController = {}
+
+-- Golpes de arma en curso: personaje y cuándo empezó.
+local hits: { [Model]: number } = {}
 
 -- Devuelve la articulación del hombro derecho y si el personaje es R6.
 local function getShoulder(character: Model): (Motor6D?, boolean)
@@ -42,21 +53,41 @@ local function swingAngle(phase: number): number
     return lowered + (raised - lowered) * (1 - (1 - progress) * (1 - progress))
 end
 
+local function setArm(character: Model, angle: number)
+    local shoulder, isR6 = getShoulder(character)
+    if shoulder then
+        -- En R6 el hombro está girado y el brazo se levanta rotando en Z.
+        shoulder.Transform = if isR6 then CFrame.Angles(0, 0, angle) else CFrame.Angles(angle, 0, 0)
+    end
+end
+
 local function update()
-    local phase = (os.clock() / MeteorsConfig.SwingPeriod) % 1
-    local angle = swingAngle(phase)
-    for _, player in Players:GetPlayers() do
-        local character = player.Character
-        if character and character:GetAttribute("Mining") == true then
-            local shoulder, isR6 = getShoulder(character)
-            if shoulder then
-                -- En R6 el hombro está girado y el brazo se levanta rotando en Z.
-                shoulder.Transform = if isR6
-                    then CFrame.Angles(0, 0, angle)
-                    else CFrame.Angles(angle, 0, 0)
-            end
+    local now = os.clock()
+    -- Golpes de arma: el brazo sube de golpe y baja fuerte. Tienen prioridad sobre picar.
+    for character, startedAt in hits do
+        local progress = (now - startedAt) / HIT_SECONDS
+        if progress >= 1 or character.Parent == nil then
+            hits[character] = nil
+        else
+            local raised = MeteorsConfig.SwingRaisedAngle
+            setArm(character, raised - (raised - 0.4) * progress * progress)
         end
     end
+    for _, player in Players:GetPlayers() do
+        local character = player.Character
+        if character and character:GetAttribute("Mining") == true and hits[character] == nil then
+            local pickaxeId = player:GetAttribute("Pickaxe")
+            local pickaxe = if type(pickaxeId) == "string" then Equipment.ById[pickaxeId] else nil
+            local speed = if pickaxe then Equipment.GetItemStat(pickaxe, "speed") else 0
+            local period = MeteorsConfig.SwingPeriod * (1 - speed * SPEED_VISUAL)
+            setArm(character, swingAngle((now / period) % 1))
+        end
+    end
+end
+
+-- Movimiento de golpe de arma en ese personaje (lo llama StealController).
+function SwingController.PlayHit(character: Model)
+    hits[character] = os.clock()
 end
 
 function SwingController.Start()

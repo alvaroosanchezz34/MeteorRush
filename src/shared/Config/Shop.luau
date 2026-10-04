@@ -30,6 +30,12 @@ export type Cosmetic = {
     color: Color3,
     -- Solo para quien tiene el game pass vip; no se compra.
     vipOnly: boolean?,
+    -- Se desbloquea gratis al llegar a ese número de rebirths; no se compra.
+    rebirthsRequired: number?,
+    -- Recompensa de esa temporada (Config/LiveOps): solo se consigue mientras dura; no se compra.
+    season: string?,
+    -- Solo sale de las cajas de equipamiento (Config/Crates); no se compra.
+    crate: boolean?,
 }
 
 local Shop = {}
@@ -138,6 +144,70 @@ Shop.Cosmetics = {
         kind = "trail",
         color = Color3.fromRGB(255, 215, 0),
         vipOnly = true,
+    },
+    {
+        key = "trailRebirth",
+        id = 0,
+        price = 0,
+        kind = "trail",
+        color = Color3.fromRGB(120, 255, 230),
+        rebirthsRequired = 3,
+    },
+    {
+        key = "baseRebirth",
+        id = 0,
+        price = 0,
+        kind = "baseColor",
+        color = Color3.fromRGB(70, 40, 110),
+        rebirthsRequired = 5,
+    },
+    {
+        key = "pickaxeRebirth",
+        id = 0,
+        price = 0,
+        kind = "pickaxe",
+        color = Color3.fromRGB(255, 120, 200),
+        rebirthsRequired = 7,
+    },
+    {
+        key = "trailSeason1",
+        id = 0,
+        price = 0,
+        kind = "trail",
+        color = Color3.fromRGB(255, 140, 60),
+        season = "s1",
+    },
+    {
+        key = "baseSeason1",
+        id = 0,
+        price = 0,
+        kind = "baseColor",
+        color = Color3.fromRGB(150, 70, 40),
+        season = "s1",
+    },
+    {
+        key = "trailPlasma",
+        id = 0,
+        price = 0,
+        kind = "trail",
+        color = Color3.fromRGB(90, 160, 255),
+        crate = true,
+    },
+    {
+        key = "trailVoid",
+        id = 0,
+        price = 0,
+        kind = "trail",
+        color = Color3.fromRGB(190, 70, 255),
+        crate = true,
+    },
+    {
+        key = "baseNebula",
+        id = 0,
+        price = 0,
+        kind = "baseColor",
+        color = Color3.fromRGB(95, 45, 130),
+        crate = true,
     },
     {
         key = "baseOcean",

@@ -10,18 +10,32 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local Banner = require(script.Parent.Banner)
+local BasesMenu = require(script.Parent.BasesMenu)
 local BaseController = require(script.Parent.Parent.Controllers.BaseController)
 local CarryController = require(script.Parent.Parent.Controllers.CarryController)
 local Components = require(script.Parent.Components)
+local CratesMenu = require(script.Parent.CratesMenu)
 local DailyMenu = require(script.Parent.DailyMenu)
 local DataController = require(script.Parent.Parent.Controllers.DataController)
+local Effects = require(script.Parent.Effects)
+local DecorMenu = require(script.Parent.DecorMenu)
+local EquipmentMenu = require(script.Parent.EquipmentMenu)
+local GearCollectionMenu = require(script.Parent.GearCollectionMenu)
+local AchievementsMenu = require(script.Parent.AchievementsMenu)
 local IndexMenu = require(script.Parent.IndexMenu)
 local InventoryMenu = require(script.Parent.InventoryMenu)
 local MeteorController = require(script.Parent.Parent.Controllers.MeteorController)
+local PermanentMenu = require(script.Parent.PermanentMenu)
+local PlayersMenu = require(script.Parent.PlayersMenu)
+local ProfileMenu = require(script.Parent.ProfileMenu)
 local QuestsMenu = require(script.Parent.QuestsMenu)
 local RebirthMenu = require(script.Parent.RebirthMenu)
+local SeasonMenu = require(script.Parent.SeasonMenu)
 local ShopMenu = require(script.Parent.ShopMenu)
 local Sound = require(script.Parent.Sound)
+local TabbedMenu = require(script.Parent.TabbedMenu)
+local Theme = require(script.Parent.Theme)
 local TradeMenu = require(script.Parent.TradeMenu)
 local UpgradesMenu = require(script.Parent.UpgradesMenu)
 
@@ -31,28 +45,46 @@ local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Strings = require(Shared:WaitForChild("Strings"))
 
-type MenuModule = { Mount: (window: Components.Window) -> () }
-
-local MENUS: { { key: string, module: MenuModule } } = {
-    { key = "inventory", module = InventoryMenu },
+local MENUS: { TabbedMenu.Tab } = {
+    {
+        key = "inventory",
+        module = TabbedMenu.Create({
+            { key = "minerals", module = InventoryMenu },
+            { key = "equipment", module = EquipmentMenu },
+            { key = "crates", module = CratesMenu },
+            { key = "decor", module = DecorMenu },
+        }),
+    },
     { key = "upgrades", module = UpgradesMenu },
     { key = "shop", module = ShopMenu },
-    { key = "index", module = IndexMenu },
+    -- Índice, logros y perfil, en pestañas.
+    {
+        key = "index",
+        module = TabbedMenu.Create({
+            { key = "index", module = IndexMenu },
+            { key = "gear", module = GearCollectionMenu },
+            { key = "achievements", module = AchievementsMenu },
+            { key = "profile", module = ProfileMenu },
+            { key = "players", module = PlayersMenu },
+            { key = "bases", module = BasesMenu },
+        }),
+    },
     { key = "daily", module = DailyMenu },
-    { key = "quests", module = QuestsMenu },
-    { key = "rebirth", module = RebirthMenu },
+    {
+        key = "quests",
+        module = TabbedMenu.Create({
+            { key = "quests", module = QuestsMenu },
+            { key = "season", module = SeasonMenu },
+        }),
+    },
+    {
+        key = "rebirth",
+        module = TabbedMenu.Create({
+            { key = "rebirth", module = RebirthMenu },
+            { key = "tree", module = PermanentMenu },
+        }),
+    },
     { key = "trade", module = TradeMenu },
-}
-
-local MENU_COLORS: { [string]: Color3 } = {
-    inventory = Color3.fromRGB(60, 170, 200),
-    upgrades = Color3.fromRGB(80, 190, 90),
-    shop = Color3.fromRGB(235, 90, 150),
-    index = Color3.fromRGB(150, 100, 240),
-    daily = Color3.fromRGB(245, 140, 50),
-    quests = Color3.fromRGB(200, 80, 80),
-    rebirth = Color3.fromRGB(250, 195, 50),
-    trade = Color3.fromRGB(70, 130, 245),
 }
 
 local BOOST_NAMES: { [string]: string } = {
@@ -139,6 +171,40 @@ function Hud.Mount()
     })
     distanceLabel.TextStrokeTransparency = 0.4
 
+    -- Competición de servidor en curso (arriba, a la derecha del próximo meteorito).
+    local competitionPill = Components.Panel({
+        size = UDim2.fromScale(0.19, 0.05),
+        position = UDim2.fromScale(0.645, 0.012),
+        color = Components.Colors.Background,
+        transparency = 0.3,
+        parent = gui,
+    })
+    competitionPill.Visible = false
+    local competitionLabel = Components.Label({
+        text = "",
+        size = UDim2.fromScale(0.92, 0.76),
+        position = UDim2.fromScale(0.04, 0.12),
+        color = Components.Colors.Gold,
+        parent = competitionPill,
+    })
+
+    -- Evento global: cuenta atrás hasta que empieza y tiempo que le queda (debajo de la competición).
+    local eventPill = Components.Panel({
+        size = UDim2.fromScale(0.19, 0.05),
+        position = UDim2.fromScale(0.645, 0.068),
+        color = Components.Colors.Background,
+        transparency = 0.3,
+        parent = gui,
+    })
+    eventPill.Visible = false
+    local eventLabel = Components.Label({
+        text = "",
+        size = UDim2.fromScale(0.92, 0.76),
+        position = UDim2.fromScale(0.04, 0.12),
+        color = Color3.fromRGB(255, 150, 90),
+        parent = eventPill,
+    })
+
     -- Flecha de vuelta a la base: aparece al llevar minerales fuera de la base.
     local baseArrow = Components.Label({
         text = "▲",
@@ -171,6 +237,17 @@ function Hud.Mount()
     })
     safeLabel.TextStrokeTransparency = 0.3
     safeLabel.Visible = false
+
+    -- Versión del juego (abajo a la derecha).
+    local version = Workspace:GetAttribute("Version")
+    Components.Label({
+        text = if type(version) == "string" then `v{version}` else "",
+        size = UDim2.fromScale(0.06, 0.022),
+        position = UDim2.fromScale(0.935, 0.972),
+        alignment = Enum.TextXAlignment.Right,
+        color = Components.Colors.Muted,
+        parent = gui,
+    })
 
     -- Tutorial (abajo en el centro) --------------------------------------------
     local tutorialLabel = Components.Label({
@@ -212,8 +289,13 @@ function Hud.Mount()
         local title = if menu.key == "inventory"
             then Strings.Inventory.Title
             else Strings.Hud.Buttons[menu.key]
-        local window =
-            Components.Window({ title = title, closeText = Strings.Hud.Close, parent = gui })
+        local window = Components.Window({
+            title = title,
+            closeText = Strings.Hud.Close,
+            parent = gui,
+            accent = Theme.Accents[menu.key],
+            icon = Theme.Icons[menu.key],
+        })
         table.insert(windows, window)
         -- Solo una ventana abierta a la vez.
         window.OnOpened(function()
@@ -226,13 +308,12 @@ function Hud.Mount()
         menu.module.Mount(window)
 
         Components.IconButton({
-            icon = Strings.Hud.Icons[menu.key] or "",
+            icon = Theme.Icons[menu.key] or "",
             text = Strings.Hud.Buttons[menu.key],
             layoutOrder = order,
-            color = MENU_COLORS[menu.key] or Components.Colors.Primary,
+            color = Theme.Accents[menu.key] or Components.Colors.Primary,
             parent = sideBar,
             onClick = function()
-                Sound.Play("UiClick")
                 window.Toggle()
             end,
         })
@@ -240,6 +321,58 @@ function Hud.Mount()
 
     -- Actualización de valores -------------------------------------------------
     -- Texto "+$X" que sube y se desvanece junto al panel cada vez que entran monedas.
+    -- Monedas que vuelan desde el centro de la pantalla hasta el contador. Como mucho una
+    -- vez cada COIN_FLY_GAP segundos, para que los ingresos automáticos no las repitan sin parar.
+    local COIN_FLY_GAP = 1.5
+    local COIN_FLY_COUNT = 6
+    local lastCoinFly = 0
+    local function flyCoins()
+        local now = os.clock()
+        if now - lastCoinFly < COIN_FLY_GAP then
+            return
+        end
+        lastCoinFly = now
+        for index = 1, COIN_FLY_COUNT do
+            local coin = Instance.new("Frame")
+            coin.AnchorPoint = Vector2.new(0.5, 0.5)
+            coin.Size = UDim2.fromScale(0.012, 0.012)
+            coin.SizeConstraint = Enum.SizeConstraint.RelativeXX
+            coin.Position = UDim2.fromScale(
+                0.5 + (math.random() - 0.5) * 0.08,
+                0.62 + (math.random() - 0.5) * 0.08
+            )
+            coin.BackgroundColor3 = Components.Colors.Gold
+            coin.BorderSizePixel = 0
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(1, 0)
+            corner.Parent = coin
+            coin.Parent = gui
+            local tween = TweenService:Create(
+                coin,
+                TweenInfo.new(
+                    0.55,
+                    Enum.EasingStyle.Quad,
+                    Enum.EasingDirection.In,
+                    0,
+                    false,
+                    (index - 1) * 0.04
+                ),
+                { Position = UDim2.fromScale(0.05, 0.045), BackgroundTransparency = 0.3 }
+            )
+            tween.Completed:Connect(function()
+                coin:Destroy()
+            end)
+            tween:Play()
+        end
+        -- El contador se enciende un momento cuando llegan.
+        task.delay(0.55, function()
+            coinsLabel.TextColor3 = Color3.new(1, 1, 1)
+            TweenService
+                :Create(coinsLabel, TweenInfo.new(0.4), { TextColor3 = Components.Colors.Gold })
+                :Play()
+        end)
+    end
+
     local lastCoins: number? = nil
     local function showCoinGain(amount: number)
         local popup = Components.Label({
@@ -273,6 +406,7 @@ function Hud.Mount()
         end
         if lastCoins and data.coins - lastCoins >= 1 then
             showCoinGain(data.coins - lastCoins)
+            flyCoins()
         end
         lastCoins = data.coins
         coinsLabel.Text = string.format(Strings.Hud.Coins, Format.Number(data.coins))
@@ -285,10 +419,35 @@ function Hud.Mount()
     -- Mochila: recuento, cuánto frena la carga y color de aviso al llenarse.
     local carried = 0
     local backpackFull = false
+    local backpackNearFull = false
     local function updateBackpack()
         local capacity = CarryController.GetCapacity()
+        local before = carried
         carried = #CarryController.GetItems()
+        local wasFull = backpackFull
+        local wasNearFull = backpackNearFull
         backpackFull = capacity > 0 and carried >= capacity
+        backpackNearFull = capacity > 0 and carried >= capacity * CarryConfig.NearFullFraction
+
+        -- Aviso al acercarse al límite y aviso más fuerte al llenarse, solo cuando se cruza.
+        if carried > before then
+            if backpackFull and not wasFull then
+                Sound.Play("BackpackFull")
+                Effects.Flash(Components.Colors.Gold, 0.14, 0.5)
+                local character = Players.LocalPlayer.Character
+                local head = if character then character:FindFirstChild("Head") else nil
+                if head and head:IsA("BasePart") then
+                    Effects.Popup({
+                        position = head.Position + Vector3.new(0, 3, 0),
+                        text = Strings.Hud.BackpackFullPopup,
+                        color = Components.Colors.Gold,
+                        height = 1.8,
+                    })
+                end
+            elseif backpackNearFull and not wasNearFull then
+                Sound.Play("BackpackNearFull")
+            end
+        end
 
         local slowdown = math.min(carried * CarryConfig.SlowdownPerItem, CarryConfig.MaxSlowdown)
         backpackLabel.Text = if carried > 0
@@ -301,6 +460,7 @@ function Hud.Mount()
             else string.format(Strings.Hud.Backpack, carried, capacity)
         backpackLabel.TextColor3 = if backpackFull
             then Components.Colors.Danger
+            elseif backpackNearFull then Components.Colors.Gold
             else Components.Colors.Text
     end
 
@@ -335,7 +495,40 @@ function Hud.Mount()
                 table.insert(parts, `{Strings.Shop.Names[productKey]} {Format.Duration(remaining)}`)
             end
         end
+        local friendBonus = PlayerStats.GetFriendBonus(data)
+        if friendBonus > 0 then
+            table.insert(parts, string.format(Strings.Social.Hud, math.round(friendBonus * 100)))
+        end
         boostsLabel.Text = table.concat(parts, "  ")
+    end
+
+    -- Nombre, tiempo restante, puesto y puntos del jugador en la competición en curso.
+    local function updateCompetition()
+        local kind = Workspace:GetAttribute("CompetitionKind")
+        local endsAt = Workspace:GetAttribute("CompetitionEndsAt")
+        if type(kind) ~= "string" or type(endsAt) ~= "number" then
+            competitionPill.Visible = false
+            return
+        end
+        local function scoreOf(player: Player): number
+            local score = player:GetAttribute("CompetitionScore")
+            return if type(score) == "number" then score else 0
+        end
+        local score = scoreOf(Players.LocalPlayer)
+        local place = 1
+        for _, player in Players:GetPlayers() do
+            if scoreOf(player) > score then
+                place += 1
+            end
+        end
+        competitionLabel.Text = string.format(
+            Strings.Competition.Hud,
+            Strings.Competition.Names[kind] or kind,
+            Format.Duration(endsAt - Workspace:GetServerTimeNow()),
+            place,
+            score
+        )
+        competitionPill.Visible = true
     end
 
     local function updateTutorial()
@@ -345,7 +538,51 @@ function Hud.Mount()
         tutorialLabel.Visible = text ~= nil
     end
 
-    for _, key in { "coins", "pedestals", "inventory", "upgrades", "passes", "rebirths" } do
+    -- Evento global: cuenta atrás, tiempo restante y un aviso grande cuando empieza.
+    local announcedEvent: string? = nil
+    local function updateEvent()
+        local eventId = Workspace:GetAttribute("EventId")
+        local startsAt = Workspace:GetAttribute("EventStartsAt")
+        local endsAt = Workspace:GetAttribute("EventEndsAt")
+        if type(eventId) ~= "string" then
+            eventPill.Visible = false
+            announcedEvent = nil
+            return
+        end
+        local name = Strings.Events.Names[eventId] or eventId
+        local now = Workspace:GetServerTimeNow()
+        if type(endsAt) == "number" then
+            eventLabel.Text =
+                string.format(Strings.Events.HudActive, name, Format.Duration(endsAt - now))
+            if announcedEvent ~= eventId then
+                announcedEvent = eventId
+                Banner.Show({
+                    heading = Strings.Events.BannerHeading,
+                    title = name,
+                    subtitle = Strings.Events.Descriptions[eventId],
+                    color = Color3.fromRGB(255, 150, 90),
+                    sound = "EventStart",
+                })
+                Effects.Flash(Color3.fromRGB(255, 150, 90), 0.15, 0.8)
+            end
+        elseif type(startsAt) == "number" then
+            eventLabel.Text =
+                string.format(Strings.Events.HudCountdown, name, Format.Duration(startsAt - now))
+        end
+        eventPill.Visible = true
+    end
+
+    for _, key in
+        {
+            "coins",
+            "pedestals",
+            "inventory",
+            "upgrades",
+            "passes",
+            "rebirths",
+            "friendsOnline",
+        }
+    do
         DataController.OnChanged(key, updateStats)
     end
     DataController.OnChanged("tutorialStep", updateTutorial)
@@ -367,6 +604,8 @@ function Hud.Mount()
                 )
                 else ""
             updateBoosts()
+            updateCompetition()
+            updateEvent()
         end
 
         local character = Players.LocalPlayer.Character

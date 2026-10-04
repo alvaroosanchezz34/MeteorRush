@@ -22,9 +22,17 @@
         "Technology": "Future",
         "ClockTime": 0,
         "Brightness": 2.5,
-        "Ambient": [0.27, 0.25, 0.4],
-        "OutdoorAmbient": [0.45, 0.43, 0.62],
-        "ExposureCompensation": 0.4,
+        "Ambient": [
+          0.27,
+          0.25,
+          0.4
+        ],
+        "OutdoorAmbient": [
+          0.45,
+          0.43,
+          0.62
+        ],
+        "ExposureCompensation": 0.15,
         "EnvironmentDiffuseScale": 1,
         "EnvironmentSpecularScale": 1
       },
@@ -38,20 +46,50 @@
       "Atmosphere": {
         "$className": "Atmosphere",
         "$properties": {
-          "Density": 0.2,
-          "Offset": 0.25,
-          "Color": [0.55, 0.45, 0.8],
-          "Decay": [0.25, 0.2, 0.45],
+          "Density": 0.26,
+          "Offset": 0.2,
+          "Color": [
+            0.55,
+            0.45,
+            0.8
+          ],
+          "Decay": [
+            0.25,
+            0.2,
+            0.45
+          ],
           "Glare": 0,
-          "Haze": 1.2
+          "Haze": 1.6
         }
       },
       "Bloom": {
         "$className": "BloomEffect",
         "$properties": {
-          "Intensity": 0.6,
-          "Size": 24,
-          "Threshold": 1.1
+          "Intensity": 0.25,
+          "Size": 16,
+          "Threshold": 1.8
+        }
+      },
+      "Grade": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Contrast": 0.1,
+          "Saturation": 0.15,
+          "Brightness": 0.01,
+          "TintColor": [
+            0.96,
+            0.97,
+            1
+          ]
+        }
+      },
+      "Depth": {
+        "$className": "DepthOfFieldEffect",
+        "$properties": {
+          "FarIntensity": 0,
+          "NearIntensity": 0,
+          "FocusDistance": 140,
+          "InFocusRadius": 260
         }
       }
     },
