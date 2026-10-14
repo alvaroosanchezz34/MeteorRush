@@ -12,11 +12,10 @@ local EconomyService = require(script.Parent.EconomyService)
 local PlotService = require(script.Parent.PlotService)
 
 local Shared = ReplicatedStorage.Shared
-local Format = require(Shared.Util.Format)
 local IncomeConfig = require(Shared.Config.Income)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local IncomeService = {}
@@ -24,8 +23,11 @@ local IncomeService = {}
 local function updatePadLabel(player: Player, data: Types.Profile)
     local plot = PlotService.GetPlot(player)
     if plot then
-        plot.collectLabel.Text =
-            string.format(Strings.Plot.CollectPad, Format.Number(math.floor(data.pendingIncome)))
+        Locale.Tag(
+            plot.collectLabel,
+            "Text",
+            Locale.Msg("Plot.CollectPad", Locale.Num(math.floor(data.pendingIncome)))
+        )
     end
 end
 
@@ -69,10 +71,7 @@ function IncomeService.Collect(player: Player, silent: boolean?)
     IncomeService.AddCoins(player, amount, "pedestals")
     updatePadLabel(player, data)
     if not silent then
-        Remotes.Notify:FireClient(
-            player,
-            string.format(Strings.Income.Collected, Format.Number(amount))
-        )
+        Remotes.Notify:FireClient(player, Locale.Msg("Income.Collected", Locale.Num(amount)))
     end
 end
 
@@ -112,10 +111,7 @@ local function grantOfflineIncome(player: Player, data: Types.Profile)
         return
     end
     DataService.Set(player, "pendingIncome", data.pendingIncome + amount)
-    Remotes.Notify:FireClient(
-        player,
-        string.format(Strings.Income.Offline, Format.Number(math.floor(amount)))
-    )
+    Remotes.Notify:FireClient(player, Locale.Msg("Income.Offline", Locale.Num(math.floor(amount))))
     updatePadLabel(player, data)
 end
 

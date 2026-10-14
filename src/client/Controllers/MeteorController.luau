@@ -172,6 +172,8 @@ local function createMarker(
         :Play()
 
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.Adornee = ring
     billboard.AlwaysOnTop = true
     billboard.LightInfluence = 0
@@ -491,6 +493,8 @@ local function getCountdownLabel(): TextLabel
         return countdownLabel
     end
     local gui = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Name = "MeteorCountdown"
     gui.ResetOnSpawn = false
     gui.DisplayOrder = 8
@@ -646,6 +650,8 @@ local function getProgressGui(): (BillboardGui, Frame)
     end
 
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.Name = "MiningProgress"
     billboard.AlwaysOnTop = true
     billboard.LightInfluence = 0
@@ -1022,6 +1028,8 @@ local function attachHitsBar(meteor: Instance)
     tracked[meteor] = state
 
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.Name = "HitsBar"
     billboard.LightInfluence = 0
     billboard.Size = UDim2.fromScale(math.max(radius * 1.6, 6), 1.3)

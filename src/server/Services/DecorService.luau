@@ -24,7 +24,7 @@ local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 -- Campos del perfil que cambian lo que se ve en la base.
@@ -165,6 +165,8 @@ local function buildBoard(player: Player, data: Types.Profile, plotCFrame: CFram
     })
 
     local gui = Instance.new("SurfaceGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Face = Enum.NormalId.Front
     gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
     gui.PixelsPerStud = 30
@@ -182,12 +184,13 @@ local function buildBoard(player: Player, data: Types.Profile, plotCFrame: CFram
     gradient.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.new(0.6, 0.6, 0.8))
     gradient.Parent = background
 
-    local function label(text: string, size: UDim2, position: UDim2, color: Color3)
+    local function label(text: Locale.Message, size: UDim2, position: UDim2, color: Color3)
         local instance = Instance.new("TextLabel")
         instance.Size = size
         instance.Position = position
         instance.BackgroundTransparency = 1
-        instance.Text = text
+        -- Cada jugador lo lee en su idioma.
+        Locale.Tag(instance, "Text", text)
         instance.TextColor3 = color
         instance.TextScaled = true
         instance.Font = Enum.Font.GothamBold
@@ -235,8 +238,8 @@ local function buildBoard(player: Player, data: Types.Profile, plotCFrame: CFram
         unlocked += 1
     end
     label(
-        string.format(
-            Strings.Decor.BoardTitle,
+        Locale.Msg(
+            "Decor.BoardTitle",
             player.DisplayName,
             discovered,
             #Minerals.List * #Mutations.List
@@ -246,7 +249,7 @@ local function buildBoard(player: Player, data: Types.Profile, plotCFrame: CFram
         Color3.new(1, 1, 1)
     )
     label(
-        string.format(Strings.Decor.BoardFooter, data.rebirths, unlocked, #AchievementsConfig.List),
+        Locale.Msg("Decor.BoardFooter", data.rebirths, unlocked, #AchievementsConfig.List),
         UDim2.fromScale(0.94, 0.13),
         UDim2.fromScale(0.03, 0.84),
         Color3.fromRGB(255, 200, 60)

@@ -29,6 +29,8 @@ function UpdateNotes.Show(data: Types.Profile)
 
     local release = LiveOps.Releases[1]
     local gui = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Name = "UpdateNotes"
     gui.ResetOnSpawn = false
     gui.DisplayOrder = 15
@@ -41,19 +43,24 @@ function UpdateNotes.Show(data: Types.Profile)
     })
     panel.AnchorPoint = Vector2.new(0.5, 0.5)
     Components.Label({
-        text = string.format(Strings.LiveOps.WhatsNew, release.version),
+        text = function(): string
+            return string.format(Strings.LiveOps.WhatsNew, release.version)
+        end,
         size = UDim2.fromScale(0.9, 0.14),
         position = UDim2.fromScale(0.05, 0.04),
         color = Components.Colors.Gold,
         parent = panel,
     })
 
-    local lines: { string } = {}
-    for _, note in release.notes do
-        table.insert(lines, "• " .. note)
-    end
+    -- Las notas traducidas están en Strings.Releases; si faltan, las de Config/LiveOps.
     local notes = Components.Label({
-        text = table.concat(lines, "\n"),
+        text = function(): string
+            local lines: { string } = {}
+            for _, note in Strings.Releases[release.version] or release.notes do
+                table.insert(lines, "• " .. note)
+            end
+            return table.concat(lines, "\n")
+        end,
         size = UDim2.fromScale(0.86, 0.5),
         position = UDim2.fromScale(0.07, 0.22),
         alignment = Enum.TextXAlignment.Left,
@@ -62,7 +69,9 @@ function UpdateNotes.Show(data: Types.Profile)
     notes.TextYAlignment = Enum.TextYAlignment.Top
 
     Components.Button({
-        text = Strings.LiveOps.Ok,
+        text = function(): string
+            return Strings.LiveOps.Ok
+        end,
         size = UDim2.fromScale(0.4, 0.16),
         position = UDim2.fromScale(0.3, 0.78),
         color = Components.Colors.Success,

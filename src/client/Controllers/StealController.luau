@@ -55,6 +55,8 @@ local function showHit(position: Vector3, count: number)
     emitter:Emit(24)
 
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.AlwaysOnTop = true
     billboard.LightInfluence = 0
     billboard.Size = UDim2.fromScale(8, 2)
@@ -84,6 +86,8 @@ local function flashScreen()
     local frame = flash
     if frame == nil then
         local gui = Instance.new("ScreenGui")
+        -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+        gui.AutoLocalize = false
         gui.Name = "StealFlash"
         gui.ResetOnSpawn = false
         gui.IgnoreGuiInset = true

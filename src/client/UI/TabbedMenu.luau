@@ -74,7 +74,9 @@ function TabbedMenu.Create(tabs: { Tab }): MenuModule
             openedCallbacks[tab.key] = {}
 
             buttons[tab.key] = Components.Button({
-                text = Strings.Tabs[tab.key] or tab.key,
+                text = function(): string
+                    return Strings.Tabs[tab.key] or tab.key
+                end,
                 size = UDim2.fromScale(math.min(0.3, 0.99 / #tabs - 0.01), 1),
                 layoutOrder = order,
                 parent = tabBar,

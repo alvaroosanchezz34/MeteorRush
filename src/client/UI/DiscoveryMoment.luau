@@ -41,6 +41,8 @@ local function getGui(): ScreenGui
         return gui
     end
     local created = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    created.AutoLocalize = false
     created.Name = "DiscoveryMoment"
     created.ResetOnSpawn = false
     created.IgnoreGuiInset = true
@@ -142,7 +144,7 @@ local function cinematic(mineral: Minerals.Mineral, mutation: Mutations.Mutation
 
     -- Rareza, nombre y mutación.
     Components.Label({
-        text = `{RarityStyle.Icons[Minerals.Rarities[mineral.rarity].rank] or ""} {string.upper(
+        text = `{RarityStyle.Icons[Minerals.Rarities[mineral.rarity].rank] or ""} {Strings.Upper(
             Strings.Rarities[mineral.rarity] or mineral.rarity
         )}`,
         size = UDim2.fromScale(1, 0.09),
@@ -152,7 +154,7 @@ local function cinematic(mineral: Minerals.Mineral, mutation: Mutations.Mutation
         parent = holder,
     })
     Components.Label({
-        text = string.upper(Strings.Minerals[mineral.id] or mineral.id),
+        text = Strings.Upper(Strings.Minerals[mineral.id] or mineral.id),
         size = UDim2.fromScale(1, 0.14),
         position = UDim2.fromScale(0, 0.76),
         color = color,

@@ -10,12 +10,11 @@ local IncomeService = require(script.Parent.IncomeService)
 local MomentService = require(script.Parent.MomentService)
 
 local Shared = ReplicatedStorage.Shared
-local Format = require(Shared.Util.Format)
 local IndexConfig = require(Shared.Config.Index)
 local Minerals = require(Shared.Config.Minerals)
 local Mutations = require(Shared.Config.Mutations)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 local IndexService = {}
 
@@ -38,11 +37,7 @@ local function checkRow(player: Player, mineralId: string)
     IncomeService.AddCoins(player, reward, "index")
     Remotes.Notify:FireClient(
         player,
-        string.format(
-            Strings.Index.RowComplete,
-            Strings.Minerals[mineralId] or mineralId,
-            Format.Number(reward)
-        )
+        Locale.Msg("Index.RowComplete", Locale.Ref("Minerals." .. mineralId), Locale.Num(reward))
     )
 end
 

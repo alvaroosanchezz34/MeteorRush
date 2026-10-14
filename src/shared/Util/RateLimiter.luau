@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 
 local Log = require(script.Parent.Log)
 local Network = require(script.Parent.Parent.Config.Network)
-local Strings = require(script.Parent.Parent.Strings)
+local Locale = require(script.Parent.Parent.Locale)
 
 export type RateLimiter = {
     -- Devuelve true si la petición del jugador está dentro del límite.
@@ -66,7 +66,7 @@ function RateLimiter.new(limit: Network.RateLimit): RateLimiter
         end
         if state.violations >= Network.MaxViolations then
             Log.Suspicious(player, "RateLimitKick", name)
-            player:Kick(Strings.Network.RateLimitKick)
+            player:Kick(Locale.GetText("Network.RateLimitKick", Locale.GetCurrentLanguage(player)))
         end
         return false
     end

@@ -33,6 +33,7 @@ local ProfileMenu = require(script.Parent.ProfileMenu)
 local QuestsMenu = require(script.Parent.QuestsMenu)
 local RebirthMenu = require(script.Parent.RebirthMenu)
 local SeasonMenu = require(script.Parent.SeasonMenu)
+local SettingsMenu = require(script.Parent.SettingsMenu)
 local ShopMenu = require(script.Parent.ShopMenu)
 local Sound = require(script.Parent.Sound)
 local TabbedMenu = require(script.Parent.TabbedMenu)
@@ -43,6 +44,7 @@ local UpgradesMenu = require(script.Parent.UpgradesMenu)
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CarryConfig = require(Shared:WaitForChild("Config"):WaitForChild("Carry"))
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
+local Locale = require(Shared:WaitForChild("Locale"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Strings = require(Shared:WaitForChild("Strings"))
@@ -110,6 +112,8 @@ end
 
 function Hud.Mount()
     local gui = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Name = "Hud"
     gui.ResetOnSpawn = false
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -231,7 +235,9 @@ function Hud.Mount()
 
     -- Aviso de zona segura: dentro de la base propia nadie puede robarte.
     local safeLabel = Components.Label({
-        text = Strings.Hud.SafeZone,
+        text = function()
+            return Strings.Hud.SafeZone
+        end,
         size = UDim2.fromScale(0.2, 0.04),
         position = UDim2.fromScale(0.4, 0.17),
         color = Components.Colors.Success,
@@ -288,11 +294,12 @@ function Hud.Mount()
 
     local windows: { Components.Window } = {}
     for order, menu in MENUS do
-        local title = if menu.key == "inventory"
-            then Strings.Inventory.Title
-            else Strings.Hud.Buttons[menu.key]
         local window = Components.Window({
-            title = title,
+            title = function(): string
+                return if menu.key == "inventory"
+                    then Strings.Inventory.Title
+                    else Strings.Hud.Buttons[menu.key]
+            end,
             closeText = Strings.Hud.Close,
             parent = gui,
             accent = Theme.Accents[menu.key],
@@ -311,7 +318,9 @@ function Hud.Mount()
 
         Components.IconButton({
             icon = Theme.Icons[menu.key] or "",
-            text = Strings.Hud.Buttons[menu.key],
+            text = function(): string
+                return Strings.Hud.Buttons[menu.key]
+            end,
             layoutOrder = order,
             color = Theme.Accents[menu.key] or Components.Colors.Primary,
             parent = sideBar,
@@ -320,6 +329,38 @@ function Hud.Mount()
             end,
         })
     end
+
+    -- Ajustes (idioma): fuera de la barra lateral, con un botón pequeño junto a los de viaje.
+    local settingsWindow = Components.Window({
+        title = function(): string
+            return Strings.Settings.Title
+        end,
+        closeText = Strings.Hud.Close,
+        parent = gui,
+        icon = Theme.Icons.settings,
+    })
+    table.insert(windows, settingsWindow)
+    settingsWindow.OnOpened(function()
+        for _, other in windows do
+            if other ~= settingsWindow and other.IsOpen() then
+                other.Close()
+            end
+        end
+    end)
+    SettingsMenu.Mount(settingsWindow)
+    local settingsButton = Components.Button({
+        text = Theme.Icons.settings,
+        size = UDim2.fromScale(0.045, 0.045),
+        position = UDim2.fromScale(0.17, 0.8),
+        color = Components.Colors.PanelRaised,
+        parent = gui,
+        onClick = function()
+            settingsWindow.Toggle()
+        end,
+    })
+    local settingsAspect = Instance.new("UIAspectRatioConstraint")
+    settingsAspect.AspectRatio = 1
+    settingsAspect.Parent = settingsButton
 
     -- Abrir un menú desde fuera del HUD (los NPCs del Outpost).
     MenuBus.SetHandler(function(key: string, tab: string?)
@@ -337,7 +378,9 @@ function Hud.Mount()
     -- Teletransporte al Outpost y de vuelta a la base (el servidor decide si se puede).
     for index, destination in { "outpost", "home" } do
         Components.Button({
-            text = if destination == "outpost" then Strings.Hud.Outpost else Strings.Hud.Home,
+            text = function(): string
+                return if destination == "outpost" then Strings.Hud.Outpost else Strings.Hud.Home
+            end,
             size = UDim2.fromScale(0.075, 0.045),
             position = UDim2.fromScale(0.01 + (index - 1) * 0.08, 0.8),
             color = if destination == "outpost"
@@ -621,6 +664,13 @@ function Hud.Mount()
     updateStats()
     updateBackpack()
     updateTutorial()
+    -- Al cambiar de idioma se repintan los contadores (lo que se actualiza cada fotograma o
+    -- cada cuarto de segundo ya sale solo en el idioma nuevo).
+    Locale.OnChanged(function()
+        updateStats()
+        updateBackpack()
+        updateTutorial()
+    end)
 
     local lastSlowUpdate = 0
     RunService.RenderStepped:Connect(function()

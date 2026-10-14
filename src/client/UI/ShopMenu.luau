@@ -177,7 +177,9 @@ function ShopMenu.Mount(window: Components.Window)
 
     for order, tab in TABS do
         tabButtons[tab] = Components.Button({
-            text = Strings.Shop.Tabs[tab],
+            text = function(): string
+                return Strings.Shop.Tabs[tab]
+            end,
             size = UDim2.fromScale(0.24, 1),
             layoutOrder = order,
             parent = tabBar,

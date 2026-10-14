@@ -30,7 +30,9 @@ function DailyMenu.Mount(window: Components.Window)
         parent = window.content,
     })
     local claimButton = Components.Button({
-        text = Strings.Daily.Claim,
+        text = function(): string
+            return Strings.Daily.Claim
+        end,
         size = UDim2.fromScale(0.4, 0.14),
         position = UDim2.fromScale(0.3, 0.82),
         color = Components.Colors.Success,
@@ -105,8 +107,15 @@ function DailyMenu.Mount(window: Components.Window)
         end
     end
 
+    -- Una sola cuenta atrás aunque se vuelva a pintar con la ventana abierta (p. ej. al
+    -- cambiar de idioma).
+    local ticking = false
     window.OnOpened(function()
         refresh()
+        if ticking then
+            return
+        end
+        ticking = true
         -- Actualiza la cuenta atrás mientras la ventana está abierta.
         while window.IsOpen() do
             task.wait(1)
@@ -114,6 +123,7 @@ function DailyMenu.Mount(window: Components.Window)
                 refresh()
             end
         end
+        ticking = false
     end)
     DataController.OnChanged("daily", refresh)
 end

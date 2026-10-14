@@ -558,3 +558,13 @@ Amplía el sistema visual de rareza ya existente; no hay un segundo sistema. Sol
 - **Teletransporte:** botones Outpost y Home en el HUD (remote `Teleport`, `VisitService`). No se puede con minerales encima, para que no sirva para escapar de un robo ni para saltarse el camino a la base; 5 s de espera entre usos.
 - **Abrir menús desde fuera del HUD:** `UI/MenuBus` (el HUD se registra) y `TabbedMenu.Select` para elegir pestaña.
 - **Mando:** hablar con un NPC pasa a la cruceta arriba, porque Y es ahora la habilidad del arma.
+
+## Idiomas: español e inglés
+
+- **Sistema propio, no LocalizationTable:** los textos son casi todos dinámicos y el jugador elige idioma en partida, distinto del de su cuenta. Tablas en código (`Locale/en`, `Locale/es`), comprobables con `tools/check-locales.luau`. Detalle en `LOCALIZATION.md`.
+- **`Strings` sigue siendo la puerta de entrada:** es la tabla del idioma activo y se reescribe en el sitio al cambiar, así que el código que ya leía `Strings.X.Y` no ha cambiado.
+- **El servidor no formatea textos:** manda mensajes (clave + parámetros) y marca los textos del mundo con `Locale.Tag`; cada cliente los muestra en su idioma.
+- **Detección:** idioma de la cuenta de Roblox, español → `es`, cualquier otro → `en`. No se guarda. Lo elegido en Ajustes se guarda en `settings.language` y siempre gana.
+- **Sin traducción automática de Roblox** en nuestras interfaces (`AutoLocalize = false`): traduciría el inglés de quien lo ha elegido a mano.
+- **Títulos:** atributo nuevo `TitleId` (id del logro) para traducirlos; `Title` sigue con el texto en inglés por compatibilidad.
+- **Sin cambios de reglas:** el idioma no interviene en precios, recompensas ni probabilidades. `Lune` se fija en `rokit.toml` solo para ejecutar las pruebas.

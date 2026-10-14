@@ -12,12 +12,11 @@ local LiveOpsService = require(script.Parent.LiveOpsService)
 
 local Shared = ReplicatedStorage.Shared
 local CodesConfig = require(Shared.Config.Codes)
-local Format = require(Shared.Util.Format)
 local Minerals = require(Shared.Config.Minerals)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local CodeService = {}
@@ -36,7 +35,7 @@ local function onRedeemCode(player: Player, text: unknown)
         return
     end
     if not LiveOpsService.IsEnabled("codes") then
-        Remotes.Notify:FireClient(player, Strings.LiveOps.Disabled)
+        Remotes.Notify:FireClient(player, Locale.Msg("LiveOps.Disabled"))
         return
     end
 
@@ -44,16 +43,16 @@ local function onRedeemCode(player: Player, text: unknown)
     local key = string.upper((string.gsub(text, "^%s*(.-)%s*$", "%1")))
     local code = CodesConfig.List[key]
     if code == nil then
-        Remotes.Notify:FireClient(player, Strings.Codes.Invalid)
+        Remotes.Notify:FireClient(player, Locale.Msg("Codes.Invalid"))
         return
     end
     local expiresAt = code.expiresAt
     if expiresAt and os.time() >= expiresAt then
-        Remotes.Notify:FireClient(player, Strings.Codes.Expired)
+        Remotes.Notify:FireClient(player, Locale.Msg("Codes.Expired"))
         return
     end
     if data.codes[key] then
-        Remotes.Notify:FireClient(player, Strings.Codes.Used)
+        Remotes.Notify:FireClient(player, Locale.Msg("Codes.Used"))
         return
     end
 
@@ -62,11 +61,11 @@ local function onRedeemCode(player: Player, text: unknown)
         return codes
     end)
 
-    local rewards: { string } = {}
+    local rewards: { Locale.Message } = {}
     local coins = code.coins
     if coins and coins > 0 then
         IncomeService.AddCoins(player, coins, "codes")
-        table.insert(rewards, string.format(Strings.Daily.Coins, Format.Number(coins)))
+        table.insert(rewards, Locale.Msg("Daily.Coins", Locale.Num(coins)))
     end
     local mineralId = code.mineral
     if mineralId and Minerals.ById[mineralId] then
@@ -80,13 +79,10 @@ local function onRedeemCode(player: Player, text: unknown)
             return inventory
         end)
         IndexService.Register(player, mineralId, "none")
-        table.insert(rewards, Strings.Minerals[mineralId] or mineralId)
+        table.insert(rewards, Locale.Mineral(mineralId, "none"))
     end
 
-    Remotes.Notify:FireClient(
-        player,
-        string.format(Strings.Codes.Redeemed, table.concat(rewards, " + "))
-    )
+    Remotes.Notify:FireClient(player, Locale.Msg("Codes.Redeemed", Locale.Join(" + ", rewards)))
 end
 
 function CodeService.Init()

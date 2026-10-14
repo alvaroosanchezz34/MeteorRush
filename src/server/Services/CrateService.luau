@@ -29,7 +29,7 @@ local Log = require(Shared.Util.Log)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local CrateService = {}
@@ -160,7 +160,7 @@ local function onBuy(player: Player, crateId: unknown)
         return
     end
     if (data.equipment.crates[crateId] or 0) >= Crates.MaxStored then
-        Remotes.Notify:FireClient(player, Strings.Crates.Full)
+        Remotes.Notify:FireClient(player, Locale.Msg("Crates.Full"))
         return
     end
     -- Política del jugador: si no puede comprar objetos aleatorios de pago, no compra
@@ -170,17 +170,19 @@ local function onBuy(player: Player, crateId: unknown)
         PolicyGateService.Refresh(player)
         Remotes.Notify:FireClient(
             player,
-            if allowed == false then Strings.Crates.Restricted else Strings.Crates.TryAgain
+            if allowed == false
+                then Locale.Msg("Crates.Restricted")
+                else Locale.Msg("Crates.TryAgain")
         )
         return
     end
     if currency == "coins" then
         if not IncomeService.SpendCoins(player, price, "crates") then
-            Remotes.Notify:FireClient(player, Strings.Crates.NotEnoughCoins)
+            Remotes.Notify:FireClient(player, Locale.Msg("Crates.NotEnoughCoins"))
             return
         end
     elseif not EquipmentService.AddDust(player, -price) then
-        Remotes.Notify:FireClient(player, Strings.Crates.NotEnoughDust)
+        Remotes.Notify:FireClient(player, Locale.Msg("Crates.NotEnoughDust"))
         return
     end
     CrateService.Give(player, crateId, 1)

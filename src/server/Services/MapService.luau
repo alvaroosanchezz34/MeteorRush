@@ -10,7 +10,7 @@ local Shared = ReplicatedStorage.Shared
 local Assets = require(Shared.Util.Assets)
 local MapConfig = require(Shared.Config.Map)
 local Scenery = require(script.Parent.Parent.Builders.Scenery)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 export type PlotLayout = {
     index: number,
@@ -171,6 +171,8 @@ local function makeSignPlaceholder(): Instance
     })
 
     local gui = Instance.new("SurfaceGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Face = Enum.NormalId.Front
     gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
     gui.PixelsPerStud = 40
@@ -390,6 +392,8 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
     })
     for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
         local gui = Instance.new("SurfaceGui")
+        -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+        gui.AutoLocalize = false
         gui.Face = face
         gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
         gui.PixelsPerStud = 40
@@ -401,7 +405,7 @@ local function buildPlotDecoration(cframe: CFrame, parent: Instance)
         label.TextScaled = true
         label.Font = Enum.Font.GothamBold
         label.TextColor3 = MapConfig.DepositZoneColor
-        label.Text = Strings.Plot.Deposit
+        Locale.Tag(label, "Text", Locale.Msg("Plot.Deposit"))
         label.Parent = gui
     end
 
@@ -685,6 +689,8 @@ local function buildPlot(index: number, parent: Instance): PlotLayout
         parent = model,
     })
     local padGui = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    padGui.AutoLocalize = false
     padGui.Size = UDim2.fromScale(10, 4)
     padGui.StudsOffsetWorldSpace = Vector3.new(0, 4, 0)
     padGui.LightInfluence = 0

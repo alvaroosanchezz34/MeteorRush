@@ -56,7 +56,9 @@ function DecorMenu.Mount(window: Components.Window)
     local refresh: () -> ()
     for slot in DecorConfig.Slots do
         slotButtons[slot] = Components.Button({
-            text = string.format(Strings.Decor.Slot, slot),
+            text = function(): string
+                return string.format(Strings.Decor.Slot, slot)
+            end,
             size = UDim2.fromScale(0.98 / #DecorConfig.Slots - 0.01, 1),
             layoutOrder = slot,
             parent = slotBar,

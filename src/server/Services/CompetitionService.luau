@@ -19,10 +19,9 @@ local MomentService = require(script.Parent.MomentService)
 local Shared = ReplicatedStorage.Shared
 local AchievementsConfig = require(Shared.Config.Achievements)
 local CompetitionConfig = require(Shared.Config.Competition)
-local Format = require(Shared.Util.Format)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 type Score = {
     points: number,
@@ -70,20 +69,15 @@ local function finish(kind: CompetitionConfig.Kind)
         return scores[a].at < scores[b].at
     end)
 
-    local name = Strings.Competition.Names[kind.id] or kind.id
-    local podium: { string } = {}
+    local name = Locale.Ref("Competition.Names." .. kind.id)
+    local podium: { Locale.Message } = {}
     for place, player in ranking do
         if place > #CompetitionConfig.RewardFractions then
             break
         end
         table.insert(
             podium,
-            string.format(
-                Strings.Competition.PodiumEntry,
-                place,
-                player.DisplayName,
-                scores[player].points
-            )
+            Locale.Msg("Competition.PodiumEntry", place, player.DisplayName, scores[player].points)
         )
         local data = DataService.GetData(player)
         if data then
@@ -91,7 +85,7 @@ local function finish(kind: CompetitionConfig.Kind)
             IncomeService.AddCoins(player, reward, "competition")
             Remotes.Notify:FireClient(
                 player,
-                string.format(Strings.Competition.Reward, place, Format.Number(reward))
+                Locale.Msg("Competition.Reward", place, Locale.Num(reward))
             )
         end
     end
@@ -117,8 +111,8 @@ local function finish(kind: CompetitionConfig.Kind)
 
     Remotes.Notify:FireAllClients(
         if #podium > 0
-            then string.format(Strings.Competition.Finished, name, table.concat(podium, "   "))
-            else string.format(Strings.Competition.NoWinner, name)
+            then Locale.Msg("Competition.Finished", name, Locale.Join("   ", podium))
+            else Locale.Msg("Competition.NoWinner", name)
     )
     for _, player in Players:GetPlayers() do
         player:SetAttribute("CompetitionScore", nil)
@@ -136,7 +130,7 @@ local function cancel(kind: CompetitionConfig.Kind)
     end
     table.clear(scores)
     Remotes.Notify:FireAllClients(
-        string.format(Strings.Competition.Cancelled, Strings.Competition.Names[kind.id] or kind.id)
+        Locale.Msg("Competition.Cancelled", Locale.Ref("Competition.Names." .. kind.id))
     )
 end
 
@@ -149,11 +143,11 @@ local function run(kind: CompetitionConfig.Kind)
         Workspace:GetServerTimeNow() + CompetitionConfig.Duration
     )
     Remotes.Notify:FireAllClients(
-        string.format(
-            Strings.Competition.Started,
-            Strings.Competition.Names[kind.id] or kind.id,
-            Strings.Competition.Goals[kind.id] or kind.id,
-            Format.Duration(CompetitionConfig.Duration)
+        Locale.Msg(
+            "Competition.Started",
+            Locale.Ref("Competition.Names." .. kind.id),
+            Locale.Ref("Competition.Goals." .. kind.id),
+            Locale.Dur(CompetitionConfig.Duration)
         )
     )
     local deadline = os.clock() + CompetitionConfig.Duration

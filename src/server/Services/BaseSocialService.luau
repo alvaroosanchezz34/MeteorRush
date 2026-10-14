@@ -29,7 +29,7 @@ local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local SocialConfig = require(Shared.Config.Social)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 -- Valor máximo que admite un OrderedDataStore con margen de sobra.
@@ -104,12 +104,12 @@ local function onLikeBase(player: Player, target: unknown)
     end
     -- Las cuentas recién creadas no pueden dar likes: frena las cuentas hechas para inflarlos.
     if DataService.GetPlaytime(player) < SocialConfig.LikeMinPlaytime then
-        Remotes.Notify:FireClient(player, Strings.Inspect.LikeTooNew)
+        Remotes.Notify:FireClient(player, Locale.Msg("Inspect.LikeTooNew"))
         return
     end
     local key = tostring(owner.UserId)
     if data.social.liked[key] then
-        Remotes.Notify:FireClient(player, Strings.Inspect.AlreadyLiked)
+        Remotes.Notify:FireClient(player, Locale.Msg("Inspect.AlreadyLiked"))
         return
     end
     local count = 0
@@ -129,11 +129,8 @@ local function onLikeBase(player: Player, target: unknown)
         social.likes += 1
         return social
     end)
-    Remotes.Notify:FireClient(player, string.format(Strings.Inspect.LikeGiven, owner.DisplayName))
-    Remotes.Notify:FireClient(
-        owner,
-        string.format(Strings.Inspect.LikeReceived, player.DisplayName)
-    )
+    Remotes.Notify:FireClient(player, Locale.Msg("Inspect.LikeGiven", owner.DisplayName))
+    Remotes.Notify:FireClient(owner, Locale.Msg("Inspect.LikeReceived", player.DisplayName))
 end
 
 -- Cuenta una visita por cada jugador que está dentro de la base de otro, con su espera.
@@ -263,8 +260,8 @@ function BaseSocialService.Init()
         if part and part:IsA("BasePart") then
             local prompt = Instance.new("ProximityPrompt")
             prompt.Name = "InspectBase"
-            prompt.ActionText = Strings.Inspect.Prompt
-            prompt.ObjectText = Strings.Inspect.PromptObject
+            Locale.Tag(prompt, "ActionText", Locale.Msg("Inspect.Prompt"))
+            Locale.Tag(prompt, "ObjectText", Locale.Msg("Inspect.PromptObject"))
             prompt.MaxActivationDistance = SocialConfig.InspectDistance
             prompt.HoldDuration = 0
             prompt.RequiresLineOfSight = false

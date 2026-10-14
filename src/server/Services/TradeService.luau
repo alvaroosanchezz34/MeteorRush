@@ -26,7 +26,7 @@ local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local TradeConfig = require(Shared.Config.Trade)
 local Types = require(Shared.Types)
 
@@ -75,18 +75,18 @@ end
 
 -- Motivo por el que `player` no puede intercambiar con `other` por la política, o nil si
 -- puede. Con `PolicyBlocksAllTrading` apagado nunca bloquea aquí (solo picos y armas, más abajo).
-local function getPolicyBlock(player: Player, other: Player): string?
+local function getPolicyBlock(player: Player, other: Player): Locale.Message?
     if not TradeConfig.PolicyBlocksAllTrading then
         return nil
     end
     local own = PolicyGateService.CanTradePaidItems(player)
     if own ~= true then
         PolicyGateService.Refresh(player)
-        return if own == false then Strings.Trade.Restricted else Strings.Trade.Checking
+        return if own == false then Locale.Msg("Trade.Restricted") else Locale.Msg("Trade.Checking")
     end
     if PolicyGateService.CanTradePaidItems(other) ~= true then
         PolicyGateService.Refresh(other)
-        return Strings.Trade.PartnerRestricted
+        return Locale.Msg("Trade.PartnerRestricted")
     end
     return nil
 end
@@ -133,7 +133,7 @@ local function sendState(trade: Trade)
     end
 end
 
-local function closeTrade(trade: Trade, message: string?)
+local function closeTrade(trade: Trade, message: Locale.Message?)
     for _, player in { trade.a, trade.b } do
         if trades[player] == trade then
             trades[player] = nil
@@ -216,7 +216,7 @@ local function execute(trade: Trade)
         getPolicyBlock(trade.a, trade.b) ~= nil
         or not (isOfferValid(trade.a, offerA, trade.b) and isOfferValid(trade.b, offerB, trade.a))
     then
-        closeTrade(trade, Strings.Trade.Failed)
+        closeTrade(trade, Locale.Msg("Trade.Failed"))
         return
     end
     -- Se saca de la lista antes de transferir para que los avisos de cambio de inventario
@@ -226,7 +226,7 @@ local function execute(trade: Trade)
     -- Sin yields entre las dos transferencias: nadie puede cambiar los inventarios en medio.
     transfer(trade.a, trade.b, offerA)
     transfer(trade.b, trade.a, offerB)
-    closeTrade(trade, Strings.Trade.Completed)
+    closeTrade(trade, Locale.Msg("Trade.Completed"))
     AchievementService.AddStat(trade.a, "tradesCompleted", 1)
     AchievementService.AddStat(trade.b, "tradesCompleted", 1)
 end
@@ -249,7 +249,7 @@ local function onRequest(player: Player, target: unknown)
         return
     end
     if not LiveOpsService.IsEnabled("trading") then
-        Remotes.Notify:FireClient(player, Strings.LiveOps.Disabled)
+        Remotes.Notify:FireClient(player, Locale.Msg("LiveOps.Disabled"))
         return
     end
     local block = getPolicyBlock(player, other)
@@ -258,7 +258,7 @@ local function onRequest(player: Player, target: unknown)
         return
     end
     if trades[player] or trades[other] then
-        Remotes.Notify:FireClient(player, Strings.Trade.Busy)
+        Remotes.Notify:FireClient(player, Locale.Msg("Trade.Busy"))
         return
     end
 
@@ -269,11 +269,8 @@ local function onRequest(player: Player, target: unknown)
     end
     pending[player] = os.clock() + TradeConfig.RequestTimeout
 
-    Remotes.Notify:FireClient(player, string.format(Strings.Trade.RequestSent, other.DisplayName))
-    Remotes.Notify:FireClient(
-        other,
-        string.format(Strings.Trade.RequestReceived, player.DisplayName)
-    )
+    Remotes.Notify:FireClient(player, Locale.Msg("Trade.RequestSent", other.DisplayName))
+    Remotes.Notify:FireClient(other, Locale.Msg("Trade.RequestReceived", player.DisplayName))
     Remotes.TradeState:FireClient(other, "request", player)
 end
 
@@ -297,7 +294,7 @@ local function onRespond(player: Player, requester: unknown, accept: unknown)
     end
 
     if not accept then
-        Remotes.Notify:FireClient(other, string.format(Strings.Trade.Declined, player.DisplayName))
+        Remotes.Notify:FireClient(other, Locale.Msg("Trade.Declined", player.DisplayName))
         return
     end
     local block = getPolicyBlock(player, other)
@@ -306,7 +303,7 @@ local function onRespond(player: Player, requester: unknown, accept: unknown)
         return
     end
     if trades[player] or trades[other] then
-        Remotes.Notify:FireClient(player, Strings.Trade.Busy)
+        Remotes.Notify:FireClient(player, Locale.Msg("Trade.Busy"))
         return
     end
 
@@ -347,7 +344,7 @@ local function onUpdateOffer(player: Player, itemIds: unknown)
         -- Si lo que falla es la política con un pico o un arma, se dice por qué.
         for _, itemId in offer do
             if gearOf(itemId) and not canTradePaidItems(player, partnerOf(trade, player)) then
-                Remotes.Notify:FireClient(player, Strings.Trade.GearRestricted)
+                Remotes.Notify:FireClient(player, Locale.Msg("Trade.GearRestricted"))
                 break
             end
         end
@@ -390,7 +387,7 @@ local function onCancel(player: Player)
     end
     local trade = trades[player]
     if trade then
-        closeTrade(trade, Strings.Trade.Cancelled)
+        closeTrade(trade, Locale.Msg("Trade.Cancelled"))
     end
 end
 
@@ -430,7 +427,7 @@ function TradeService.Start()
     Players.PlayerRemoving:Connect(function(player: Player)
         local trade = trades[player]
         if trade then
-            closeTrade(trade, Strings.Trade.Cancelled)
+            closeTrade(trade, Locale.Msg("Trade.Cancelled"))
         end
         requests[player] = nil
         for _, pending in requests do

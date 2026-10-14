@@ -72,6 +72,8 @@ local Remotes = {
     AchievementUnlocked = getOrCreateRemoteEvent("AchievementUnlocked"),
     Notify = getOrCreateRemoteEvent("Notify"),
     EconomyStats = getOrCreateRemoteEvent("EconomyStats"),
+    -- Idioma: el cliente pide un cambio (o manda el de su cuenta al entrar).
+    SetLanguage = getOrCreateRemoteEvent("SetLanguage"),
 }
 
 return Remotes

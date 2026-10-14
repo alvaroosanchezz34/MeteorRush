@@ -43,6 +43,7 @@ Network.RateLimits = {
     UseAbility = { maxRequests = 3, windowSeconds = 1 } :: RateLimit,
     AdminRequest = { maxRequests = 12, windowSeconds = 1 } :: RateLimit,
     AckVersion = { maxRequests = 2, windowSeconds = 5 } :: RateLimit,
+    SetLanguage = { maxRequests = 4, windowSeconds = 2 } :: RateLimit,
 }
 
 -- Infracciones del límite que se toleran antes de expulsar al jugador.

@@ -34,7 +34,7 @@ local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local StealConfig = require(Shared.Config.Steal)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 local Weapons = require(Shared.Config.Weapons)
 
@@ -143,19 +143,19 @@ end
 
 -- Motivo por el que no se puede hacer soltar la carga a ese jugador ahora mismo, o nil si
 -- se puede. Las mismas reglas para un golpe y para una habilidad.
-local function getProtection(victim: Player, victimRoot: BasePart, now: number): string?
+local function getProtection(victim: Player, victimRoot: BasePart, now: number): Locale.Message?
     local victimData = DataService.GetData(victim)
     if victimData == nil or isNewbie(victim) then
-        return Strings.Steal.Newbie
+        return Locale.Msg("Steal.Newbie")
     end
     if PlotService.IsInOwnPlot(victim, victimRoot.Position) then
-        return Strings.Steal.TargetSafe
+        return Locale.Msg("Steal.TargetSafe")
     end
     if now < (immuneUntil[victim] or 0) then
-        return Strings.Steal.TargetImmune
+        return Locale.Msg("Steal.TargetImmune")
     end
     if PlayerStats.IsBoostActive(victimData, "carryShield", os.time()) then
-        return Strings.Steal.TargetShielded
+        return Locale.Msg("Steal.TargetShielded")
     end
     return nil
 end
@@ -235,17 +235,17 @@ local function onHitPlayer(attacker: Player, target: unknown)
         return
     end
 
-    local function reject(message: string)
+    local function reject(message: Locale.Message)
         Remotes.Notify:FireClient(attacker, message)
     end
     if not LiveOpsService.IsEnabled("stealing") then
-        return reject(Strings.LiveOps.Disabled)
+        return reject(Locale.Msg("LiveOps.Disabled"))
     end
     if isNewbie(attacker) then
-        return reject(Strings.Steal.Newbie)
+        return reject(Locale.Msg("Steal.Newbie"))
     end
     if CarryService.GetCount(victim) == 0 then
-        return reject(Strings.Steal.NothingToSteal)
+        return reject(Locale.Msg("Steal.NothingToSteal"))
     end
     local protection = getProtection(victim, victimRoot, now)
     if protection then
@@ -289,10 +289,10 @@ local function onHitPlayer(attacker: Player, target: unknown)
         knockback,
         stunSeconds
     )
-    Remotes.Notify:FireClient(attacker, string.format(Strings.Steal.YouHit, victim.DisplayName))
+    Remotes.Notify:FireClient(attacker, Locale.Msg("Steal.YouHit", victim.DisplayName))
     Remotes.Notify:FireClient(
         victim,
-        string.format(Strings.Steal.YouWereHit, attacker.DisplayName, #dropped)
+        Locale.Msg("Steal.YouWereHit", attacker.DisplayName, #dropped)
     )
     recordHit(attacker, victim, dropped)
 end
@@ -320,16 +320,16 @@ local function onUseAbility(attacker: Player)
     if now < readyAt then
         Remotes.Notify:FireClient(
             attacker,
-            string.format(Strings.Steal.AbilityCooldown, tostring(math.ceil(readyAt - now)))
+            Locale.Msg("Steal.AbilityCooldown", tostring(math.ceil(readyAt - now)))
         )
         return
     end
     if not LiveOpsService.IsEnabled("stealing") then
-        Remotes.Notify:FireClient(attacker, Strings.LiveOps.Disabled)
+        Remotes.Notify:FireClient(attacker, Locale.Msg("LiveOps.Disabled"))
         return
     end
     if isNewbie(attacker) then
-        Remotes.Notify:FireClient(attacker, Strings.Steal.Newbie)
+        Remotes.Notify:FireClient(attacker, Locale.Msg("Steal.Newbie"))
         return
     end
     -- Desde la propia base no se ataca: la zona segura no es una trinchera.
@@ -425,10 +425,10 @@ local function updateDrops()
                             if owner.Parent == Players then
                                 Remotes.Notify:FireClient(
                                     owner,
-                                    string.format(
-                                        Strings.Steal.LootTaken,
+                                    Locale.Msg(
+                                        "Steal.LootTaken",
                                         player.DisplayName,
-                                        Strings.MineralName(drop.item.mineral, drop.item.mutation)
+                                        Locale.Mineral(drop.item.mineral, drop.item.mutation)
                                     )
                                 )
                             end

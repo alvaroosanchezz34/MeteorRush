@@ -88,6 +88,13 @@ export type EquipmentData = {
     opened: number,
 }
 
+-- Preferencias del jugador. Solo cambian la presentación, nunca las reglas.
+export type SettingsData = {
+    -- Idioma elegido a mano en Ajustes ("es", "en"), o "" si nunca ha elegido: entonces se usa
+    -- el idioma de su cuenta de Roblox en cada sesión.
+    language: string,
+}
+
 export type Profile = {
     version: number,
     coins: number,
@@ -135,6 +142,7 @@ export type Profile = {
     equipment: EquipmentData,
     -- Última versión del juego (Config/LiveOps) cuyas notas ha visto el jugador.
     seenVersion: string,
+    settings: SettingsData,
 }
 
 return {}

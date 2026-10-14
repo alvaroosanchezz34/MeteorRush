@@ -4,6 +4,9 @@
 -- comparten el mismo lenguaje visual, que sale del sistema de diseño (UI/Theme).
 -- Todo con tamaños relativos (escala), nunca píxeles fijos, para que funcione igual en
 -- móvil, PC y consola. Los botones se pueden recorrer con el mando.
+-- Los textos pueden ser una función (p. ej. `function() return Strings.Hud.SafeZone end`):
+-- entonces se vuelven a pintar solos al cambiar de idioma. Úsalo en lo que se pinta una sola
+-- vez; lo que se repinta al abrir la ventana ya sale en el idioma nuevo.
 
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
@@ -15,7 +18,23 @@ local Workspace = game:GetService("Workspace")
 local AudioManager = require(script.Parent.AudioManager)
 local Theme = require(script.Parent.Theme)
 
+local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local Locale = require(Shared:WaitForChild("Locale"))
+local Strings = require(Shared:WaitForChild("Strings"))
+
+-- Un texto fijo, o una función que lo devuelve en el idioma activo.
+export type Text = string | () -> string
+
 local Components = {}
+
+-- Pone el texto en esa propiedad; si es una función, lo enlaza al idioma (Locale.Bind).
+function Components.SetText(instance: Instance, property: string, text: Text)
+    if type(text) == "function" then
+        Locale.Bind(instance, property, text)
+    else
+        (instance :: any)[property] = text
+    end
+end
 
 -- Los colores del tema, con los nombres que usan las pantallas.
 Components.Colors = Theme.Colors
@@ -177,7 +196,7 @@ end
 
 -- Texto con tamaño automático. `heading` usa la tipografía de títulos.
 function Components.Label(props: {
-    text: string,
+    text: Text,
     size: UDim2,
     position: UDim2?,
     color: Color3?,
@@ -190,7 +209,7 @@ function Components.Label(props: {
     label.Size = props.size
     label.Position = props.position or UDim2.new()
     label.BackgroundTransparency = 1
-    label.Text = props.text
+    Components.SetText(label, "Text", props.text)
     label.TextColor3 = props.color or Theme.Colors.Text
     label.TextScaled = true
     label.TextWrapped = true
@@ -204,7 +223,7 @@ end
 -- Botón con color de fondo y esquinas redondeadas. Si su color es Colors.Disabled (al
 -- crearlo o más tarde) se muestra apagado.
 function Components.Button(props: {
-    text: string,
+    text: Text,
     size: UDim2,
     position: UDim2?,
     color: Color3?,
@@ -216,7 +235,7 @@ function Components.Button(props: {
     button.Size = props.size
     button.Position = props.position or UDim2.new()
     button.BackgroundColor3 = props.color or Theme.Colors.Primary
-    button.Text = props.text
+    Components.SetText(button, "Text", props.text)
     button.TextScaled = true
     button.Font = Theme.Fonts.Body
     button.LayoutOrder = props.layoutOrder or 0
@@ -241,7 +260,7 @@ end
 -- Botón cuadrado con un icono grande y el nombre debajo (barra lateral del HUD).
 function Components.IconButton(props: {
     icon: string,
-    text: string,
+    text: Text,
     color: Color3,
     layoutOrder: number?,
     parent: Instance?,
@@ -343,7 +362,7 @@ end
 
 -- Casilla de texto con el aspecto del resto de la interfaz.
 function Components.Input(props: {
-    placeholder: string,
+    placeholder: Text,
     size: UDim2,
     position: UDim2?,
     parent: Instance?,
@@ -353,7 +372,7 @@ function Components.Input(props: {
     box.Position = props.position or UDim2.new()
     box.BackgroundColor3 = Theme.Colors.Panel
     box.TextColor3 = Theme.Colors.Text
-    box.PlaceholderText = props.placeholder
+    Components.SetText(box, "PlaceholderText", props.placeholder)
     box.PlaceholderColor3 = Theme.Colors.Muted
     box.Text = ""
     box.ClearTextOnFocus = false
@@ -437,8 +456,8 @@ export type Confirm = {
 -- no se pueden deshacer.
 function Components.Confirm(props: {
     parent: Instance,
-    confirmText: string,
-    cancelText: string,
+    confirmText: Text,
+    cancelText: Text,
     onConfirm: () -> (),
 }): Confirm
     local overlay = Components.Panel({
@@ -520,7 +539,7 @@ export type Window = {
 -- entrada y salida. En pantallas pequeñas ocupa casi toda la pantalla. Con el mando, al
 -- abrirla la selección pasa a su primer botón y B la cierra.
 function Components.Window(props: {
-    title: string,
+    title: Text,
     closeText: string,
     parent: Instance,
     accent: Color3?,
@@ -584,8 +603,11 @@ function Components.Window(props: {
             parent = frame,
         })
     end
+    local title = props.title
     Components.Label({
-        text = string.upper(props.title),
+        text = function(): string
+            return Strings.Upper(if type(title) == "function" then title() else title)
+        end,
         size = UDim2.fromScale(0.74, header * 0.6),
         position = UDim2.fromScale(if props.icon then 0.095 else 0.03, 0.03),
         alignment = Enum.TextXAlignment.Left,
@@ -712,6 +734,14 @@ function Components.Window(props: {
             table.insert(openedCallbacks, callback)
         end,
     }
+    -- Al cambiar de idioma, una ventana abierta se repinta igual que al abrirse.
+    Locale.OnChanged(function()
+        if isOpen then
+            for _, callback in openedCallbacks do
+                task.spawn(callback)
+            end
+        end
+    end)
     return window
 end
 

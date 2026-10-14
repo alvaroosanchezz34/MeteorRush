@@ -136,6 +136,8 @@ end
 
 function EconomyPanel.Mount()
     local gui = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Name = "EconomyPanel"
     gui.ResetOnSpawn = false
     gui.DisplayOrder = 10

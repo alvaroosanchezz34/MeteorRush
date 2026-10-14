@@ -98,7 +98,7 @@ function EquipmentMenu.Mount(window: Components.Window)
             parent = body,
         })
         Components.Label({
-            text = `{string.upper(Strings.Equipment.Rarities[item.rarity])} {string.upper(
+            text = `{Strings.Upper(Strings.Equipment.Rarities[item.rarity])} {Strings.Upper(
                 Strings.Equipment.KindNames[item.kind]
             )}`,
             size = UDim2.fromScale(0.92, 0.045),
@@ -315,7 +315,9 @@ function EquipmentMenu.Mount(window: Components.Window)
 
     for index, key in KINDS do
         filters[key] = Components.Button({
-            text = Strings.Equipment.Kinds[key],
+            text = function(): string
+                return Strings.Equipment.Kinds[key]
+            end,
             size = UDim2.fromScale(0.21, 0.09),
             position = UDim2.fromScale((index - 1) * 0.22, 0),
             color = Components.Colors.PanelRaised,

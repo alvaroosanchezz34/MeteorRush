@@ -235,6 +235,8 @@ function Effects.Popup(
     local anchor = Effects.Anchor(props.position, duration + 0.1)
 
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.AlwaysOnTop = true
     billboard.LightInfluence = 0
     billboard.Size = UDim2.fromScale(height * 8, height)
@@ -283,6 +285,8 @@ function Effects.Flash(color: Color3, strength: number, duration: number)
     local frame = flashFrame
     if frame == nil then
         local gui = Instance.new("ScreenGui")
+        -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+        gui.AutoLocalize = false
         gui.Name = "ScreenFlash"
         gui.ResetOnSpawn = false
         gui.IgnoreGuiInset = true

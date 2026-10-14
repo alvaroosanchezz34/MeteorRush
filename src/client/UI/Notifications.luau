@@ -3,7 +3,8 @@
 -- Mensajes cortos en la parte baja del centro de la pantalla (lejos de los contadores de
 -- arriba y de los avisos grandes) que entran con un pequeño rebote y desaparecen solos.
 -- Hay tres tipos, cada uno con su color, su icono y su sonido: información, éxito y error.
--- El servidor solo envía el texto, así que el tipo se deduce de palabras clave.
+-- El tipo se deduce de palabras clave del texto en inglés (NotificationController lo calcula
+-- con la versión inglesa del mensaje, así funciona igual en cualquier idioma).
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -69,6 +70,8 @@ local function getContainer(): Frame
     end
 
     local gui = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Name = "Notifications"
     gui.ResetOnSpawn = false
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling

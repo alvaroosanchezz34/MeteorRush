@@ -32,7 +32,7 @@ local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 type MiningState = {
@@ -91,7 +91,7 @@ local function notifyBackpackFull(player: Player)
     local capacity = CarryService.GetCapacity(player)
     Remotes.Notify:FireClient(
         player,
-        string.format(Strings.Mining.BackpackFull, CarryService.GetCount(player), capacity)
+        Locale.Msg("Mining.BackpackFull", CarryService.GetCount(player), capacity)
     )
 end
 
@@ -183,10 +183,10 @@ local function grantMineral(
         and (Minerals.GetRank(mineral.id) >= Minerals.AnnounceRank or mutation.announce)
     then
         Remotes.Notify:FireAllClients(
-            string.format(
-                Strings.Mining.Announce,
+            Locale.Msg(
+                "Mining.Announce",
                 player.DisplayName,
-                Strings.MineralName(mineral.id, mutation.id)
+                Locale.Mineral(mineral.id, mutation.id)
             )
         )
     end

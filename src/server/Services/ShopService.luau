@@ -23,7 +23,7 @@ local Remotes = require(Shared.Remotes)
 local Equipment = require(Shared.Config.Equipment)
 local EquipmentVisual = require(Shared.Util.EquipmentVisual)
 local ShopConfig = require(Shared.Config.Shop)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local ShopService = {}
@@ -269,7 +269,7 @@ local function processReceipt(receiptInfo: { [string]: any }): Enum.ProductPurch
             Log.Warn("Shop", `Error al entregar la compra {purchaseId}: {err}`)
             return Enum.ProductPurchaseDecision.NotProcessedYet
         end
-        Remotes.Notify:FireClient(player, Strings.Shop.Thanks)
+        Remotes.Notify:FireClient(player, Locale.Msg("Shop.Thanks"))
     end
 
     local saved = DataService.SaveAndWait(player, function(savedData: Types.Profile): boolean
@@ -319,7 +319,7 @@ function ShopService.Start()
             for _, pass in ShopConfig.GamePasses do
                 if pass.id ~= 0 and pass.id == passId then
                     setPass(player, pass.key, true)
-                    Remotes.Notify:FireClient(player, Strings.Shop.Thanks)
+                    Remotes.Notify:FireClient(player, Locale.Msg("Shop.Thanks"))
                 end
             end
         end

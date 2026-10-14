@@ -15,14 +15,13 @@ local MomentService = require(script.Parent.MomentService)
 
 local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
-local Format = require(Shared.Util.Format)
 local MomentsConfig = require(Shared.Config.Moments)
 local Mutations = require(Shared.Config.Mutations)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local InventoryService = {}
@@ -67,11 +66,7 @@ local function onSellMineral(player: Player, itemId: unknown)
     AchievementService.AddStat(player, "sold", 1)
     Remotes.Notify:FireClient(
         player,
-        string.format(
-            Strings.Inventory.Sold,
-            Strings.MineralName(item.mineral, item.mutation),
-            Format.Number(price)
-        )
+        Locale.Msg("Inventory.Sold", Locale.Mineral(item.mineral, item.mutation), Locale.Num(price))
     )
 end
 
@@ -96,17 +91,14 @@ local function onSellJunk(player: Player)
         end
     end
     if count == 0 then
-        Remotes.Notify:FireClient(player, Strings.Inventory.NothingToSell)
+        Remotes.Notify:FireClient(player, Locale.Msg("Inventory.NothingToSell"))
         return
     end
 
     removeItems(player, ids)
     IncomeService.AddCoins(player, total, "sell")
     AchievementService.AddStat(player, "sold", count)
-    Remotes.Notify:FireClient(
-        player,
-        string.format(Strings.Inventory.SoldMany, count, Format.Number(total))
-    )
+    Remotes.Notify:FireClient(player, Locale.Msg("Inventory.SoldMany", count, Locale.Num(total)))
 end
 
 local function onFuseMineral(player: Player, itemId: unknown)
@@ -150,7 +142,7 @@ local function onFuseMineral(player: Player, itemId: unknown)
     if found < Mutations.FuseCount then
         Remotes.Notify:FireClient(
             player,
-            string.format(Strings.Inventory.FuseNotEnough, Mutations.FuseCount)
+            Locale.Msg("Inventory.FuseNotEnough", Mutations.FuseCount)
         )
         return
     end
@@ -160,7 +152,7 @@ local function onFuseMineral(player: Player, itemId: unknown)
     if not IncomeService.SpendCoins(player, cost, "fuse") then
         Remotes.Notify:FireClient(
             player,
-            string.format(Strings.Inventory.FuseNotEnoughCoins, Format.Number(cost))
+            Locale.Msg("Inventory.FuseNotEnoughCoins", Locale.Num(cost))
         )
         return
     end
@@ -191,7 +183,7 @@ local function onFuseMineral(player: Player, itemId: unknown)
     })
     Remotes.Notify:FireClient(
         player,
-        string.format(Strings.Inventory.Fused, Strings.MineralName(fused.mineral, fused.mutation))
+        Locale.Msg("Inventory.Fused", Locale.Mineral(fused.mineral, fused.mutation))
     )
 end
 

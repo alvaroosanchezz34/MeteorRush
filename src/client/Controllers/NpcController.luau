@@ -66,6 +66,8 @@ local function getBubble(npc: Npc): (BillboardGui?, TextLabel?)
         return nil, nil
     end
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.Name = "SpeechBubble"
     billboard.Size = UDim2.fromScale(15, 3.6)
     billboard.StudsOffsetWorldSpace = Vector3.new(0, 6.4, 0)

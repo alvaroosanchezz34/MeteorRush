@@ -59,7 +59,7 @@ function SeasonMenu.Mount(window: Components.Window)
         if season then
             header.Text = string.format(
                 Strings.Season.Header,
-                season.name,
+                (Strings.Seasons[season.id] or {}).Name or season.name,
                 Format.LongDuration(LiveOps.GetSeasonRemaining(season, now)),
                 points
             )
@@ -145,7 +145,10 @@ function SeasonMenu.Mount(window: Components.Window)
             local progress = if current then data.season.progress[mission.id] or 0 else 0
             local row = Components.Panel({ size = UDim2.new(), layoutOrder = order, parent = list })
             Components.Label({
-                text = string.format(mission.text, Format.Number(mission.goal)),
+                text = string.format(
+                    ((Strings.Seasons[season.id] or {}).Missions or {})[mission.id] or mission.text,
+                    Format.Number(mission.goal)
+                ),
                 size = UDim2.fromScale(0.62, 0.42),
                 position = UDim2.fromScale(0.03, 0.08),
                 alignment = Enum.TextXAlignment.Left,

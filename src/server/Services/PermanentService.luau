@@ -14,7 +14,7 @@ local PermanentConfig = require(Shared.Config.Permanent)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 local PermanentService = {}
 
@@ -36,16 +36,16 @@ local function onBuyPermanent(player: Player, nodeId: unknown)
 
     local level = PlayerStats.GetPermanentLevel(data, nodeId)
     if level >= node.maxLevel then
-        Remotes.Notify:FireClient(player, Strings.Upgrades.MaxLevel)
+        Remotes.Notify:FireClient(player, Locale.Msg("Upgrades.MaxLevel"))
         return
     end
     if not PlayerStats.IsPermanentUnlocked(data, node) then
-        Remotes.Notify:FireClient(player, Strings.Permanent.Locked)
+        Remotes.Notify:FireClient(player, Locale.Msg("Permanent.Locked"))
         return
     end
     local cost = PermanentConfig.GetCost(nodeId, level)
     if data.shards < cost then
-        Remotes.Notify:FireClient(player, Strings.Permanent.NotEnoughShards)
+        Remotes.Notify:FireClient(player, Locale.Msg("Permanent.NotEnoughShards"))
         return
     end
 
@@ -56,7 +56,7 @@ local function onBuyPermanent(player: Player, nodeId: unknown)
     end)
     Remotes.Notify:FireClient(
         player,
-        string.format(Strings.Upgrades.Bought, Strings.Permanent.Names[nodeId], level + 1)
+        Locale.Msg("Upgrades.Bought", Locale.Ref("Permanent.Names." .. nodeId), level + 1)
     )
 end
 

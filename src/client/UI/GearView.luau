@@ -13,6 +13,7 @@ local Crates = require(Config:WaitForChild("Crates"))
 local Equipment = require(Config:WaitForChild("Equipment"))
 local EquipmentVisual = require(Shared:WaitForChild("Util"):WaitForChild("EquipmentVisual"))
 local ShopConfig = require(Config:WaitForChild("Shop"))
+local Locale = require(Shared:WaitForChild("Locale"))
 local Strings = require(Shared:WaitForChild("Strings"))
 
 -- Radianes por segundo.
@@ -143,7 +144,7 @@ function GearView.OddsText(crate: Crates.Crate): string
         table.insert(
             parts,
             `{Strings.Equipment.Rarities[entry.rarity]} {if percent < 10
-                then string.format("%.1f", percent)
+                then Locale.FormatDecimal(percent, 1)
                 else tostring(math.round(percent))}%`
         )
     end

@@ -15,7 +15,7 @@ local Log = require(Shared.Util.Log)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 local Upgrades = require(Shared.Config.Upgrades)
 
@@ -39,12 +39,12 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
 
     local level = ((data.upgrades :: any)[upgradeId] or 0) :: number
     if level >= upgrade.maxLevel then
-        Remotes.Notify:FireClient(player, Strings.Upgrades.MaxLevel)
+        Remotes.Notify:FireClient(player, Locale.Msg("Upgrades.MaxLevel"))
         return
     end
     local cost = Upgrades.GetCost(upgradeId, level)
     if not IncomeService.SpendCoins(player, cost, "upgrades") then
-        Remotes.Notify:FireClient(player, Strings.Upgrades.NotEnoughCoins)
+        Remotes.Notify:FireClient(player, Locale.Msg("Upgrades.NotEnoughCoins"))
         return
     end
 
@@ -54,7 +54,7 @@ local function onBuyUpgrade(player: Player, upgradeId: unknown)
     end)
     Remotes.Notify:FireClient(
         player,
-        string.format(Strings.Upgrades.Bought, Strings.Upgrades.Names[upgradeId], level + 1)
+        Locale.Msg("Upgrades.Bought", Locale.Ref("Upgrades.Names." .. upgradeId), level + 1)
     )
     QuestService.Progress(player, "upgrade", 1)
     AchievementService.AddStat(player, "upgradesBought", 1)

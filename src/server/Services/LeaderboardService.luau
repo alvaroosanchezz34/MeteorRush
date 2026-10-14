@@ -12,10 +12,9 @@ local DataService = require(script.Parent.DataService)
 local MapService = require(script.Parent.MapService)
 
 local Shared = ReplicatedStorage.Shared
-local Format = require(Shared.Util.Format)
 local LeaderboardConfig = require(Shared.Config.Leaderboard)
 local MapConfig = require(Shared.Config.Map)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 -- Los OrderedDataStore solo guardan enteros de 64 bits.
@@ -120,6 +119,8 @@ local function buildBoard(gap: number): { TextLabel }
     )
 
     local gui = Instance.new("SurfaceGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    gui.AutoLocalize = false
     gui.Face = Enum.NormalId.Front
     gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
     gui.PixelsPerStud = 30
@@ -140,7 +141,8 @@ local function buildBoard(gap: number): { TextLabel }
         return label
     end
 
-    local title = addLabel(Strings.Leaderboard.Title, 0.02, 0.14, LeaderboardConfig.TitleColor)
+    local title = addLabel("", 0.02, 0.14, LeaderboardConfig.TitleColor)
+    Locale.Tag(title, "Text", Locale.Msg("Leaderboard.Title"))
     title.TextXAlignment = Enum.TextXAlignment.Center
 
     local rows: { TextLabel } = {}
@@ -149,7 +151,7 @@ local function buildBoard(gap: number): { TextLabel }
         rows[index] =
             addLabel("", 0.18 + (index - 1) * rowHeight, rowHeight * 0.85, Color3.new(1, 1, 1))
     end
-    rows[1].Text = Strings.Leaderboard.Empty
+    Locale.Tag(rows[1], "Text", Locale.Msg("Leaderboard.Empty"))
 
     model.Parent = MapService.GetMapFolder()
     return rows
@@ -181,27 +183,22 @@ local function refreshBoards()
         return
     end
 
-    local lines: { string } = {}
+    local lines: { Locale.Message } = {}
     for rank, entry in page do
         local userId = tonumber(entry.key)
         if userId then
             table.insert(
                 lines,
-                string.format(
-                    Strings.Leaderboard.Row,
-                    rank,
-                    getName(userId),
-                    Format.Number(entry.value)
-                )
+                Locale.Msg("Leaderboard.Row", rank, getName(userId), Locale.Num(entry.value))
             )
         end
     end
     if #lines == 0 then
-        lines[1] = Strings.Leaderboard.Empty
+        lines[1] = Locale.Msg("Leaderboard.Empty")
     end
     for _, rows in boards do
         for index, label in rows do
-            label.Text = lines[index] or ""
+            Locale.Tag(label, "Text", lines[index] or "")
         end
     end
 end

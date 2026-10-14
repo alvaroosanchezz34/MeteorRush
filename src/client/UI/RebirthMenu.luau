@@ -65,15 +65,21 @@ function RebirthMenu.Mount(window: Components.Window)
     -- Segundo paso: qué se pierde, qué se conserva y qué se gana.
     local confirm = Components.Confirm({
         parent = window.content,
-        confirmText = Strings.Rebirth.ConfirmYes,
-        cancelText = Strings.Rebirth.ConfirmNo,
+        confirmText = function(): string
+            return Strings.Rebirth.ConfirmYes
+        end,
+        cancelText = function(): string
+            return Strings.Rebirth.ConfirmNo
+        end,
         onConfirm = function()
             Remotes.Rebirth:FireServer()
         end,
     })
 
     local button = Components.Button({
-        text = Strings.Rebirth.Confirm,
+        text = function(): string
+            return Strings.Rebirth.Confirm
+        end,
         size = UDim2.fromScale(0.4, 0.16),
         position = UDim2.fromScale(0.3, 0.8),
         parent = window.content,

@@ -14,7 +14,7 @@ local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local SocialService = {}
@@ -43,10 +43,7 @@ local function refresh(player: Player)
     DataService.Set(player, "friendsOnline", count)
     local after = PlayerStats.GetFriendBonus(data)
     if after > before then
-        Remotes.Notify:FireClient(
-            player,
-            string.format(Strings.Social.Bonus, math.round(after * 100))
-        )
+        Remotes.Notify:FireClient(player, Locale.Msg("Social.Bonus", math.round(after * 100)))
     end
 end
 

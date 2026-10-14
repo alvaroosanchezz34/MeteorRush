@@ -13,7 +13,6 @@ local TutorialService = require(script.Parent.TutorialService)
 local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local Assets = require(Shared.Util.Assets)
-local Format = require(Shared.Util.Format)
 local MapConfig = require(Shared.Config.Map)
 local MineralVisual = require(Shared.Util.MineralVisual)
 local Minerals = require(Shared.Config.Minerals)
@@ -22,7 +21,7 @@ local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local DISPLAY_SIZE = 2
@@ -114,8 +113,11 @@ local function refresh(player: Player)
         if item and current then
             local income = PlayerStats.GetItemBaseIncome(item) * multiplier
             if current.label then
-                current.label.Text =
-                    string.format(Strings.Pedestal.PerSecond, Format.Number(income))
+                Locale.Tag(
+                    current.label,
+                    "Text",
+                    Locale.Msg("Pedestal.PerSecond", Locale.Num(income))
+                )
             end
             local rank = Minerals.GetRank(item.mineral)
             if rank > prestige then
@@ -162,7 +164,7 @@ local function onPlaceMineral(player: Player, itemId: unknown, pedestalNumber: u
     if number == nil then
         number = findFreePedestal(data)
         if number == nil then
-            Remotes.Notify:FireClient(player, Strings.Pedestal.NoFreePedestal)
+            Remotes.Notify:FireClient(player, Locale.Msg("Pedestal.NoFreePedestal"))
             return
         end
     end
@@ -178,7 +180,7 @@ local function onPlaceMineral(player: Player, itemId: unknown, pedestalNumber: u
     end)
     Remotes.Notify:FireClient(
         player,
-        string.format(Strings.Pedestal.Placed, Strings.MineralName(item.mineral, item.mutation))
+        Locale.Msg("Pedestal.Placed", Locale.Mineral(item.mineral, item.mutation))
     )
     TutorialService.Advance(player, 3)
 end
@@ -208,10 +210,7 @@ local function onRemoveMineral(player: Player, pedestalNumber: unknown)
     if item then
         Remotes.Notify:FireClient(
             player,
-            string.format(
-                Strings.Pedestal.Removed,
-                Strings.MineralName(item.mineral, item.mutation)
-            )
+            Locale.Msg("Pedestal.Removed", Locale.Mineral(item.mineral, item.mutation))
         )
     end
 end
@@ -237,7 +236,7 @@ local function onPlaceBest(player: Player)
     end
 
     DataService.Set(player, "pedestals", pedestals)
-    Remotes.Notify:FireClient(player, Strings.Pedestal.PlacedBest)
+    Remotes.Notify:FireClient(player, Locale.Msg("Pedestal.PlacedBest"))
     TutorialService.Advance(player, 3)
 end
 

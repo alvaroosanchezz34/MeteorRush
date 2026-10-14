@@ -12,11 +12,10 @@ local IndexService = require(script.Parent.IndexService)
 
 local Shared = ReplicatedStorage.Shared
 local DailyConfig = require(Shared.Config.Daily)
-local Format = require(Shared.Util.Format)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local DailyService = {}
@@ -37,12 +36,12 @@ local function onClaimDaily(player: Player)
     if data.daily.lastClaim > 0 and waited < DailyConfig.Cooldown then
         Remotes.Notify:FireClient(
             player,
-            string.format(Strings.Daily.NotReady, Format.Duration(DailyConfig.Cooldown - waited))
+            Locale.Msg("Daily.NotReady", Locale.Dur(DailyConfig.Cooldown - waited))
         )
         return
     end
     if data.daily.lastClaim > 0 and waited > DailyConfig.ResetAfter then
-        Remotes.Notify:FireClient(player, Strings.Daily.StreakReset)
+        Remotes.Notify:FireClient(player, Locale.Msg("Daily.StreakReset"))
     end
 
     local day = DailyConfig.GetNextDay(data.daily, now)
@@ -50,7 +49,7 @@ local function onClaimDaily(player: Player)
     DataService.Set(player, "daily", { streak = day, lastClaim = now })
 
     IncomeService.AddCoins(player, reward.coins, "daily")
-    local rewardText = string.format(Strings.Daily.Coins, Format.Number(reward.coins))
+    local rewardText = Locale.Msg("Daily.Coins", Locale.Num(reward.coins))
 
     local mineralId = reward.mineral
     if mineralId then
@@ -64,14 +63,11 @@ local function onClaimDaily(player: Player)
             return inventory
         end)
         IndexService.Register(player, mineralId, "none")
-        rewardText = string.format(
-            Strings.Daily.MineralReward,
-            rewardText,
-            Strings.Minerals[mineralId] or mineralId
-        )
+        rewardText =
+            Locale.Msg("Daily.MineralReward", rewardText, Locale.Ref("Minerals." .. mineralId))
     end
 
-    Remotes.Notify:FireClient(player, string.format(Strings.Daily.Claimed, day, rewardText))
+    Remotes.Notify:FireClient(player, Locale.Msg("Daily.Claimed", day, rewardText))
 end
 
 function DailyService.Init()

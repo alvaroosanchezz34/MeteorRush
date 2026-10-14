@@ -22,7 +22,7 @@ local CarryConfig = require(Shared.Config.Carry)
 local MineralVisual = require(Shared.Util.MineralVisual)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local CarryService = {}
@@ -253,7 +253,7 @@ local function deposit(player: Player)
     end
     backpacks[player] = nil
     changed(player)
-    Remotes.Notify:FireClient(player, string.format(Strings.Carry.Deposited, #items))
+    Remotes.Notify:FireClient(player, Locale.Msg("Carry.Deposited", #items))
     TutorialService.Advance(player, 2)
     QuestService.Progress(player, "deposit", #items)
     -- Objetivos secretos: llegar a la base poco después de un robo, y depositar una mochila

@@ -28,7 +28,9 @@ function InventoryMenu.Mount(window: Components.Window)
         parent = window.content,
     })
     Components.Button({
-        text = Strings.Inventory.PlaceBest,
+        text = function(): string
+            return Strings.Inventory.PlaceBest
+        end,
         size = UDim2.fromScale(0.23, 0.085),
         position = UDim2.fromScale(0.52, 0),
         color = Components.Colors.Success,
@@ -38,7 +40,9 @@ function InventoryMenu.Mount(window: Components.Window)
         end,
     })
     Components.Button({
-        text = Strings.Inventory.SellJunk,
+        text = function(): string
+            return Strings.Inventory.SellJunk
+        end,
         size = UDim2.fromScale(0.23, 0.085),
         position = UDim2.fromScale(0.76, 0),
         color = Components.Colors.Gold,

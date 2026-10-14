@@ -14,7 +14,6 @@ local DataService = require(script.Parent.DataService)
 local PlotService = require(script.Parent.PlotService)
 
 local Shared = ReplicatedStorage.Shared
-local Format = require(Shared.Util.Format)
 local Log = require(Shared.Util.Log)
 local MapConfig = require(Shared.Config.Map)
 local Network = require(Shared.Config.Network)
@@ -22,7 +21,7 @@ local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local SocialConfig = require(Shared.Config.Social)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 local VisitService = {}
 
@@ -58,16 +57,13 @@ local function onVisitBase(player: Player, target: unknown)
         return
     end
     if CarryService.GetCount(player) > 0 then
-        Remotes.Notify:FireClient(player, Strings.Visit.Carrying)
+        Remotes.Notify:FireClient(player, Locale.Msg("Visit.Carrying"))
         return
     end
     local now = os.clock()
     local wait = SocialConfig.VisitCooldown - (now - (lastVisit[player] or -math.huge))
     if wait > 0 then
-        Remotes.Notify:FireClient(
-            player,
-            string.format(Strings.Visit.Cooldown, Format.Duration(math.ceil(wait)))
-        )
+        Remotes.Notify:FireClient(player, Locale.Msg("Visit.Cooldown", Locale.Dur(math.ceil(wait))))
         return
     end
     lastVisit[player] = now
@@ -78,7 +74,7 @@ local function onVisitBase(player: Player, target: unknown)
     local inside = plot.cframe * CFrame.new(0, 3, 0)
     humanoid.Sit = false
     character:PivotTo(CFrame.lookAt(front.Position, inside.Position))
-    Remotes.Notify:FireClient(player, string.format(Strings.Visit.Arrived, owner.DisplayName))
+    Remotes.Notify:FireClient(player, Locale.Msg("Visit.Arrived", owner.DisplayName))
 end
 
 -- Teletransporte al Outpost ("outpost") o a la base propia ("home").
@@ -98,16 +94,13 @@ local function onTeleport(player: Player, destination: unknown)
     end
     -- Sin carga: si no, sería la forma de escapar de un robo o de saltarse el camino a casa.
     if CarryService.GetCount(player) > 0 then
-        Remotes.Notify:FireClient(player, Strings.Visit.TeleportCarrying)
+        Remotes.Notify:FireClient(player, Locale.Msg("Visit.TeleportCarrying"))
         return
     end
     local now = os.clock()
     local wait = MapConfig.Hub.cooldown - (now - (lastTeleport[player] or -math.huge))
     if wait > 0 then
-        Remotes.Notify:FireClient(
-            player,
-            string.format(Strings.Visit.Cooldown, Format.Duration(math.ceil(wait)))
-        )
+        Remotes.Notify:FireClient(player, Locale.Msg("Visit.Cooldown", Locale.Dur(math.ceil(wait))))
         return
     end
     lastTeleport[player] = now
@@ -117,10 +110,10 @@ local function onTeleport(player: Player, destination: unknown)
         -- En la losa central, mirando hacia el interior de la plaza.
         local center = MapConfig.GetHubCFrame() * CFrame.new(0, MapConfig.Hub.height + 3, 0)
         character:PivotTo(center * CFrame.Angles(0, math.pi, 0))
-        Remotes.Notify:FireClient(player, Strings.Visit.OutpostArrived)
+        Remotes.Notify:FireClient(player, Locale.Msg("Visit.OutpostArrived"))
     else
         character:PivotTo(plot.spawnLocation.CFrame + Vector3.new(0, 3, 0))
-        Remotes.Notify:FireClient(player, Strings.Visit.HomeArrived)
+        Remotes.Notify:FireClient(player, Locale.Msg("Visit.HomeArrived"))
     end
 end
 

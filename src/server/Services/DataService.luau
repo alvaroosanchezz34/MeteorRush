@@ -17,7 +17,7 @@ local Log = require(Shared.Util.Log)
 local Network = require(Shared.Config.Network)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 type StoreProfile = {
@@ -115,7 +115,7 @@ local function loadProfile(player: Player)
 
     if profile == nil then
         if player.Parent == Players then
-            player:Kick(Strings.Data.LoadFailed)
+            player:Kick(Locale.GetText("Data.LoadFailed", Locale.GetCurrentLanguage(player)))
         end
         return
     end
@@ -127,7 +127,7 @@ local function loadProfile(player: Player)
         profiles[player] = nil
         lastPlaytimeFlush[player] = nil
         if player.Parent == Players then
-            player:Kick(Strings.Data.SessionEnded)
+            player:Kick(Locale.GetText("Data.SessionEnded", Locale.GetCurrentLanguage(player)))
         end
     end)
 

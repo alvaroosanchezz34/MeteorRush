@@ -21,13 +21,12 @@ local MeteorService = require(script.Parent.MeteorService)
 
 local Shared = ReplicatedStorage.Shared
 local EventsConfig = require(Shared.Config.Events)
-local Format = require(Shared.Util.Format)
 local LiveOps = require(Shared.Config.LiveOps)
 local Log = require(Shared.Util.Log)
 local MeteorsConfig = require(Shared.Config.Meteors)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local WeightedRandom = require(Shared.Util.WeightedRandom)
 
 type Handler = {
@@ -90,8 +89,8 @@ local handlers: { [string]: Handler } = {
     supernova = { start = spawnMeteor, finish = nothing },
 }
 
-local function name(event: EventsConfig.Event): string
-    return Strings.Events.Names[event.id] or event.id
+local function name(event: EventsConfig.Event): Locale.Message
+    return Locale.Ref(`Events.Names.{event.id}`)
 end
 
 local function reward()
@@ -101,10 +100,7 @@ local function reward()
             local amount = PlayerStats.GetEventReward(data)
             IncomeService.AddCoins(player, amount, "events")
             AchievementService.AddStat(player, "eventsJoined", 1)
-            Remotes.Notify:FireClient(
-                player,
-                string.format(Strings.Events.Reward, Format.Number(amount))
-            )
+            Remotes.Notify:FireClient(player, Locale.Msg("Events.Reward", Locale.Num(amount)))
         end
     end
     table.clear(participants)
@@ -126,9 +122,7 @@ local function run(event: EventsConfig.Event, countdown: number)
     running = event
     Workspace:SetAttribute("EventId", event.id)
     Workspace:SetAttribute("EventStartsAt", Workspace:GetServerTimeNow() + countdown)
-    Remotes.Notify:FireAllClients(
-        string.format(Strings.Events.Starting, name(event), Format.Duration(countdown))
-    )
+    Remotes.Notify:FireAllClients(Locale.Msg("Events.Starting", name(event), Locale.Dur(countdown)))
     if not waitUnlessStopped(countdown) then
         return
     end
@@ -150,7 +144,7 @@ local function run(event: EventsConfig.Event, countdown: number)
     end
     active = nil
     lastFinished[event.id] = os.clock()
-    Remotes.Notify:FireAllClients(string.format(Strings.Events.Ended, name(event)))
+    Remotes.Notify:FireAllClients(Locale.Msg("Events.Ended", name(event)))
     -- Un evento parado a mano no reparte recompensas.
     if completed then
         reward()

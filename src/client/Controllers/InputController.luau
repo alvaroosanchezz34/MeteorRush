@@ -19,6 +19,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = Shared:WaitForChild("Config")
 local Equipment = require(Config:WaitForChild("Equipment"))
 local MeteorsConfig = require(Config:WaitForChild("Meteors"))
+local Locale = require(Shared:WaitForChild("Locale"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local StealConfig = require(Config:WaitForChild("Steal"))
@@ -171,6 +172,15 @@ function InputController.Start()
     )
     ContextActionService:SetTitle(HIT_ACTION, Strings.Steal.HitButton)
     ContextActionService:SetPosition(HIT_ACTION, UDim2.fromScale(0.55, 0.3))
+
+    -- Botones táctiles: su texto sigue al idioma.
+    Locale.OnChanged(function()
+        ContextActionService:SetTitle(MINE_ACTION, Strings.Mining.MineButton)
+        ContextActionService:SetTitle(HIT_ACTION, Strings.Steal.HitButton)
+        if abilityBound then
+            ContextActionService:SetTitle(ABILITY_ACTION, Strings.Steal.AbilityButton)
+        end
+    end)
 end
 
 return InputController

@@ -124,6 +124,8 @@ local function getGui(): ScreenGui
         return gui
     end
     local created = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    created.AutoLocalize = false
     created.Name = "CrateOpening"
     created.ResetOnSpawn = false
     created.IgnoreGuiInset = true
@@ -420,7 +422,7 @@ function CrateOpening.Play(result: Result)
         })
         name.ZIndex = 7
         local rarityLabel = Components.Label({
-            text = `{string.upper(Strings.Equipment.Rarities[result.rarity] or result.rarity)} {string.upper(
+            text = `{Strings.Upper(Strings.Equipment.Rarities[result.rarity] or result.rarity)} {Strings.Upper(
                 Strings.Equipment.KindNames[result.kind] or ""
             )}`,
             size = UDim2.fromScale(0.5, 0.04),

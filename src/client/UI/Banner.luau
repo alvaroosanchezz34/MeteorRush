@@ -47,6 +47,8 @@ local function getGui(): ScreenGui
         return gui
     end
     local created = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    created.AutoLocalize = false
     created.Name = "Banner"
     created.ResetOnSpawn = false
     created.DisplayOrder = 20

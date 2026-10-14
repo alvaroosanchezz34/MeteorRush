@@ -37,6 +37,8 @@ local function getGui(): ScreenGui
         return gui
     end
     local created = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    created.AutoLocalize = false
     created.Name = "LegendaryMoment"
     created.ResetOnSpawn = false
     created.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -150,7 +152,7 @@ function LegendaryMoment.Show(playerName: any, kind: any, mineralId: any, mutati
         color = (if mutation then mutation.color else nil)
             or Minerals.Rarities[mineral.rarity].color
         what =
-            string.upper(Strings.MineralName(mineral.id, if mutation then mutation.id else "none"))
+            Strings.Upper(Strings.MineralName(mineral.id, if mutation then mutation.id else "none"))
     end
     table.insert(queue, {
         heading = text.Heading,

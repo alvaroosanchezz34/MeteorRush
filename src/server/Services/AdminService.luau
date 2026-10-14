@@ -61,6 +61,7 @@ local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local ShopConfig = require(Shared.Config.Shop)
+local Locale = require(Shared.Locale)
 local Strings = require(Shared.Strings)
 local Types = require(Shared.Types)
 local WeightedRandom = require(Shared.Util.WeightedRandom)
@@ -280,7 +281,7 @@ commands.kick = {
             return false, "No se puede expulsar a un administrador."
         end
         AdminLogs.Add(admin, "KICK", target.Name)
-        target:Kick(Strings.Admin.Kicked)
+        target:Kick(Locale.GetText("Admin.Kicked", Locale.GetCurrentLanguage(target)))
         return true, `{target.Name} expulsado.`
     end,
 }
@@ -1028,11 +1029,11 @@ commands.shutdown = {
         -- Los datos se guardan al salir cada jugador, como en cualquier desconexión.
         for _, player in Players:GetPlayers() do
             if player ~= admin then
-                player:Kick(Strings.Admin.Shutdown)
+                player:Kick(Locale.GetText("Admin.Shutdown", Locale.GetCurrentLanguage(player)))
             end
         end
         task.delay(1, function()
-            admin:Kick(Strings.Admin.Shutdown)
+            admin:Kick(Locale.GetText("Admin.Shutdown", Locale.GetCurrentLanguage(admin)))
         end)
         return true, "Cerrando el servidor."
     end,
@@ -1204,7 +1205,7 @@ function AdminService.Start()
     -- Mientras se cierra el servidor no entra nadie más.
     Players.PlayerAdded:Connect(function(player: Player)
         if shuttingDown then
-            player:Kick(Strings.Admin.Shutdown)
+            player:Kick(Locale.GetText("Admin.Shutdown", Locale.GetCurrentLanguage(player)))
         end
     end)
 end

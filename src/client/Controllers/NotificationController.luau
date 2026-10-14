@@ -18,6 +18,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = Shared:WaitForChild("Config")
 local AchievementsConfig = require(Config:WaitForChild("Achievements"))
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
+local Locale = require(Shared:WaitForChild("Locale"))
 local Minerals = require(Config:WaitForChild("Minerals"))
 local Mutations = require(Config:WaitForChild("Mutations"))
 local RarityFx = require(Config:WaitForChild("RarityFx"))
@@ -96,9 +97,21 @@ local function onAchievementUnlocked(achievementId: any, reward: any)
 end
 
 function NotificationController.Init()
-    Remotes.Notify.OnClientEvent:Connect(function(text: any)
-        if type(text) == "string" then
-            Notifications.Show(text)
+    -- El servidor manda mensajes de Locale (clave + parámetros) y aquí se traducen al idioma
+    -- del jugador. Un texto suelto se muestra tal cual.
+    Remotes.Notify.OnClientEvent:Connect(function(message: any)
+        if type(message) ~= "string" and type(message) ~= "table" then
+            return
+        end
+        local text = Locale.Resolve(message)
+        if text ~= "" then
+            -- El tipo (error, éxito, información) se deduce del texto en inglés, que es el
+            -- mismo sea cual sea el idioma elegido.
+            Notifications.Show(
+                text,
+                nil,
+                Notifications.Classify(Locale.Resolve(message, Locale.Default))
+            )
         end
     end)
     Remotes.IndexDiscovered.OnClientEvent:Connect(onIndexDiscovered)

@@ -16,7 +16,7 @@ local Shared = ReplicatedStorage.Shared
 local EquipmentVisual = require(Shared.Util.EquipmentVisual)
 local MapConfig = require(Shared.Config.Map)
 local NpcsConfig = require(Shared.Config.Npcs)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 local METAL = Color3.fromRGB(70, 75, 95)
 local DARK = Color3.fromRGB(32, 33, 44)
@@ -362,19 +362,27 @@ local function buildFigure(npc: NpcsConfig.Npc, base: CFrame, parent: Instance)
     model:SetAttribute("Base", base)
 
     -- Cartel: nombre y, debajo, para qué sirve.
-    local name = Strings.Npcs.Names[npc.id] or npc.id
+    local name = Locale.Ref(`Npcs.Names.{npc.id}`)
     local tag = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    tag.AutoLocalize = false
     tag.Name = "NameTag"
     tag.Size = UDim2.fromScale(9, 2.2)
     tag.StudsOffsetWorldSpace = Vector3.new(0, 4.6, 0)
     tag.MaxDistance = NpcsConfig.NameDistance
     tag.LightInfluence = 0
-    local function line(text: string, color: Color3, y: number, height: number, font: Enum.Font)
+    local function line(
+        text: Locale.Message,
+        color: Color3,
+        y: number,
+        height: number,
+        font: Enum.Font
+    )
         local label = Instance.new("TextLabel")
         label.Size = UDim2.fromScale(1, height)
         label.Position = UDim2.fromScale(0, y)
         label.BackgroundTransparency = 1
-        label.Text = text
+        Locale.Tag(label, "Text", text)
         label.TextColor3 = color
         label.TextScaled = true
         label.TextStrokeTransparency = 0
@@ -382,13 +390,19 @@ local function buildFigure(npc: NpcsConfig.Npc, base: CFrame, parent: Instance)
         label.Parent = tag
     end
     line(name, accent, 0, 0.58, Enum.Font.GothamBlack)
-    line(Strings.Npcs.Roles[npc.id] or "", WHITE, 0.6, 0.4, Enum.Font.GothamBold)
+    line(Locale.Ref(`Npcs.Roles.{npc.id}`), WHITE, 0.6, 0.4, Enum.Font.GothamBold)
     tag.Parent = root
 
     -- Hablar es opcional: una opción de proximidad, que funciona igual en PC, móvil y mando.
     local prompt = Instance.new("ProximityPrompt")
-    prompt.ActionText = Strings.Npcs.Actions[npc.id] or Strings.Npcs.Talk
-    prompt.ObjectText = name
+    -- Los que abren un menú dicen cuál; los demás, "Hablar".
+    local actionKey = `Npcs.Actions.{npc.id}`
+    Locale.Tag(
+        prompt,
+        "ActionText",
+        Locale.Ref(if Locale.GetRaw(actionKey) ~= nil then actionKey else "Npcs.Talk")
+    )
+    Locale.Tag(prompt, "ObjectText", name)
     prompt.MaxActivationDistance = NpcsConfig.TalkDistance
     prompt.HoldDuration = 0
     prompt.RequiresLineOfSight = false
@@ -777,13 +791,15 @@ local function buildPlaza(center: CFrame, parent: Instance)
     })
     anchor.CanQuery = false
     local sign = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    sign.AutoLocalize = false
     sign.Size = UDim2.fromScale(26, 5)
     sign.MaxDistance = 600
     sign.LightInfluence = 0
     local label = Instance.new("TextLabel")
     label.Size = UDim2.fromScale(1, 1)
     label.BackgroundTransparency = 1
-    label.Text = Strings.Npcs.OutpostSign
+    Locale.Tag(label, "Text", Locale.Msg("Npcs.OutpostSign"))
     label.TextColor3 = MapConfig.PlotAccentColor
     label.TextScaled = true
     label.TextStrokeTransparency = 0

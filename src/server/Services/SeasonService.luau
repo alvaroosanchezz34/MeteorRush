@@ -14,14 +14,13 @@ local IncomeService = require(script.Parent.IncomeService)
 local LiveOpsService = require(script.Parent.LiveOpsService)
 
 local Shared = ReplicatedStorage.Shared
-local Format = require(Shared.Util.Format)
 local LiveOps = require(Shared.Config.LiveOps)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local ShopConfig = require(Shared.Config.Shop)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local SeasonService = {}
@@ -61,14 +60,14 @@ local function grantTier(player: Player, season: LiveOps.Season, index: number, 
         return progress
     end)
 
-    local reward = ""
+    local reward: Locale.Message = ""
     if tier.coinsFraction then
         local coins = PlayerStats.GetSeasonCoins(data, tier.coinsFraction)
         IncomeService.AddCoins(player, coins, "season")
-        reward = string.format(Strings.Season.RewardCoins, Format.Number(coins))
+        reward = Locale.Msg("Season.RewardCoins", Locale.Num(coins))
     elseif tier.shards then
         DataService.Increment(player, "shards", tier.shards)
-        reward = string.format(Strings.Season.RewardShards, tier.shards)
+        reward = Locale.Msg("Season.RewardShards", tier.shards)
     elseif tier.cosmetic then
         local cosmetic = ShopConfig.CosmeticsByKey[tier.cosmetic]
         if cosmetic and cosmetic.season == season.id then
@@ -78,10 +77,10 @@ local function grantTier(player: Player, season: LiveOps.Season, index: number, 
                 end
                 return cosmetics
             end)
-            reward = Strings.Shop.Names[cosmetic.key] or cosmetic.key
+            reward = Locale.Ref(`Shop.Names.{cosmetic.key}`)
         end
     end
-    Remotes.Notify:FireClient(player, string.format(Strings.Season.TierUnlocked, index, reward))
+    Remotes.Notify:FireClient(player, Locale.Msg("Season.TierUnlocked", index, reward))
 end
 
 local function checkTiers(player: Player, season: LiveOps.Season)
@@ -136,9 +135,9 @@ local function onStat(player: Player, stat: string, amount: number)
     for _, mission in completed do
         Remotes.Notify:FireClient(
             player,
-            string.format(
-                Strings.Season.MissionDone,
-                string.format(mission.text, Format.Number(mission.goal)),
+            Locale.Msg(
+                "Season.MissionDone",
+                Locale.Msg(`Seasons.{season.id}.Missions.{mission.id}`, Locale.Num(mission.goal)),
                 mission.points
             )
         )

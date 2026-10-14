@@ -37,7 +37,9 @@ function BasesMenu.Mount(window: Components.Window)
     for index, kind in KINDS do
         local x = (index - 1) * 0.51
         Components.Label({
-            text = Strings.Bases.Titles[kind] or kind,
+            text = function(): string
+                return Strings.Bases.Titles[kind] or kind
+            end,
             size = UDim2.fromScale(0.49, 0.1),
             position = UDim2.fromScale(x, 0),
             color = Components.Colors.Gold,

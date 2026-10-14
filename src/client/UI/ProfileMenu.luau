@@ -36,7 +36,9 @@ function ProfileMenu.Mount(window: Components.Window)
         parent = window.content,
     })
     local removeButton = Components.Button({
-        text = Strings.Profile.RemoveTitle,
+        text = function(): string
+            return Strings.Profile.RemoveTitle
+        end,
         size = UDim2.fromScale(0.3, 0.12),
         position = UDim2.fromScale(0.68, 0.03),
         color = Components.Colors.Danger,

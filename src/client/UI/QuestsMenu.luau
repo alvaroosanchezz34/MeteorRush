@@ -37,14 +37,18 @@ function QuestsMenu.Mount(window: Components.Window)
 
     -- Códigos -------------------------------------------------------------------
     local codeBox = Components.Input({
-        placeholder = Strings.Codes.Placeholder,
+        placeholder = function(): string
+            return Strings.Codes.Placeholder
+        end,
         size = UDim2.fromScale(0.62, 0.14),
         position = UDim2.fromScale(0, 0.82),
         parent = window.content,
     })
 
     Components.Button({
-        text = Strings.Codes.Redeem,
+        text = function(): string
+            return Strings.Codes.Redeem
+        end,
         size = UDim2.fromScale(0.34, 0.14),
         position = UDim2.fromScale(0.66, 0.82),
         color = Components.Colors.Primary,
@@ -138,8 +142,15 @@ function QuestsMenu.Mount(window: Components.Window)
         end
     end
 
+    -- Una sola cuenta atrás aunque se vuelva a pintar con la ventana abierta (p. ej. al
+    -- cambiar de idioma).
+    local ticking = false
     window.OnOpened(function()
         refresh()
+        if ticking then
+            return
+        end
+        ticking = true
         -- Actualiza la cuenta atrás mientras la ventana está abierta.
         local lastDay = QuestsConfig.GetDay(Workspace:GetServerTimeNow())
         while window.IsOpen() do
@@ -154,6 +165,7 @@ function QuestsMenu.Mount(window: Components.Window)
                 end
             end
         end
+        ticking = false
     end)
     for _, key in { "quests", "rebirths" } do
         DataController.OnChanged(key, refresh)

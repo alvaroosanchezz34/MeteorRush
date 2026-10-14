@@ -11,21 +11,20 @@ local IncomeService = require(script.Parent.IncomeService)
 
 local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
-local Format = require(Shared.Util.Format)
 local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local QuestsConfig = require(Shared.Config.Quests)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 local Types = require(Shared.Types)
 
 local QuestService = {}
 
 local limiter = RateLimiter.new(Network.RateLimits.ClaimQuest)
 
-local function describe(quest: QuestsConfig.Quest): string
-    return string.format(Strings.Quests.Descriptions[quest.id] or quest.id, quest.goal)
+local function describe(quest: QuestsConfig.Quest): Locale.Message
+    return Locale.Msg("Quests.Descriptions." .. quest.id, quest.goal)
 end
 
 -- Si el progreso guardado es de otro día, empieza el de hoy desde cero.
@@ -69,7 +68,7 @@ function QuestService.Progress(player: Player, kind: string, amount: number)
         return quests
     end)
     for _, quest in completed do
-        Remotes.Notify:FireClient(player, string.format(Strings.Quests.Completed, describe(quest)))
+        Remotes.Notify:FireClient(player, Locale.Msg("Quests.Completed", describe(quest)))
     end
 end
 
@@ -98,10 +97,7 @@ local function onClaimQuest(player: Player, questId: unknown)
     end)
     IncomeService.AddCoins(player, reward, "quests")
     AchievementService.AddStat(player, "questsClaimed", 1)
-    Remotes.Notify:FireClient(
-        player,
-        string.format(Strings.Quests.RewardClaimed, Format.Number(reward))
-    )
+    Remotes.Notify:FireClient(player, Locale.Msg("Quests.RewardClaimed", Locale.Num(reward)))
 end
 
 function QuestService.Init()

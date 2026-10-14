@@ -120,6 +120,7 @@ Theme.Icons = {
     quests = "📜",
     rebirth = "⭐",
     trade = "🤝",
+    settings = "⚙",
 } :: { [string]: string }
 
 -- Animaciones ---------------------------------------------------------------------------------

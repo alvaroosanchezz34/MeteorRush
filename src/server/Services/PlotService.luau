@@ -9,7 +9,7 @@ local MapService = require(script.Parent.MapService)
 
 local Shared = ReplicatedStorage.Shared
 local MapConfig = require(Shared.Config.Map)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 local PlotService = {}
 
@@ -22,14 +22,19 @@ local titleConnections: { [Player]: RBXScriptConnection } = {}
 local function setSign(plot: MapService.PlotLayout, owner: Player?)
     local label = plot.signLabel
     if label then
-        -- AchievementService pone el título equipado en el atributo `Title` del jugador.
-        local title = if owner then owner:GetAttribute("Title") else nil
-        if owner and type(title) == "string" then
-            label.Text = string.format(Strings.Plot.OwnerSignTitle, owner.DisplayName, title)
+        -- AchievementService pone el título equipado en los atributos `TitleId` y `Title`.
+        -- El cartel se marca con Locale.Tag: cada jugador lo lee en su idioma.
+        local titleId = if owner then owner:GetAttribute("TitleId") else nil
+        if owner and type(titleId) == "string" then
+            Locale.Tag(
+                label,
+                "Text",
+                Locale.Msg("Plot.OwnerSignTitle", owner.DisplayName, Locale.Ref(`Titles.{titleId}`))
+            )
         elseif owner then
-            label.Text = string.format(Strings.Plot.OwnerSign, owner.DisplayName)
+            Locale.Tag(label, "Text", Locale.Msg("Plot.OwnerSign", owner.DisplayName))
         else
-            label.Text = Strings.Plot.FreeSign
+            Locale.Tag(label, "Text", Locale.Msg("Plot.FreeSign"))
         end
     end
 end

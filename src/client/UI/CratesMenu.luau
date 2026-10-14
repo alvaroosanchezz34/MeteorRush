@@ -69,7 +69,9 @@ function CratesMenu.Mount(window: Components.Window)
         parent = oddsPanel,
     })
     Components.Label({
-        text = Strings.Crates.OddsTotal,
+        text = function(): string
+            return Strings.Crates.OddsTotal
+        end,
         size = UDim2.fromScale(0.3, 0.06),
         position = UDim2.fromScale(0.03, 0.92),
         alignment = Enum.TextXAlignment.Left,
@@ -77,7 +79,9 @@ function CratesMenu.Mount(window: Components.Window)
         parent = oddsPanel,
     })
     Components.Button({
-        text = Strings.Crates.Close,
+        text = function(): string
+            return Strings.Crates.Close
+        end,
         size = UDim2.fromScale(0.2, 0.09),
         position = UDim2.fromScale(0.77, 0.02),
         color = Components.Colors.PanelRaised,
@@ -183,7 +187,9 @@ function CratesMenu.Mount(window: Components.Window)
             parent = row,
         })
         Components.Button({
-            text = Strings.Crates.OddsButton,
+            text = function(): string
+                return Strings.Crates.OddsButton
+            end,
             size = UDim2.fromScale(0.2, 0.22),
             position = UDim2.fromScale(0.54, 0.73),
             color = Components.Colors.PanelRaised,
@@ -203,7 +209,9 @@ function CratesMenu.Mount(window: Components.Window)
             end,
         })
         local open = Components.Button({
-            text = Strings.Crates.Open,
+            text = function(): string
+                return Strings.Crates.Open
+            end,
             size = UDim2.fromScale(0.22, 0.4),
             position = UDim2.fromScale(0.76, 0.53),
             color = Components.Colors.Success,

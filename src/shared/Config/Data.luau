@@ -55,6 +55,8 @@ local template: Types.Profile = {
     decor = { slots = {}, effect = "" },
     season = { id = "", points = 0, progress = {}, done = {}, claimed = {} },
     seenVersion = "",
+    -- Los perfiles anteriores reciben esto al cargar (Reconcile): idioma automático.
+    settings = { language = "" },
     social = { visits = 0, likes = 0, liked = {} },
     -- Los perfiles anteriores al equipamiento reciben estos valores al cargar (Reconcile):
     -- el pico y el arma iniciales, sin cajas.

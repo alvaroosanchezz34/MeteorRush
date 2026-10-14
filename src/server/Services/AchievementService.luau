@@ -18,6 +18,7 @@ local Network = require(Shared.Config.Network)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
+local Locale = require(Shared.Locale)
 local Strings = require(Shared.Strings)
 local Types = require(Shared.Types)
 
@@ -68,12 +69,14 @@ local function check(player: Player, stat: string?)
     end
 end
 
--- Pone el título equipado sobre la cabeza del personaje y en el atributo `Title`.
+-- Pone el título equipado sobre la cabeza del personaje y en los atributos `TitleId` (id del
+-- logro, para traducirlo en cada cliente) y `Title` (texto en inglés, el de siempre).
 local function applyTitle(player: Player)
     local data = DataService.GetData(player)
-    local text = if data and PlayerStats.OwnsTitle(data, data.title)
-        then Strings.Titles[data.title]
-        else nil
+    local titleId = if data and PlayerStats.OwnsTitle(data, data.title) then data.title else nil
+    local text = if titleId then Strings.Titles[titleId] else nil
+    -- TitleId antes que Title: quien escucha los cambios de Title ya encuentra el id nuevo.
+    player:SetAttribute("TitleId", titleId)
     player:SetAttribute("Title", text)
 
     local character = player.Character
@@ -90,6 +93,8 @@ local function applyTitle(player: Player)
     end
 
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.Name = TITLE_TAG
     billboard.Size = UDim2.fromScale(7, 0.9)
     billboard.StudsOffsetWorldSpace = Vector3.new(0, 3.2, 0)
@@ -98,7 +103,7 @@ local function applyTitle(player: Player)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.fromScale(1, 1)
     label.BackgroundTransparency = 1
-    label.Text = text
+    Locale.Tag(label, "Text", Locale.Ref(`Titles.{titleId}`))
     label.TextColor3 = TITLE_COLOR
     label.TextScaled = true
     label.TextStrokeTransparency = 0.3

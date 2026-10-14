@@ -123,7 +123,7 @@ local function onStealMoment(mineralId: any, mutationId: any, fromName: any)
     Banner.Show({
         heading = string.format(
             Strings.Steal.Stolen,
-            string.upper(Strings.MineralName(mineral.id, mutation.id))
+            Strings.Upper(Strings.MineralName(mineral.id, mutation.id))
         ),
         title = Strings.MineralName(mineral.id, mutation.id),
         subtitle = if type(fromName) == "string"

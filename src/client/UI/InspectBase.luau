@@ -52,8 +52,7 @@ local function refresh()
     local isOwn = player == Players.LocalPlayer
     nameLabel.Text = string.format(Strings.Inspect.Owner, player.DisplayName)
 
-    local title = player:GetAttribute("Title")
-    valueLabels.title.Text = if type(title) == "string" then title else Strings.Profile.NoTitle
+    valueLabels.title.Text = Strings.TitleOf(player) or Strings.Profile.NoTitle
     valueLabels.rebirths.Text = Format.Number(numberAttribute(player, "Rebirths"))
     valueLabels.index.Text = string.format(
         Strings.Quests.Progress,
@@ -125,6 +124,8 @@ end
 
 function InspectBase.Mount()
     local screen = Instance.new("ScreenGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    screen.AutoLocalize = false
     screen.Name = "InspectBase"
     screen.ResetOnSpawn = false
     screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -141,7 +142,9 @@ function InspectBase.Mount()
     panel.Visible = false
 
     Components.Label({
-        text = Strings.Inspect.Title,
+        text = function(): string
+            return Strings.Inspect.Title
+        end,
         size = UDim2.fromScale(0.78, 0.09),
         position = UDim2.fromScale(0.04, 0.03),
         alignment = Enum.TextXAlignment.Left,
@@ -149,7 +152,9 @@ function InspectBase.Mount()
         parent = panel,
     })
     local close = Components.Button({
-        text = Strings.Hud.Close,
+        text = function(): string
+            return Strings.Hud.Close
+        end,
         size = UDim2.fromScale(0.1, 0.09),
         position = UDim2.fromScale(0.86, 0.03),
         color = Components.Colors.Danger,
@@ -175,7 +180,9 @@ function InspectBase.Mount()
     for index, key in ROWS do
         local y = 0.24 + (index - 1) * rowHeight
         Components.Label({
-            text = Strings.Inspect.Rows[key] or key,
+            text = function(): string
+                return Strings.Inspect.Rows[key] or key
+            end,
             size = UDim2.fromScale(0.42, rowHeight * 0.8),
             position = UDim2.fromScale(0.04, y),
             alignment = Enum.TextXAlignment.Left,
@@ -205,7 +212,9 @@ function InspectBase.Mount()
         end,
     })
     visitButton = Components.Button({
-        text = Strings.Visit.Button,
+        text = function(): string
+            return Strings.Visit.Button
+        end,
         size = UDim2.fromScale(0.44, 0.13),
         position = UDim2.fromScale(0.52, 0.82),
         color = Components.Colors.Success,

@@ -15,7 +15,7 @@ local MapConfig = require(Shared.Config.Map)
 local MeteorFx = require(Shared.Config.MeteorFx)
 local MeteorsConfig = require(Shared.Config.Meteors)
 local Remotes = require(Shared.Remotes)
-local Strings = require(Shared.Strings)
+local Locale = require(Shared.Locale)
 
 export type Meteor = {
     id: number,
@@ -419,7 +419,7 @@ local function spawnMeteor(id: number, typeId: string, position: Vector3)
 
     if typeId == GIANT_TYPE then
         Workspace:SetAttribute("GiantActive", true)
-        Remotes.Notify:FireAllClients(Strings.Meteor.GiantLanded)
+        Remotes.Notify:FireAllClients(Locale.Msg("Meteor.GiantLanded"))
     end
 
     task.delay(meteorType.duration, removeMeteor, id)
@@ -438,7 +438,7 @@ local function announceMeteor(typeId: string, impactIn: number, at: Vector3?)
     local impactAt = Workspace:GetServerTimeNow() + impactIn
     Remotes.MeteorIncoming:FireAllClients(id, typeId, position, impactAt)
     if meteorType.announce then
-        Remotes.Notify:FireAllClients(Strings.Meteor.Incoming[typeId])
+        Remotes.Notify:FireAllClients(Locale.Msg(`Meteor.Incoming.{typeId}`))
     end
 
     task.delay(impactIn, spawnMeteor, id, typeId, position)

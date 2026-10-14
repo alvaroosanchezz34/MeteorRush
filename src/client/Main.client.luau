@@ -8,6 +8,8 @@ type Controller = {
 }
 
 local CONTROLLER_ORDER: { string } = {
+    -- Primero el idioma, para que todo lo que se pinte después salga ya traducido.
+    "LanguageController",
     "DataController",
     "NotificationController",
     "CarryController",

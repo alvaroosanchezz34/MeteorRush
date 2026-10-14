@@ -7,7 +7,7 @@
 local Assets = require(script.Parent.Assets)
 local Minerals = require(script.Parent.Parent.Config.Minerals)
 local Mutations = require(script.Parent.Parent.Config.Mutations)
-local Strings = require(script.Parent.Parent.Strings)
+local Locale = require(script.Parent.Parent.Locale)
 
 local MineralVisual = {}
 
@@ -429,25 +429,26 @@ function MineralVisual.AddSign(
     local rarity = Minerals.Rarities[mineral.rarity]
     local special = MineralVisual.IsSpecial(mineralId, mutationId)
 
-    type Line = { name: string, text: string, color: Color3, heavy: boolean }
+    -- Los textos van como mensajes de Locale: cada jugador ve el cartel en su idioma.
+    type Line = { name: string, text: Locale.Message, color: Color3, heavy: boolean }
     local lines: { Line } = {}
     if mutation and mutationColor then
         table.insert(lines, {
             name = "Mutation",
-            text = string.upper(Strings.Mutations[mutationId] or mutationId),
+            text = Locale.UpperMsg(Locale.Ref(`Mutations.{mutationId}`)),
             color = mutationColor,
             heavy = true,
         })
     end
     table.insert(lines, {
         name = "MineralName",
-        text = Strings.Minerals[mineralId] or mineralId,
+        text = Locale.Ref(`Minerals.{mineralId}`),
         color = Color3.new(1, 1, 1),
         heavy = true,
     })
     table.insert(lines, {
         name = "Rarity",
-        text = Strings.Rarities[mineral.rarity] or mineral.rarity,
+        text = Locale.Ref(`Rarities.{mineral.rarity}`),
         color = rarity.color,
         heavy = rarity.rank >= MineralVisual.SpecialRank,
     })
@@ -458,6 +459,8 @@ function MineralVisual.AddSign(
     -- Los especiales llevan el cartel algo más grande.
     local scale = if special then 1.12 else 1
     local billboard = Instance.new("BillboardGui")
+    -- Los textos ya salen en el idioma elegido: sin traducción automática de Roblox.
+    billboard.AutoLocalize = false
     billboard.Name = "MineralSign"
     billboard.Size = UDim2.fromScale(SIGN_WIDTH * scale, #lines * SIGN_LINE_HEIGHT * scale)
     billboard.StudsOffsetWorldSpace =
@@ -484,7 +487,7 @@ function MineralVisual.AddSign(
         label.BackgroundTransparency = 1
         label.TextScaled = true
         label.Font = if line.heavy then Enum.Font.GothamBlack else Enum.Font.GothamBold
-        label.Text = line.text
+        Locale.Tag(label, "Text", line.text)
         label.TextColor3 = line.color
         label.TextStrokeColor3 = Color3.new(0, 0, 0)
         label.TextStrokeTransparency = 0

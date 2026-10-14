@@ -40,7 +40,7 @@ function PlayersMenu.Mount(window: Components.Window)
         for _, player in Players:GetPlayers() do
             if player ~= Players.LocalPlayer then
                 order += 1
-                local title = player:GetAttribute("Title")
+                local title = Strings.TitleOf(player)
                 local row =
                     Components.Panel({ size = UDim2.new(), layoutOrder = order, parent = list })
                 Components.Label({

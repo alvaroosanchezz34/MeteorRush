@@ -9,6 +9,7 @@ local DataController = require(script.Parent.Parent.Controllers.DataController)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
+local Locale = require(Shared:WaitForChild("Locale"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Strings = require(Shared:WaitForChild("Strings"))
 local Upgrades = require(Shared:WaitForChild("Config"):WaitForChild("Upgrades"))
@@ -17,7 +18,7 @@ local UpgradesMenu = {}
 
 local function formatValue(upgradeId: string, level: number): string
     if upgradeId == "pickaxe" then
-        return string.format("%.2f", Upgrades.GetMineTime(level))
+        return Locale.FormatDecimal(Upgrades.GetMineTime(level), 2)
     elseif upgradeId == "backpack" then
         return tostring(Upgrades.GetBackpackCapacity(level))
     elseif upgradeId == "speed" then
@@ -28,7 +29,7 @@ local function formatValue(upgradeId: string, level: number): string
         -- Son fracciones: se muestran como porcentaje.
         return tostring(math.round(Upgrades.GetValue(upgradeId, level) * 100))
     end
-    return string.format("%.2f", Upgrades.GetValue(upgradeId, level))
+    return Locale.FormatDecimal(Upgrades.GetValue(upgradeId, level), 2)
 end
 
 function UpgradesMenu.Mount(window: Components.Window)
