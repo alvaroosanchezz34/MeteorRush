@@ -95,6 +95,20 @@ Theme.Shadow = {
     Transparency = 0.55,
 }
 
+-- Cristal -------------------------------------------------------------------------------------
+-- Paneles del HUD: fondo oscuro translúcido, borde fino del color de acento y una línea de luz
+-- arriba. Es el aspecto de ciencia ficción del HUD.
+Theme.Glass = {
+    Color = Color3.fromRGB(12, 16, 32),
+    Transparency = 0.22,
+    StrokeTransparency = 0.45,
+    -- Brillo de la línea de arriba (transparencia) y su grosor en fracción del panel.
+    LineTransparency = 0.15,
+    LineHeight = 0.04,
+    -- Segundos por vuelta del borde animado de las ofertas.
+    BorderSpinSeconds = 3,
+}
+
 -- Degradados ----------------------------------------------------------------------------------
 -- Cuánto se oscurece la parte de abajo (1 = nada): da volumen sin recargar.
 Theme.Gradients = {
@@ -104,7 +118,8 @@ Theme.Gradients = {
 
 -- Iconos --------------------------------------------------------------------------------------
 Theme.Icons = {
-    close = "✕",
+    -- "✕" no existe en las fuentes de Roblox y sale como un cuadrado.
+    close = "X",
     coins = "💰",
     shards = "💎",
     lock = "🔒",

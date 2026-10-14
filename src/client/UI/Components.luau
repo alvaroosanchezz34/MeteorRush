@@ -339,6 +339,76 @@ function Components.Panel(props: {
     return frame
 end
 
+-- Panel de cristal del HUD: fondo oscuro translúcido con degradado, borde fino del color de
+-- acento y una línea de luz arriba. Devuelve el panel y su borde (para animarlo o recolorearlo).
+function Components.Glass(props: {
+    size: UDim2,
+    position: UDim2?,
+    anchor: Vector2?,
+    accent: Color3?,
+    radius: number?,
+    parent: Instance?,
+}): (Frame, UIStroke)
+    local accent = props.accent or Theme.Colors.Accent
+    local frame = Instance.new("Frame")
+    frame.Size = props.size
+    frame.Position = props.position or UDim2.new()
+    frame.AnchorPoint = props.anchor or Vector2.zero
+    frame.BackgroundColor3 = Theme.Glass.Color
+    frame.BackgroundTransparency = Theme.Glass.Transparency
+    frame.BorderSizePixel = 0
+    corner(frame, props.radius or Theme.Radius.Panel)
+    local stroke = border(frame, accent, Theme.Stroke.Panel, Theme.Glass.StrokeTransparency)
+    shade(frame, Theme.Gradients.Window)
+
+    local line = Instance.new("Frame")
+    line.Name = "GlassLine"
+    line.AnchorPoint = Vector2.new(0.5, 0)
+    line.Position = UDim2.fromScale(0.5, 0)
+    line.Size = UDim2.fromScale(0.6, Theme.Glass.LineHeight)
+    line.BackgroundColor3 = accent
+    line.BackgroundTransparency = Theme.Glass.LineTransparency
+    line.BorderSizePixel = 0
+    corner(line, Theme.Radius.Pill)
+    -- La línea se apaga hacia los lados.
+    local fade = Instance.new("UIGradient")
+    fade.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.5, 0),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    fade.Parent = line
+    line.Parent = frame
+
+    frame.Parent = props.parent
+    return frame, stroke
+end
+
+-- Borde que da vueltas con un brillo (ofertas y avisos importantes). Se para al destruir el borde.
+function Components.SpinBorder(stroke: UIStroke, color: Color3)
+    stroke.Color = Color3.new(1, 1, 1)
+    stroke.Transparency = 0
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, color),
+        ColorSequenceKeypoint.new(0.45, color),
+        ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+        ColorSequenceKeypoint.new(0.55, color),
+        ColorSequenceKeypoint.new(1, color),
+    })
+    gradient.Parent = stroke
+    TweenService:Create(
+        gradient,
+        TweenInfo.new(
+            Theme.Glass.BorderSpinSeconds,
+            Enum.EasingStyle.Linear,
+            Enum.EasingDirection.In,
+            -1
+        ),
+        { Rotation = 360 }
+    ):Play()
+end
+
 -- Lista vertical con desplazamiento. Las celdas se reparten con una rejilla cuyo tamaño
 -- es relativo al área visible, así que crecen o encogen con la pantalla.
 function Components.ScrollList(props: {

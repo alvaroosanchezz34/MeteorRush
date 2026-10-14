@@ -115,6 +115,8 @@ export type Profile = {
     passes: { [string]: boolean },
     -- Ids de recibos ya procesados (últimos 100).
     purchases: { string },
+    -- [producto] = true para los productos de una sola vez ya comprados (oferta de bienvenida).
+    offers: { [string]: boolean },
     boosts: { [string]: number },
     cosmetics: CosmeticsData,
     -- Paso del tutorial de primer uso: 0..3; 3 = terminado.

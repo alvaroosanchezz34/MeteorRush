@@ -69,6 +69,9 @@ function PlayerStats.GetBackpackCapacity(data: Types.Profile): number
     if PlayerStats.HasPass(data, "vipBackpack") then
         capacity += Shop.VipBackpackBonus
     end
+    if PlayerStats.HasPass(data, "megaBackpack") then
+        capacity += Shop.MegaBackpackBonus
+    end
     return capacity
 end
 
@@ -80,10 +83,14 @@ function PlayerStats.GetPedestalCount(data: Types.Profile): number
     return count
 end
 
--- Segundos por golpe: la mejora de pico y lo que ahorra el pico equipado.
+-- Segundos por golpe: la mejora de pico, lo que ahorra el pico equipado y el pass fastMining.
 function PlayerStats.GetMineTime(data: Types.Profile): number
-    return Upgrades.GetMineTime(data.upgrades.pickaxe)
+    local seconds = Upgrades.GetMineTime(data.upgrades.pickaxe)
         * (1 - Equipment.GetStat(data, "pickaxe", "speed"))
+    if PlayerStats.HasPass(data, "fastMining") then
+        seconds *= 1 - Shop.FastMiningReduction
+    end
+    return seconds
 end
 
 -- WalkSpeed con la mejora, el pass vip y la penalización por carga.
@@ -97,11 +104,15 @@ function PlayerStats.GetWalkSpeed(data: Types.Profile, carriedCount: number): nu
     return speed * (1 - slowdown)
 end
 
--- Multiplicador de peso para minerales Raro o superior (mejora de suerte y boost).
+-- Multiplicador de peso para minerales Raro o superior (mejora de suerte, pass superLuck y
+-- boost).
 function PlayerStats.GetLuckMultiplier(data: Types.Profile, now: number): number
     local luck = Upgrades.GetLuckMultiplier(data.upgrades.luck)
         + PlayerStats.GetPermanentValue(data, "luck")
         + Equipment.GetStat(data, "pickaxe", "rareFind")
+    if PlayerStats.HasPass(data, "superLuck") then
+        luck *= Shop.SuperLuckMultiplier
+    end
     if PlayerStats.IsBoostActive(data, "luck", now) then
         luck *= Shop.LuckBoostMultiplier
     end
@@ -155,14 +166,18 @@ function PlayerStats.GetFriendBonus(data: Types.Profile): number
     return friends * Social.IncomeBonusPerFriend
 end
 
--- Multiplicador de ingresos (rebirths, mejora de refinería, amigos y pass doubleCoins).
-function PlayerStats.GetIncomeMultiplier(data: Types.Profile): number
+-- Multiplicador de ingresos (rebirths, mejora de refinería, amigos, pass doubleCoins y boost
+-- coins2x). `now` es la hora Unix para el boost; por defecto, la de este equipo.
+function PlayerStats.GetIncomeMultiplier(data: Types.Profile, now: number?): number
     local multiplier = Rebirth.GetIncomeMultiplier(data.rebirths)
         * Upgrades.GetValue("refinery", PlayerStats.GetUpgradeLevel(data, "refinery"))
         * (1 + PlayerStats.GetFriendBonus(data))
         * (1 + PlayerStats.GetPermanentValue(data, "income"))
     if PlayerStats.HasPass(data, "doubleCoins") then
         multiplier *= Shop.DoubleCoinsMultiplier
+    end
+    if PlayerStats.IsBoostActive(data, "coins2x", now or os.time()) then
+        multiplier *= Shop.CoinsBoostMultiplier
     end
     return multiplier
 end
@@ -229,8 +244,9 @@ function PlayerStats.GetPedestalOf(data: Types.Profile, itemId: string): number?
     return nil
 end
 
--- Monedas por segundo que generan todos los pedestales del jugador.
-function PlayerStats.GetIncomePerSecond(data: Types.Profile): number
+-- Monedas por segundo que generan todos los pedestales del jugador. `now` es la hora Unix
+-- con la que se mira el boost coins2x (math.huge = sin boosts temporales).
+function PlayerStats.GetIncomePerSecond(data: Types.Profile, now: number?): number
     local unlocked = PlayerStats.GetPedestalCount(data)
     local total = 0
     for key, itemId in data.pedestals do
@@ -242,7 +258,7 @@ function PlayerStats.GetIncomePerSecond(data: Types.Profile): number
             end
         end
     end
-    return total * PlayerStats.GetIncomeMultiplier(data)
+    return total * PlayerStats.GetIncomeMultiplier(data, now)
 end
 
 -- Monedas que da un paquete de monedas: una fracción del coste del siguiente rebirth.
@@ -358,7 +374,8 @@ function PlayerStats.IsUnlocked(data: Types.Profile, unlock: Decor.Unlock?): boo
         and (achievement == nil or data.achievements[achievement] == true)
 end
 
--- Indica si el jugador puede equipar un cosmético (comprado, o exclusivo vip con el pass).
+-- Indica si el jugador puede equipar un cosmético (comprado, de un paquete comprado, o
+-- exclusivo vip con el pass).
 function PlayerStats.OwnsCosmetic(data: Types.Profile, cosmetic: Shop.Cosmetic): boolean
     if cosmetic.vipOnly then
         return PlayerStats.HasPass(data, "vip")

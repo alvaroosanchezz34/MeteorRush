@@ -90,7 +90,8 @@ local function refresh(player: Player)
         displays[player] = playerDisplays
     end
 
-    local multiplier = PlayerStats.GetIncomeMultiplier(data)
+    -- Sin boosts temporales: estos carteles no se repintan cuando un boost se acaba.
+    local multiplier = PlayerStats.GetIncomeMultiplier(data, math.huge)
     -- Lo más raro que hay expuesto: da "presencia" a la base (BaseController tiñe su baliza).
     local prestige = 0
     local prestigeMutation: string? = nil

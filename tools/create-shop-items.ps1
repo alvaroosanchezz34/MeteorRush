@@ -19,7 +19,10 @@ $Passes = @(
     @{ key = "vipBackpack"; name = "VIP Backpack"; price = 149; desc = "+10 backpack capacity." },
     @{ key = "autoCollect"; name = "Auto Collect"; price = 249; desc = "Your base income is collected automatically." },
     @{ key = "extraPedestals"; name = "+6 Pedestals"; price = 299; desc = "6 extra pedestals in your base." },
-    @{ key = "vip"; name = "VIP"; price = 399; desc = "VIP chat tag, exclusive gold trail and +10% walk speed." }
+    @{ key = "vip"; name = "VIP"; price = 399; desc = "VIP chat tag, exclusive gold trail and +10% walk speed." },
+    @{ key = "fastMining"; name = "Fast Mining"; price = 249; desc = "Every pickaxe hit takes 30% less time. Forever." },
+    @{ key = "superLuck"; name = "Super Luck"; price = 349; desc = "+50% luck with rare minerals. Forever." },
+    @{ key = "megaBackpack"; name = "Mega Backpack"; price = 299; desc = "+20 backpack capacity. Forever." }
 )
 
 $Products = @(
@@ -34,7 +37,15 @@ $Products = @(
     @{ key = "trailFire"; name = "Fire Trail"; price = 99; desc = "A fiery trail that follows you." },
     @{ key = "trailCosmic"; name = "Cosmic Trail"; price = 149; desc = "A cosmic purple trail that follows you." },
     @{ key = "baseOcean"; name = "Ocean Base"; price = 79; desc = "Paint your base floor ocean blue." },
-    @{ key = "baseForest"; name = "Forest Base"; price = 79; desc = "Paint your base floor forest green." }
+    @{ key = "baseForest"; name = "Forest Base"; price = 79; desc = "Paint your base floor forest green." },
+    @{ key = "coins2x30"; name = "2x Coins (30 min)"; price = 99; desc = "Double income from your pedestals for 30 minutes." },
+    @{ key = "carryShield60"; name = "Carry Shield (1 hour)"; price = 79; desc = "Nobody can hit you while carrying for 1 hour." },
+    @{ key = "magnet60"; name = "Magnet (1 hour)"; price = 65; desc = "Pick up dropped minerals from 20 studs away for 1 hour." },
+    @{ key = "luck60"; name = "2x Luck (1 hour)"; price = 129; desc = "Double rare luck for 1 hour." },
+    @{ key = "coins2x60"; name = "2x Coins (1 hour)"; price = 169; desc = "Double income from your pedestals for 1 hour." },
+    @{ key = "starterPack"; name = "Starter Pack"; price = 99; desc = "Coins, 2x Luck 1 h, Carry Shield 1 h and the Starter Trail. Once per account." },
+    @{ key = "megaPack"; name = "Mega Pack"; price = 499; desc = "A big pack of coins plus 1 hour of 2x Luck, Magnet, Carry Shield and 2x Coins." },
+    @{ key = "serverMeteor"; name = "Server Meteor"; price = 149; desc = "A big meteor falls for everyone in the server." }
 )
 
 function Invoke-Roblox([string[]]$CurlArgs) {

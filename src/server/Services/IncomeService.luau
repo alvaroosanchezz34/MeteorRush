@@ -106,7 +106,10 @@ local function grantOfflineIncome(player: Player, data: Types.Profile)
         return
     end
     local elapsed = math.clamp(os.time() - data.lastSeen, 0, IncomeConfig.OfflineCapSeconds)
-    local amount = PlayerStats.GetIncomePerSecond(data) * elapsed * PlayerStats.GetOfflineRate(data)
+    -- Sin conexión no cuentan los boosts temporales: podrían acabar mucho antes de volver.
+    local amount = PlayerStats.GetIncomePerSecond(data, math.huge)
+        * elapsed
+        * PlayerStats.GetOfflineRate(data)
     if amount < 1 then
         return
     end

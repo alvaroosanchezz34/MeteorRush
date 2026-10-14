@@ -72,3 +72,25 @@ Abrir `juego1` con `rojo serve` y probar en Play (y en Play con 2 jugadores para
 14. **Gráficos bajos**: en Ajustes de Roblox, gráficos a 1–3. Al caer un meteorito no hay humo ni
     polvo flotante, y hay menos partículas, pero todo se entiende igual.
 15. **Profundidad de campo**: el aspecto general es el mismo que antes (estaba a intensidad 0).
+
+## 4. HUD nuevo y ofertas de Robux (pruebas)
+
+Ya comprobado en Studio: HUD nuevo sin errores, oferta de bienvenida grande que se minimiza al
+lateral, "+" de monedas que abre la tienda en Monedas, pestaña Packs, oferta de esquina, y entrega
+con `FakeReceipt` de Pack Inicial (una sola vez aunque el recibo se repita), Mega Pack y Meteorito
+para el servidor.
+
+Pendiente:
+1. **Crear los productos en Roblox:** `powershell -ExecutionPolicy Bypass -File tools\create-shop-items.ps1`
+   y copiar los ids nuevos de `tools/shop-ids.json` a `src/shared/Config/Shop.luau` (los que ahora
+   tienen `id = 0`).
+2. **Comprar de verdad en el juego publicado en privado** (en Studio son de prueba): Pack Inicial,
+   Mega Pack, un boost de 1 h, Monedas x2, Meteorito para el servidor y los 3 pases nuevos.
+3. **Pases:** con Minado rápido, la barra de cada golpe es más corta; con Mega mochila, la
+   capacidad sube 20; con Súper suerte salen más raros (pruébalo con el panel de economía).
+4. **Monedas x2:** el "+$/s" se duplica mientras dura y vuelve al acabar.
+5. **Avisos rojos:** el botón Diario tiene "!" cuando la recompensa está lista y Misiones cuando hay
+   una terminada sin cobrar.
+6. **Móvil (emulador):** la oferta de esquina sale a media altura a la derecha, sin tapar el salto;
+   la oferta de bienvenida cabe entera.
+7. **Inglés:** cambiar el idioma y revisar las ofertas, la pestaña Packs y el HUD.

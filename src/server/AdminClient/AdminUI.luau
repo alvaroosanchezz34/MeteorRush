@@ -516,7 +516,7 @@ builders.Economy = function(page: ScrollingFrame)
 
     section(page, "Multiplicadores temporales (boosts del juego)")
     local boosts = row(page)
-    local boost = cycle(boosts, "Boost", { "luck", "magnet", "carryShield" }, 180)
+    local boost = cycle(boosts, "Boost", { "luck", "magnet", "carryShield", "coins2x" }, 180)
     local minutes = input(boosts, "minutos", 80, "30")
     button(boosts, "Dar", 70, COLORS.ok, function()
         runOnTarget("boostGive", { boost = boost(), minutes = number(minutes) })

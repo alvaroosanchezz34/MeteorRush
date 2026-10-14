@@ -568,3 +568,13 @@ Amplía el sistema visual de rareza ya existente; no hay un segundo sistema. Sol
 - **Sin traducción automática de Roblox** en nuestras interfaces (`AutoLocalize = false`): traduciría el inglés de quien lo ha elegido a mano.
 - **Títulos:** atributo nuevo `TitleId` (id del logro) para traducirlos; `Title` sigue con el texto en inglés por compatibilidad.
 - **Sin cambios de reglas:** el idioma no interviene en precios, recompensas ni probabilidades. `Lune` se fija en `rokit.toml` solo para ejecutar las pruebas.
+
+## HUD de cristal y ofertas de Robux
+
+- **HUD:** estilo ciencia ficción limpio. Paneles de cristal oscuro con borde y línea de luz del color de cada cosa (`Components.Glass`, `Theme.Glass`). Arriba a la izquierda, una columna con monedas (y un "+" que abre la tienda en Monedas), mochila con barra y boosts activos con icono. Píldora central para el próximo meteorito. Botones laterales de cristal con franja de color y un punto rojo cuando hay recompensa diaria o misión por cobrar.
+- **Opciones nuevas:** 3 pases (Minado rápido −30 % por golpe, Súper suerte ×1,5, Mega mochila +20), boost nuevo Monedas x2 (30 min y 1 h), versiones de 1 h de suerte, imán y escudo, Mega Pack y Meteorito para el servidor. Todo concreto y visible antes de pagar: nada aleatorio con Robux.
+- **Pack Inicial (99 R$):** una vez por cuenta (`offers.starterPack`). Si el recibo llega otra vez (Roblox ya ha cobrado), se entrega igual. Incluye monedas (15 % del siguiente rebirth), Suerte x2 1 h, Escudo 1 h y la Estela Starter, que solo existe en este pack.
+- **Sin urgencia falsa:** ni cuentas atrás inventadas ni "precio anterior". "MEJOR VALOR" es verdad: el Mega Pack (499 R$) cuesta menos que sus partes sueltas (841 R$).
+- **Ofertas en pantalla:** la de bienvenida sale grande al entrar mientras no se haya comprado y al cerrarla queda minimizada en el lateral derecho. Las de esquina salen en momentos concretos (mochila llena, meteorito grande, o de vez en cuando), cada una como mucho una vez por sesión y con 4 min mínimos entre dos (`Shop.CornerOffers`).
+- **Ids pendientes:** los productos nuevos están con id 0 (sale "Próximamente") hasta crearlos con `tools/create-shop-items.ps1`. En Studio las ofertas se enseñan igual para poder probarlas (`Shop.ShowUnreleasedOffersInStudio`), y `DebugService.FakeReceipt` acepta la clave del producto aunque su id sea 0.
+- **Monedas x2 y los ingresos:** el boost entra en `GetIncomeMultiplier`. No cuenta para los ingresos sin conexión ni para los carteles de los pedestales, que no se repintan cuando el boost se acaba.

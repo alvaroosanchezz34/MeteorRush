@@ -40,6 +40,8 @@ local template: Types.Profile = {
     daily = { streak = 0, lastClaim = 0 },
     passes = {},
     purchases = {},
+    -- [producto] = true para los productos de una sola vez ya comprados (oferta de bienvenida).
+    offers = {},
     boosts = {},
     cosmetics = { owned = {}, equipped = {} },
     tutorialStep = 0,

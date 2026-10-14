@@ -77,7 +77,7 @@ local MAX_ANNOUNCEMENT_SECONDS = 15
 local ANNOUNCEMENT_STYLES = { info = true, success = true, warning = true, event = true }
 -- Segundos hasta el impacto de un meteorito pedido como "instantáneo".
 local INSTANT_IMPACT = 2
-local BOOSTS = { carryShield = true, magnet = true, luck = true }
+local BOOSTS = { carryShield = true, magnet = true, luck = true, coins2x = true }
 -- Código del panel: está junto a Services, dentro de ServerScriptService, que no se envía a
 -- los clientes. El servidor lo copia al PlayerGui de cada administrador.
 local CLIENT_FOLDER = "AdminClient"

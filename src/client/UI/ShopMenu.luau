@@ -1,7 +1,8 @@
 --!strict
 
--- Tienda: game passes, boosts, paquetes de monedas y cosméticos.
--- Se abre solo al pulsar su botón. Un id 0 muestra "Coming soon" y no lanza la compra.
+-- Tienda: packs, game passes, boosts, paquetes de monedas y cosméticos.
+-- Se abre al pulsar su botón, desde el "+" de las monedas o desde una oferta (ShopMenu.Select
+-- elige la pestaña). Un id 0 muestra "Coming soon" y no lanza la compra.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -20,7 +21,7 @@ local ShopConfig = require(Shared:WaitForChild("Config"):WaitForChild("Shop"))
 local Strings = require(Shared:WaitForChild("Strings"))
 local Types = require(Shared:WaitForChild("Types"))
 
-local TABS = { "passes", "boosts", "coins", "cosmetics" }
+local TABS = { "packs", "passes", "boosts", "coins", "cosmetics" }
 -- Segundos que un botón queda en espera tras pulsarlo (mientras responde Roblox o el servidor).
 local BUSY_SECONDS = 2
 
@@ -32,9 +33,15 @@ type Entry = {
     buttonText: string,
     buttonColor: Color3,
     onClick: (() -> ())?,
+    -- Etiqueta destacada en la esquina de la fila ("MEJOR VALOR").
+    tag: string?,
 }
 
 local ShopMenu = {}
+
+-- Pestaña que se enseñará la próxima vez que se pinte la tienda.
+local currentTab = TABS[1]
+local refreshShop: (() -> ())? = nil
 
 local function priceButton(id: number, price: number): (string, Color3)
     if id == 0 then
@@ -47,7 +54,39 @@ local function buildEntries(tab: string, data: Types.Profile): { Entry }
     local player = Players.LocalPlayer
     local entries: { Entry } = {}
 
-    if tab == "passes" then
+    if tab == "packs" then
+        for _, product in ShopConfig.Products do
+            if product.kind == "bundle" or product.kind == "meteor" then
+                local bought = product.oncePerAccount == true and data.offers[product.key] == true
+                local description = Strings.Shop.Descriptions[product.key]
+                if product.kind == "bundle" then
+                    description = string.format(
+                        description,
+                        Format.Number(PlayerStats.GetCoinPackAmount(data, product))
+                    )
+                end
+                local text, color = priceButton(product.id, product.price)
+                table.insert(entries, {
+                    key = product.key,
+                    name = Strings.Shop.Names[product.key],
+                    description = description,
+                    buttonText = if bought then Strings.Shop.Owned else text,
+                    buttonColor = if bought then Components.Colors.Disabled else color,
+                    onClick = if bought or product.id == 0
+                        then nil
+                        else function()
+                            MarketplaceService:PromptProductPurchase(player, product.id)
+                        end,
+                    tag = if product.key == "megaPack"
+                        then Strings.Shop.BestValue
+                        elseif product.oncePerAccount then Strings.Upper(
+                            Strings.Shop.OncePerAccount
+                        )
+                        else nil,
+                })
+            end
+        end
+    elseif tab == "passes" then
         for _, pass in ShopConfig.GamePasses do
             local owned = PlayerStats.HasPass(data, pass.key)
             local text, color = priceButton(pass.id, pass.price)
@@ -67,7 +106,7 @@ local function buildEntries(tab: string, data: Types.Profile): { Entry }
     else
         for _, product in ShopConfig.Products do
             local isBoost = product.kind == "boost"
-            if (tab == "boosts" and isBoost) or (tab == "coins" and not isBoost) then
+            if (tab == "boosts" and isBoost) or (tab == "coins" and product.kind == "coins") then
                 local description = Strings.Shop.Descriptions[product.key]
                 if not isBoost then
                     description = string.format(
@@ -119,6 +158,8 @@ local function buildEntries(tab: string, data: Types.Profile): { Entry }
                 text, color = Strings.Shop.VipOnly, Components.Colors.Disabled
             elseif cosmetic.crate then
                 text, color = Strings.Shop.CrateOnly, Components.Colors.Disabled
+            elseif cosmetic.bundle then
+                text, color = Strings.Shop.BundleOnly, Components.Colors.Disabled
             elseif cosmetic.season then
                 text, color = Strings.Shop.SeasonOnly, Components.Colors.Disabled
             elseif cosmetic.rebirthsRequired then
@@ -153,8 +194,17 @@ local function buildEntries(tab: string, data: Types.Profile): { Entry }
     return entries
 end
 
+-- Elige la pestaña que se enseña ("packs", "passes", "boosts", "coins" o "cosmetics").
+function ShopMenu.Select(tab: string)
+    if table.find(TABS, tab) then
+        currentTab = tab
+        if refreshShop then
+            refreshShop()
+        end
+    end
+end
+
 function ShopMenu.Mount(window: Components.Window)
-    local currentTab = TABS[1]
     local tabBar = Instance.new("Frame")
     tabBar.BackgroundTransparency = 1
     tabBar.Size = UDim2.fromScale(1, 0.1)
@@ -180,7 +230,7 @@ function ShopMenu.Mount(window: Components.Window)
             text = function(): string
                 return Strings.Shop.Tabs[tab]
             end,
-            size = UDim2.fromScale(0.24, 1),
+            size = UDim2.fromScale(0.19, 1),
             layoutOrder = order,
             parent = tabBar,
             onClick = function()
@@ -235,12 +285,36 @@ function ShopMenu.Mount(window: Components.Window)
                 color = Components.Colors.Muted,
                 parent = row,
             })
+            local tag = entry.tag
+            if tag then
+                row.BackgroundColor3 = Components.Colors.PanelRaised
+                local stroke = row:FindFirstChildOfClass("UIStroke")
+                if stroke then
+                    stroke.Color = Components.Colors.Gold
+                    stroke.Transparency = 0.2
+                end
+                local badge = Components.Label({
+                    text = tag,
+                    size = UDim2.fromScale(0.3, 0.22),
+                    position = UDim2.fromScale(0.67, 0.05),
+                    color = Components.Colors.TextDark,
+                    heading = true,
+                    parent = row,
+                })
+                badge.BackgroundColor3 = Components.Colors.Gold
+                badge.BackgroundTransparency = 0
+                badge.ZIndex = 3
+                local badgeCorner = Instance.new("UICorner")
+                badgeCorner.CornerRadius = UDim.new(0.5, 0)
+                badgeCorner.Parent = badge
+            end
             local onClick = entry.onClick
             local button: TextButton
             button = Components.Button({
                 text = entry.buttonText,
-                size = UDim2.fromScale(0.3, 0.66),
-                position = UDim2.fromScale(0.67, 0.17),
+                -- Con etiqueta, el botón baja para dejarle sitio encima.
+                size = UDim2.fromScale(0.3, if tag then 0.58 else 0.66),
+                position = UDim2.fromScale(0.67, if tag then 0.33 else 0.17),
                 color = entry.buttonColor,
                 parent = row,
                 onClick = function()
@@ -253,8 +327,9 @@ function ShopMenu.Mount(window: Components.Window)
         end
     end
 
+    refreshShop = refresh
     window.OnOpened(refresh)
-    for _, key in { "passes", "boosts", "cosmetics", "rebirths" } do
+    for _, key in { "passes", "boosts", "cosmetics", "rebirths", "offers" } do
         DataController.OnChanged(key, refresh)
     end
 end

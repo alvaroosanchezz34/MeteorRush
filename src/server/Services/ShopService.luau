@@ -12,6 +12,7 @@ local RunService = game:GetService("RunService")
 
 local DataService = require(script.Parent.DataService)
 local IncomeService = require(script.Parent.IncomeService)
+local MeteorService = require(script.Parent.MeteorService)
 local PlotService = require(script.Parent.PlotService)
 
 local Shared = ReplicatedStorage.Shared
@@ -21,6 +22,7 @@ local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local Equipment = require(Shared.Config.Equipment)
+local MeteorsConfig = require(Shared.Config.Meteors)
 local EquipmentVisual = require(Shared.Util.EquipmentVisual)
 local ShopConfig = require(Shared.Config.Shop)
 local Locale = require(Shared.Locale)
@@ -205,18 +207,12 @@ local function findProductById(productId: number): (ShopConfig.Product?, ShopCon
     return nil, nil
 end
 
-local function grantProduct(player: Player, data: Types.Profile, product: ShopConfig.Product)
-    if product.kind == "boost" and product.boost and product.duration then
-        local boost = product.boost
-        local duration = product.duration
-        DataService.Update(player, "boosts", function(boosts: { [string]: number })
-            -- Si ya estaba activo, se suma el tiempo.
-            boosts[boost] = math.max(boosts[boost] or 0, os.time()) + duration
-            return boosts
-        end)
-    elseif product.kind == "coins" then
-        IncomeService.AddCoins(player, PlayerStats.GetCoinPackAmount(data, product), "shop")
-    end
+local function addBoost(player: Player, boost: string, duration: number)
+    DataService.Update(player, "boosts", function(boosts: { [string]: number })
+        -- Si ya estaba activo, se suma el tiempo.
+        boosts[boost] = math.max(boosts[boost] or 0, os.time()) + duration
+        return boosts
+    end)
 end
 
 local function grantCosmetic(player: Player, cosmetic: ShopConfig.Cosmetic)
@@ -227,6 +223,40 @@ local function grantCosmetic(player: Player, cosmetic: ShopConfig.Cosmetic)
         cosmetics.equipped[cosmetic.kind] = cosmetic.key
         return cosmetics
     end)
+end
+
+local function grantProduct(player: Player, data: Types.Profile, product: ShopConfig.Product)
+    if product.kind == "boost" and product.boost and product.duration then
+        addBoost(player, product.boost, product.duration)
+    elseif product.kind == "coins" then
+        IncomeService.AddCoins(player, PlayerStats.GetCoinPackAmount(data, product), "shop")
+    elseif product.kind == "bundle" then
+        -- Si un paquete de una sola vez llega otra vez (Roblox ya lo ha cobrado), se entrega igual.
+        if (product.rebirthCostFraction or 0) > 0 then
+            IncomeService.AddCoins(player, PlayerStats.GetCoinPackAmount(data, product), "shop")
+        end
+        for boost, duration in product.boosts or {} do
+            addBoost(player, boost, duration)
+        end
+        for _, key in product.cosmetics or {} do
+            local cosmetic = ShopConfig.CosmeticsByKey[key]
+            if cosmetic then
+                grantCosmetic(player, cosmetic)
+            end
+        end
+        if product.oncePerAccount then
+            DataService.Update(player, "offers", function(offers: { [string]: boolean })
+                offers[product.key] = true
+                return offers
+            end)
+        end
+    elseif product.kind == "meteor" then
+        local typeId = product.meteorType
+        if typeId and MeteorsConfig.Types[typeId] then
+            MeteorService.Spawn(typeId, MeteorsConfig.WarningTime)
+            Remotes.Notify:FireAllClients(Locale.Msg("Shop.MeteorSummoned", player.DisplayName))
+        end
+    end
 end
 
 -- Entrega una compra exactamente una vez y solo la da por buena cuando está guardada:
@@ -246,6 +276,12 @@ local function processReceipt(receiptInfo: { [string]: any }): Enum.ProductPurch
     local purchaseId = tostring(receiptInfo.PurchaseId)
     if not table.find(data.purchases, purchaseId) then
         local product, cosmetic = findProductById(receiptInfo.ProductId)
+        -- Recibo inventado de DebugService (solo Studio): el producto puede tener aún id 0.
+        local debugKey = receiptInfo.DebugKey
+        if type(debugKey) == "string" and RunService:IsStudio() then
+            product = ShopConfig.ProductsByKey[debugKey]
+            cosmetic = ShopConfig.CosmeticsByKey[debugKey]
+        end
         if product == nil and cosmetic == nil then
             Log.Warn("Shop", `Producto desconocido: {receiptInfo.ProductId}`)
             return Enum.ProductPurchaseDecision.NotProcessedYet
@@ -292,6 +328,7 @@ function ShopService.DebugProcessReceipt(player: Player, key: string, purchaseId
         PlayerId = player.UserId,
         ProductId = productId,
         PurchaseId = purchaseId,
+        DebugKey = key,
     }).Name
 end
 

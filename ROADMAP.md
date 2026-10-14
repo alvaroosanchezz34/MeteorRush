@@ -115,6 +115,7 @@ Pruebas: cada evento empieza y termina limpio · todos ven el mismo estado · de
 - [x] Comprobación de passes en servidor
 - [x] Entrega segura de consumibles (idempotente y confirmada solo cuando el perfil está guardado)
 - [x] Sin compras aleatorias: todo lo que se paga con Robux es concreto y se ve antes de pagar
+- [x] Ampliación: 3 pases, boosts de 1 h, Monedas x2, Pack Inicial (oferta de bienvenida), Mega Pack, Meteorito para el servidor y ofertas en pantalla (ver DECISIONS.md). Falta crear sus ids en Roblox
 
 Pruebas: comprar cada pass y comprobar su efecto · comprar un consumible y reconectar · procesar una compra repetida · servidor caído durante una compra · comprobar que no hay compras de resultado incierto · comprobar que no se pueden duplicar monedas.
 

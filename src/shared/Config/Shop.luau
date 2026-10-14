@@ -14,12 +14,19 @@ export type Product = {
     key: string,
     id: number,
     price: number,
-    kind: "boost" | "coins",
+    kind: "boost" | "coins" | "bundle" | "meteor",
     -- kind = "boost"
     boost: string?,
     duration: number?,
-    -- kind = "coins": fracción del coste del siguiente rebirth (escala con los rebirths)
+    -- kind = "coins" o "bundle": fracción del coste del siguiente rebirth (escala con los rebirths)
     rebirthCostFraction: number?,
+    -- kind = "bundle": segundos de cada boost que incluye y cosméticos que regala.
+    boosts: { [string]: number }?,
+    cosmetics: { string }?,
+    -- Solo se puede comprar una vez por cuenta (oferta de bienvenida).
+    oncePerAccount: boolean?,
+    -- kind = "meteor": tipo de meteorito (Config/Meteors) que cae para todo el servidor.
+    meteorType: string?,
 }
 
 export type Cosmetic = {
@@ -36,6 +43,8 @@ export type Cosmetic = {
     season: string?,
     -- Solo sale de las cajas de equipamiento (Config/Crates); no se compra.
     crate: boolean?,
+    -- Solo viene dentro de ese paquete (clave de Shop.Products); no se compra suelto.
+    bundle: string?,
 }
 
 local Shop = {}
@@ -45,9 +54,42 @@ Shop.DoubleCoinsMultiplier = 2
 Shop.VipBackpackBonus = 10
 Shop.ExtraPedestalsBonus = 6
 Shop.VipSpeedMultiplier = 1.1
+-- Minado rápido: fracción que se ahorra de cada golpe.
+Shop.FastMiningReduction = 0.3
+-- Súper suerte: multiplicador permanente de la suerte con raros.
+Shop.SuperLuckMultiplier = 1.5
+Shop.MegaBackpackBonus = 20
 
 -- Efectos de los boosts.
 Shop.LuckBoostMultiplier = 2
+Shop.CoinsBoostMultiplier = 2
+
+-- Oferta de bienvenida: producto que se enseña en grande al entrar hasta que se compra.
+Shop.StarterPackKey = "starterPack"
+-- Ofertas pequeñas en la esquina: segundos mínimos entre dos, y segundos que se quedan a la
+-- vista si no se tocan. Cada una sale como mucho una vez por sesión.
+Shop.CornerOfferGap = 240
+Shop.CornerOfferSeconds = 14
+-- Segundos desde que se entra hasta que puede salir la primera oferta de esquina.
+Shop.CornerOfferDelay = 90
+-- En Studio se enseñan también las ofertas cuyo producto aún tiene id 0 (con el botón en
+-- "Próximamente"), para poder probar cómo se ven antes de crear los productos.
+Shop.ShowUnreleasedOffersInStudio = true
+
+-- Ofertas de la esquina: qué se ofrece (clave de un pass o un producto) y cuándo.
+--   backpackFull → al llenarse la mochila      meteor → al anunciarse un meteorito grande
+--   timer        → de vez en cuando, en este orden
+-- Un pass que ya se tiene no se ofrece; si hay varias para el mismo momento, gana la primera.
+export type CornerOffer = { key: string, trigger: "backpackFull" | "meteor" | "timer" }
+Shop.CornerOffers = {
+    { key = "megaBackpack", trigger = "backpackFull" },
+    { key = "vipBackpack", trigger = "backpackFull" },
+    { key = "luck60", trigger = "meteor" },
+    { key = "megaPack", trigger = "timer" },
+    { key = "coins2x30", trigger = "timer" },
+    { key = "fastMining", trigger = "timer" },
+    { key = "serverMeteor", trigger = "timer" },
+} :: { CornerOffer }
 
 -- El creador de la experiencia posee todos sus game passes. Con esto a true, en Studio se
 -- empieza sin ninguno para probar el juego como un jugador normal; comprarlos en Studio
@@ -63,6 +105,9 @@ Shop.GamePasses = {
     { key = "autoCollect", id = 2006018882, price = 249 },
     { key = "extraPedestals", id = 2007626854, price = 299 },
     { key = "vip", id = 2006738869, price = 399 },
+    { key = "fastMining", id = 0, price = 249 },
+    { key = "superLuck", id = 0, price = 349 },
+    { key = "megaBackpack", id = 0, price = 299 },
 } :: { GamePass }
 
 Shop.Products = {
@@ -90,6 +135,47 @@ Shop.Products = {
         boost = "luck",
         duration = 30 * 60,
     },
+    {
+        key = "coins2x30",
+        id = 0,
+        price = 99,
+        kind = "boost",
+        boost = "coins2x",
+        duration = 30 * 60,
+    },
+    -- Versiones de 1 hora: más baratas por minuto que dos de 30.
+    {
+        key = "carryShield60",
+        id = 0,
+        price = 79,
+        kind = "boost",
+        boost = "carryShield",
+        duration = 60 * 60,
+    },
+    {
+        key = "magnet60",
+        id = 0,
+        price = 65,
+        kind = "boost",
+        boost = "magnet",
+        duration = 60 * 60,
+    },
+    {
+        key = "luck60",
+        id = 0,
+        price = 129,
+        kind = "boost",
+        boost = "luck",
+        duration = 60 * 60,
+    },
+    {
+        key = "coins2x60",
+        id = 0,
+        price = 169,
+        kind = "boost",
+        boost = "coins2x",
+        duration = 60 * 60,
+    },
     { key = "coinsSmall", id = 3716263157, price = 49, kind = "coins", rebirthCostFraction = 0.02 },
     {
         key = "coinsMedium",
@@ -105,6 +191,32 @@ Shop.Products = {
         kind = "coins",
         rebirthCostFraction = 0.25,
     },
+    -- Paquetes: varias cosas juntas por menos de lo que cuestan sueltas.
+    {
+        key = "starterPack",
+        id = 0,
+        price = 99,
+        kind = "bundle",
+        rebirthCostFraction = 0.15,
+        boosts = { luck = 60 * 60, carryShield = 60 * 60 },
+        cosmetics = { "trailStarter" },
+        oncePerAccount = true,
+    },
+    {
+        key = "megaPack",
+        id = 0,
+        price = 499,
+        kind = "bundle",
+        rebirthCostFraction = 0.25,
+        boosts = {
+            luck = 60 * 60,
+            magnet = 60 * 60,
+            carryShield = 60 * 60,
+            coins2x = 60 * 60,
+        },
+    },
+    -- Meteorito grande que cae para todo el servidor, con aviso de quién lo ha invocado.
+    { key = "serverMeteor", id = 0, price = 149, kind = "meteor", meteorType = "big" },
 } :: { Product }
 
 -- Cosméticos: compra directa con Robux (producto de desarrollador). El jugador ve el color antes de pagar.
@@ -208,6 +320,14 @@ Shop.Cosmetics = {
         kind = "baseColor",
         color = Color3.fromRGB(95, 45, 130),
         crate = true,
+    },
+    {
+        key = "trailStarter",
+        id = 0,
+        price = 0,
+        kind = "trail",
+        color = Color3.fromRGB(80, 255, 170),
+        bundle = "starterPack",
     },
     {
         key = "baseOcean",
