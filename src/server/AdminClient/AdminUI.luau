@@ -28,6 +28,7 @@ local LiveOps = require(Config:WaitForChild("LiveOps"))
 local MeteorsConfig = require(Config:WaitForChild("Meteors"))
 local Minerals = require(Config:WaitForChild("Minerals"))
 local Mutations = require(Config:WaitForChild("Mutations"))
+local NpcsConfig = require(Config:WaitForChild("Npcs"))
 
 local TOGGLE_KEY = Enum.KeyCode.F2
 local WINDOW_SIZE = Vector2.new(980, 600)
@@ -893,6 +894,13 @@ builders.Debug = function(page: ScrollingFrame)
         if module then
             module.Show("Test notification from the admin panel")
         end
+    end)
+
+    section(page, "NPCs ambientales")
+    local npcs = row(page)
+    local npc = cycle(npcs, "NPC", ids(NpcsConfig.List), 220)
+    button(npcs, "Ir al NPC", 100, nil, function()
+        run("npcTeleport", { npc = npc() })
     end)
 
     section(page, "Limpieza")

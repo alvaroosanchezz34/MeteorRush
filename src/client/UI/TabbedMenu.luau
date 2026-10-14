@@ -12,7 +12,11 @@ local Theme = require(script.Parent.Theme)
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Strings = require(Shared:WaitForChild("Strings"))
 
-export type MenuModule = { Mount: (window: Components.Window) -> () }
+export type MenuModule = {
+    Mount: (window: Components.Window) -> (),
+    -- Solo en los menús con pestañas: deja elegida esa pestaña.
+    Select: ((tab: string) -> ())?,
+}
 export type Tab = { key: string, module: MenuModule }
 
 -- Posición vertical de las páginas, debajo de la barra de pestañas.
@@ -22,6 +26,7 @@ local TabbedMenu = {}
 
 -- Devuelve un menú que muestra esos menús como pestañas. Los nombres salen de Strings.Tabs.
 function TabbedMenu.Create(tabs: { Tab }): MenuModule
+    local selectTab: ((tab: string) -> ())? = nil
     local function mount(window: Components.Window)
         local currentTab = tabs[1].key
         local tabBar = Instance.new("Frame")
@@ -95,8 +100,23 @@ function TabbedMenu.Create(tabs: { Tab }): MenuModule
         end
 
         window.OnOpened(show)
+        selectTab = function(tab: string)
+            if pages[tab] then
+                currentTab = tab
+                if window.IsOpen() then
+                    show()
+                end
+            end
+        end
     end
-    return { Mount = mount }
+    return {
+        Mount = mount,
+        Select = function(tab: string)
+            if selectTab then
+                selectTab(tab)
+            end
+        end,
+    }
 end
 
 return TabbedMenu

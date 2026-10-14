@@ -2,6 +2,10 @@
 
 -- Cajas de equipamiento: una fila por caja con su modelo, sus probabilidades (siempre a la
 -- vista), el seguro de mala suerte, cuántas tiene el jugador y los botones de comprar y abrir.
+-- El botón de probabilidades abre la lista de cada objeto con su porcentaje exacto (suman
+-- 100,00 %), así que se pueden consultar antes de comprar.
+-- Las cajas solo se pueden comprar cuando el servidor ha confirmado que la política del
+-- jugador lo permite (atributo `CratesRestricted` = false); si no, la compra está bloqueada.
 -- Comprar y abrir los decide el servidor (CrateService); el resultado llega por el remote
 -- CrateResult y lo presenta UI/CrateOpening.
 
@@ -46,6 +50,84 @@ function CratesMenu.Mount(window: Components.Window)
         cellSize = UDim2.fromScale(0.98, 0.3),
         parent = window.content,
     })
+
+    -- Panel de probabilidades: tapa la lista y enseña cada objeto de la caja con su porcentaje.
+    local oddsPanel = Components.Panel({
+        size = UDim2.fromScale(1, 1),
+        color = Components.Colors.Background,
+        parent = window.content,
+    })
+    oddsPanel.Visible = false
+    oddsPanel.ZIndex = 5
+    oddsPanel.Active = true
+    local oddsTitle = Components.Label({
+        text = "",
+        size = UDim2.fromScale(0.7, 0.09),
+        position = UDim2.fromScale(0.03, 0.02),
+        alignment = Enum.TextXAlignment.Left,
+        heading = true,
+        parent = oddsPanel,
+    })
+    Components.Label({
+        text = Strings.Crates.OddsTotal,
+        size = UDim2.fromScale(0.3, 0.06),
+        position = UDim2.fromScale(0.03, 0.92),
+        alignment = Enum.TextXAlignment.Left,
+        color = Components.Colors.Muted,
+        parent = oddsPanel,
+    })
+    Components.Button({
+        text = Strings.Crates.Close,
+        size = UDim2.fromScale(0.2, 0.09),
+        position = UDim2.fromScale(0.77, 0.02),
+        color = Components.Colors.PanelRaised,
+        parent = oddsPanel,
+        onClick = function()
+            oddsPanel.Visible = false
+        end,
+    })
+    local oddsList = Components.ScrollList({
+        size = UDim2.fromScale(0.94, 0.77),
+        position = UDim2.fromScale(0.03, 0.13),
+        cellSize = UDim2.fromScale(0.98, 0.11),
+        parent = oddsPanel,
+    })
+
+    local function showOdds(crate: Crates.Crate)
+        Components.Clear(oddsList)
+        oddsTitle.Text =
+            string.format(Strings.Crates.OddsTitle, Strings.Crates.Names[crate.id] or crate.id)
+        oddsTitle.TextColor3 = Equipment.Rarities[crate.rarity].color
+        for order, entry in Crates.GetItemOdds(crate) do
+            local reward = entry.reward
+            local color = GearView.RarityColor(reward.rarity)
+            local line =
+                Components.Panel({ size = UDim2.new(), layoutOrder = order, parent = oddsList })
+            Components.Label({
+                text = GearView.Name(reward.kind, reward.id),
+                size = UDim2.fromScale(0.5, 0.7),
+                position = UDim2.fromScale(0.03, 0.15),
+                alignment = Enum.TextXAlignment.Left,
+                color = color,
+                parent = line,
+            })
+            Components.Label({
+                text = `{Strings.Equipment.Rarities[reward.rarity]} · {Strings.Equipment.KindNames[reward.kind]}`,
+                size = UDim2.fromScale(0.26, 0.6),
+                position = UDim2.fromScale(0.54, 0.2),
+                color = Components.Colors.Muted,
+                parent = line,
+            })
+            Components.Label({
+                text = string.format("%.2f%%", entry.hundredths / 100),
+                size = UDim2.fromScale(0.15, 0.7),
+                position = UDim2.fromScale(0.82, 0.15),
+                alignment = Enum.TextXAlignment.Right,
+                parent = line,
+            })
+        end
+        oddsPanel.Visible = true
+    end
 
     -- Las filas se crean una vez (los visores con el modelo girando no se rehacen en cada
     -- cambio de datos); después solo se actualizan los textos y los botones.
@@ -100,6 +182,16 @@ function CratesMenu.Mount(window: Components.Window)
             color = Components.Colors.Gold,
             parent = row,
         })
+        Components.Button({
+            text = Strings.Crates.OddsButton,
+            size = UDim2.fromScale(0.2, 0.22),
+            position = UDim2.fromScale(0.54, 0.73),
+            color = Components.Colors.PanelRaised,
+            parent = row,
+            onClick = function()
+                showOdds(crate)
+            end,
+        })
         local buy = Components.Button({
             text = "",
             size = UDim2.fromScale(0.22, 0.4),
@@ -132,7 +224,9 @@ function CratesMenu.Mount(window: Components.Window)
             return
         end
         dustLabel.Text = string.format(Strings.Equipment.Dust, Format.Number(data.equipment.dust))
-        local restricted = player:GetAttribute("CratesRestricted") == true
+        -- Solo se puede comprar cuando el servidor ha confirmado que está permitido.
+        local policy = player:GetAttribute("CratesRestricted")
+        local allowed = policy == false
         for _, crate in Crates.List do
             local row = rows[crate.id]
             local stored = data.equipment.crates[crate.id] or 0
@@ -154,9 +248,12 @@ function CratesMenu.Mount(window: Components.Window)
             if currency == nil then
                 row.buy.Text = Strings.Crates.NotForSale
                 row.buy.BackgroundColor3 = Components.Colors.Disabled
+            elseif not allowed then
+                row.buy.Text = Strings.Crates.Unavailable
+                row.buy.BackgroundColor3 = Components.Colors.Disabled
             elseif currency == "coins" then
                 row.buy.Text = string.format(Strings.Crates.BuyCoins, Format.Number(price))
-                row.buy.BackgroundColor3 = if restricted or data.coins < price
+                row.buy.BackgroundColor3 = if data.coins < price
                     then Components.Colors.Disabled
                     else Components.Colors.Primary
             else
@@ -166,7 +263,10 @@ function CratesMenu.Mount(window: Components.Window)
                     else Components.Colors.Primary
             end
         end
-        header.Text = if restricted then Strings.Crates.Restricted else Strings.Crates.Contents
+        header.Text = if allowed
+            then Strings.Crates.Contents
+            elseif policy == true then Strings.Crates.Restricted
+            else Strings.Crates.Checking
     end
 
     window.OnOpened(refresh)

@@ -24,6 +24,7 @@ local EquipmentMenu = require(script.Parent.EquipmentMenu)
 local GearCollectionMenu = require(script.Parent.GearCollectionMenu)
 local AchievementsMenu = require(script.Parent.AchievementsMenu)
 local IndexMenu = require(script.Parent.IndexMenu)
+local MenuBus = require(script.Parent.MenuBus)
 local InventoryMenu = require(script.Parent.InventoryMenu)
 local MeteorController = require(script.Parent.Parent.Controllers.MeteorController)
 local PermanentMenu = require(script.Parent.PermanentMenu)
@@ -43,6 +44,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CarryConfig = require(Shared:WaitForChild("Config"):WaitForChild("Carry"))
 local Format = require(Shared:WaitForChild("Util"):WaitForChild("Format"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
 local Strings = require(Shared:WaitForChild("Strings"))
 
 local MENUS: { TabbedMenu.Tab } = {
@@ -315,6 +317,35 @@ function Hud.Mount()
             parent = sideBar,
             onClick = function()
                 window.Toggle()
+            end,
+        })
+    end
+
+    -- Abrir un menú desde fuera del HUD (los NPCs del Outpost).
+    MenuBus.SetHandler(function(key: string, tab: string?)
+        for index, menu in MENUS do
+            if menu.key == key then
+                local selectTab = menu.module.Select
+                if tab and selectTab then
+                    selectTab(tab)
+                end
+                windows[index].Open()
+            end
+        end
+    end)
+
+    -- Teletransporte al Outpost y de vuelta a la base (el servidor decide si se puede).
+    for index, destination in { "outpost", "home" } do
+        Components.Button({
+            text = if destination == "outpost" then Strings.Hud.Outpost else Strings.Hud.Home,
+            size = UDim2.fromScale(0.075, 0.045),
+            position = UDim2.fromScale(0.01 + (index - 1) * 0.08, 0.8),
+            color = if destination == "outpost"
+                then Components.Colors.Primary
+                else Components.Colors.PanelRaised,
+            parent = gui,
+            onClick = function()
+                Remotes.Teleport:FireServer(destination)
             end,
         })
     end

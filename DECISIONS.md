@@ -517,7 +517,7 @@ Amplía el sistema visual de rareza ya existente; no hay un segundo sistema. Sol
 - **Empujón:** lo aplica el cliente de la víctima (es quien mueve su personaje). Un tramposo podría ignorarlo; solo se libra del empujón, no de soltar la carga.
 - **Cajas:** Basic, Rare y Epic con monedas; Legendary con Forge Dust; Mythic definida pero sin precio (eventos y administración). El servidor gasta la caja, tira y guarda en una sola modificación del perfil; el cliente solo presenta. SKIP salta la animación, no la lógica.
 - **Seguro (pity):** activado en las cuatro cajas que se venden (15/20/25/12 aperturas → Raro/Épico/Legendario/Legendario). Se puede apagar por caja en `Config/Crates`.
-- **Política de Roblox:** las cajas de monedas son objetos aleatorios de pago (las monedas se compran con Robux). El menú enseña siempre las probabilidades y el servidor no vende esas cajas a quien tenga `ArePaidRandomItemsRestricted` (PolicyService).
+- **Política de Roblox:** las cajas son objetos aleatorios de pago (las monedas se compran con Robux, y el Forge Dust sale de cajas). El servidor no vende ninguna caja, ni con monedas ni con Forge Dust, a quien tenga `ArePaidRandomItemsRestricted` (PolicyService), ni mientras no haya podido consultarlo; el menú solo activa la compra cuando el servidor confirma que está permitido. Antes de comprar se ven las probabilidades por rareza y, en "Drop rates", la de cada objeto con dos decimales, repartidas para sumar exactamente 100,00 % (`Crates.GetItemOdds`). Al arrancar se comprueba que los pesos de cada caja suman 100 (`Crates.Validate`). Lo que se enseña son las probabilidades base: el seguro solo puede mejorarlas y también está a la vista.
 - **Cosméticos de caja:** tres nuevos (`trailPlasma`, `trailVoid`, `baseNebula`) marcados con `crate = true` en `Config/Shop`. Los cosméticos de Robux no salen en cajas.
 - **Intercambio:** los picos y armas van en la misma oferta que los minerales, con el prefijo `gear:`. No se ofrece lo equipado ni lo inicial, y el otro jugador no puede tenerlo ya. Se revalida al ejecutar.
 - **Migración:** el campo `equipment` es nuevo en la plantilla; los perfiles antiguos lo reciben con `Reconcile`. `EquipmentService` lo revisa al cargar sin borrar nada (los ids que no conoce se quedan).
@@ -542,3 +542,19 @@ Amplía el sistema visual de rareza ya existente; no hay un segundo sistema. Sol
 - **Llama de rareza (`RarityFx.Flame`):** un `Fire` a los pies del mineral, del color de su rareza o su mutación. Nada en Común y Poco común; crece de Raro a Mítico. Un mineral con mutación lleva como mínimo la de Raro. Solo de cerca (niveles de calidad 2 y 3).
 - **Carteles:** más pequeños (5,5 studs de ancho) y con contorno negro sólido.
 - **Suelo de losas:** 6x6 baldosas en dos tonos sobre un suelo oscuro que hace de junta (`Map.PlotTiles`). Los cosméticos de color de base tiñen las losas. Las losas llevan los tacos que trae Roblox (`SurfaceType.Studs` sobre plástico, `Map.PlotTileStuds`), sin ningún asset externo.
+
+## Política de Roblox en el intercambio
+
+- **`PolicyGateService`:** consulta la política de cada jugador una vez al entrar (con reintentos) y la guarda. `CrateService` y `TradeService` preguntan sin esperar; sin respuesta todavía, cuenta como "no permitido".
+- **`IsPaidItemTradingAllowed`:** los picos y las armas son objetos de pago (salen de cajas compradas con monedas, y las monedas se compran con Robux). Nunca se intercambian si alguno de los dos jugadores no lo tiene permitido.
+- **`Trade.PolicyBlocksAllTrading = true`:** a esos jugadores se les bloquea todo el intercambio, también el de minerales. Es la opción prudente (los minerales se venden por monedas y hay boosts de pago que ayudan a conseguirlos). En `false`, solo se bloquean picos y armas.
+- **Dónde se comprueba:** al pedir el intercambio, al aceptarlo, al añadir un pico o un arma a la oferta y otra vez justo antes de ejecutarlo.
+
+## Outpost: la plaza de los NPCs
+
+- **Motivo:** los cuatro NPCs originales estaban repartidos por el mapa y no se veían. Ahora están todos en una plaza (`Map.Hub`), fuera del anillo de bases, en el hueco 4. El decorado del mapa deja libre ese sitio.
+- **Ocho NPCs.** Siete abren un menú del juego al hablar con ellos (cajas, equipamiento, intercambio, colección, misiones, recompensa diaria y mejoras); el meteorólogo solo informa. No venden nada por sí mismos ni cambian reglas: son un acceso con cara a lo que ya existe.
+- **Aspecto:** figuras por código con cara (ojos, cejas, boca), pelo, botas, cinturón, hombreras y, según el NPC, lo que lleva en la cabeza, puesto y en la mano (`Config/Npcs`). Cada uno tiene su puesto; el de cajas y la fragua exponen los modelos reales de `EquipmentVisual`.
+- **Teletransporte:** botones Outpost y Home en el HUD (remote `Teleport`, `VisitService`). No se puede con minerales encima, para que no sirva para escapar de un robo ni para saltarse el camino a la base; 5 s de espera entre usos.
+- **Abrir menús desde fuera del HUD:** `UI/MenuBus` (el HUD se registra) y `TabbedMenu.Select` para elegir pestaña.
+- **Mando:** hablar con un NPC pasa a la cruceta arriba, porque Y es ahora la habilidad del arma.

@@ -35,6 +35,7 @@ Network.RateLimits = {
     SetDecoration = { maxRequests = 4, windowSeconds = 1 } :: RateLimit,
     SetBaseEffect = { maxRequests = 4, windowSeconds = 1 } :: RateLimit,
     VisitBase = { maxRequests = 2, windowSeconds = 2 } :: RateLimit,
+    Teleport = { maxRequests = 2, windowSeconds = 2 } :: RateLimit,
     LikeBase = { maxRequests = 2, windowSeconds = 2 } :: RateLimit,
     EquipGear = { maxRequests = 4, windowSeconds = 1 } :: RateLimit,
     BuyCrate = { maxRequests = 4, windowSeconds = 1 } :: RateLimit,

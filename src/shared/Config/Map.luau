@@ -138,4 +138,26 @@ Map.Scenery = {
 -- Altura (studs) sobre una zona plana que sigue contando como "pisándola".
 Map.ZoneHeight = 8
 
+-- Outpost: la plaza donde están reunidos los NPCs. Está fuera del anillo de bases, en el
+-- hueco entre la parcela `gap` y la siguiente, a `radius` studs del centro del mapa.
+-- `size` es el radio de la plaza, `height` lo que levanta del suelo y `npcRadius` la distancia
+-- del centro a la que se colocan los NPCs. `cooldown` son los segundos entre dos
+-- teletransportes (al Outpost o de vuelta a la base).
+Map.Hub = {
+    gap = 4,
+    radius = 455,
+    size = 36,
+    height = 0.6,
+    npcRadius = 26,
+    cooldown = 5,
+}
+
+-- Centro de la plaza a ras de suelo, con -Z mirando al centro del mapa.
+function Map.GetHubCFrame(): CFrame
+    local sector = math.pi * 2 / Map.PlotCount
+    local angle = (Map.Hub.gap - 1) * sector + sector / 2
+    local position = Vector3.new(math.cos(angle), 0, math.sin(angle)) * Map.Hub.radius
+    return CFrame.lookAt(position, Vector3.zero)
+end
+
 return Map

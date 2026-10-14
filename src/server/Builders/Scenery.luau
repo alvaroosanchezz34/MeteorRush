@@ -30,6 +30,11 @@ end
 
 -- Indica si un punto cae sobre una parcela o su camino (para no poner rocas encima).
 local function isReserved(angle: number, radius: number): boolean
+    -- La plaza del Outpost y un margen alrededor.
+    local hub = MapConfig.GetHubCFrame().Position
+    if (polar(angle, radius) - hub).Magnitude < MapConfig.Hub.size + 10 then
+        return true
+    end
     if radius > MapConfig.PlotRingRadius + MapConfig.PlotSize then
         return false
     end
@@ -393,7 +398,10 @@ local function buildLandmarks(rng: Random, parent: Instance)
         local spot = facingCenter(angle + rng:NextNumber(-0.05, 0.05), rng:NextNumber(400, 430))
             * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
         local kind = index % 3
-        if kind == 0 then
+        if index == MapConfig.Hub.gap then
+            -- En este hueco está el Outpost: sin estructura, para no pisarlo.
+            continue
+        elseif kind == 0 then
             buildRadarTower(spot, parent)
         elseif kind == 1 then
             buildCrashedPod(spot, rng, parent)

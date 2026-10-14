@@ -4,6 +4,8 @@
 -- que no entra en ninguna zona segura). No se puede usar llevando minerales, para que no
 -- sirva de atajo ni para escapar de un robo, y tiene un enfriamiento.
 -- También publica en atributos del jugador lo que muestra la lista de jugadores.
+-- Con las mismas reglas lleva al jugador al Outpost (la plaza de los NPCs) y de vuelta a su
+-- base: sin minerales encima y con un enfriamiento corto.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -25,6 +27,8 @@ local Strings = require(Shared.Strings)
 local VisitService = {}
 
 local limiter = RateLimiter.new(Network.RateLimits.VisitBase)
+local teleportLimiter = RateLimiter.new(Network.RateLimits.Teleport)
+local lastTeleport: { [Player]: number } = {}
 local lastVisit: { [Player]: number } = {}
 
 local function publish(player: Player)
@@ -77,7 +81,51 @@ local function onVisitBase(player: Player, target: unknown)
     Remotes.Notify:FireClient(player, string.format(Strings.Visit.Arrived, owner.DisplayName))
 end
 
+-- Teletransporte al Outpost ("outpost") o a la base propia ("home").
+local function onTeleport(player: Player, destination: unknown)
+    if not teleportLimiter.Check(player) then
+        return
+    end
+    if destination ~= "outpost" and destination ~= "home" then
+        Log.Suspicious(player, "Teleport", "destino inválido")
+        return
+    end
+    local character = player.Character
+    local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+    local plot = PlotService.GetPlot(player)
+    if character == nil or humanoid == nil or humanoid.Health <= 0 or plot == nil then
+        return
+    end
+    -- Sin carga: si no, sería la forma de escapar de un robo o de saltarse el camino a casa.
+    if CarryService.GetCount(player) > 0 then
+        Remotes.Notify:FireClient(player, Strings.Visit.TeleportCarrying)
+        return
+    end
+    local now = os.clock()
+    local wait = MapConfig.Hub.cooldown - (now - (lastTeleport[player] or -math.huge))
+    if wait > 0 then
+        Remotes.Notify:FireClient(
+            player,
+            string.format(Strings.Visit.Cooldown, Format.Duration(math.ceil(wait)))
+        )
+        return
+    end
+    lastTeleport[player] = now
+
+    humanoid.Sit = false
+    if destination == "outpost" then
+        -- En la losa central, mirando hacia el interior de la plaza.
+        local center = MapConfig.GetHubCFrame() * CFrame.new(0, MapConfig.Hub.height + 3, 0)
+        character:PivotTo(center * CFrame.Angles(0, math.pi, 0))
+        Remotes.Notify:FireClient(player, Strings.Visit.OutpostArrived)
+    else
+        character:PivotTo(plot.spawnLocation.CFrame + Vector3.new(0, 3, 0))
+        Remotes.Notify:FireClient(player, Strings.Visit.HomeArrived)
+    end
+end
+
 function VisitService.Init()
+    Remotes.Teleport.OnServerEvent:Connect(onTeleport)
     Remotes.VisitBase.OnServerEvent:Connect(onVisitBase)
     DataService.OnProfileLoaded(publish)
     for _, field in { "rebirths", "index" } do
@@ -88,6 +136,7 @@ end
 function VisitService.Start()
     game:GetService("Players").PlayerRemoving:Connect(function(player: Player)
         lastVisit[player] = nil
+        lastTeleport[player] = nil
     end)
 end
 

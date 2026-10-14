@@ -19,6 +19,7 @@
 --     tras el diálogo de confirmación.
 --   * Toda acción queda en el registro (Admin/AdminLogs).
 
+local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -55,6 +56,7 @@ local MeteorsConfig = require(Shared.Config.Meteors)
 local Minerals = require(Shared.Config.Minerals)
 local Mutations = require(Shared.Config.Mutations)
 local Network = require(Shared.Config.Network)
+local NpcsConfig = require(Shared.Config.Npcs)
 local PlayerStats = require(Shared.Util.PlayerStats)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
@@ -985,6 +987,25 @@ commands.testLegendary = {
     end,
 }
 
+-- Lleva al administrador delante de un NPC ambiental (para comprobar que están en su sitio).
+commands.npcTeleport = {
+    handler = function(admin: Player, args: Args): (boolean, any)
+        local character = admin.Character
+        for _, model in CollectionService:GetTagged(NpcsConfig.Tag) do
+            local base = model:GetAttribute("Base")
+            if
+                model:GetAttribute("NpcId") == args.npc
+                and typeof(base) == "CFrame"
+                and character
+            then
+                character:PivotTo(base * CFrame.new(0, 4, -9) * CFrame.Angles(0, math.pi, 0))
+                return true, `Delante de "{args.npc}".`
+            end
+        end
+        return false, "Ese NPC no está en el mapa."
+    end,
+}
+
 -- Servidor.
 -- Para lo que está en marcha: evento, competición y meteoritos. No toca datos.
 commands.systemsReset = {
@@ -1155,7 +1176,10 @@ function AdminService.Start()
     end
     local function deliver(player: Player)
         if not AdminPermissions.IsAdmin(player) then
-            print(`[Admin] {player.Name} (UserId {player.UserId}) no es administrador`)
+            -- Solo en Studio: en el juego publicado sería una línea por cada jugador que entra.
+            if RunService:IsStudio() then
+                print(`[Admin] {player.Name} (UserId {player.UserId}) no es administrador`)
+            end
             return
         end
         local playerGui = player:FindFirstChildOfClass("PlayerGui")

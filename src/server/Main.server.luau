@@ -13,6 +13,7 @@ local SERVICE_ORDER: { string } = {
     "NpcService",
     "DataService",
     "LiveOpsService",
+    "PolicyGateService",
     "AmbientService",
     "LeaderboardService",
     "TutorialService",

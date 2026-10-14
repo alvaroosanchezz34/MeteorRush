@@ -17,6 +17,7 @@ local Minerals = require(Shared:WaitForChild("Config"):WaitForChild("Minerals"))
 local PlayerStats = require(Shared:WaitForChild("Util"):WaitForChild("PlayerStats"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local Strings = require(Shared:WaitForChild("Strings"))
+local TradeConfig = require(Shared:WaitForChild("Config"):WaitForChild("Trade"))
 local Types = require(Shared:WaitForChild("Types"))
 
 type TradeState = {
@@ -300,6 +301,18 @@ function TradeMenu.Mount(window: Components.Window)
         local current = state
         if current then
             renderTrade(current)
+        elseif
+            TradeConfig.PolicyBlocksAllTrading
+            and Players.LocalPlayer:GetAttribute("TradingAllowed") == false
+        then
+            -- El servidor lo bloquea igualmente; esto solo explica por qué.
+            Components.Label({
+                text = Strings.Trade.Restricted,
+                size = UDim2.fromScale(0.9, 0.2),
+                position = UDim2.fromScale(0.05, 0.35),
+                color = Components.Colors.Muted,
+                parent = root,
+            })
         else
             renderIdle()
         end
@@ -351,6 +364,7 @@ function TradeMenu.Mount(window: Components.Window)
     window.OnOpened(refresh)
     DataController.OnChanged("inventory", refresh)
     DataController.OnChanged("equipment", refresh)
+    Players.LocalPlayer:GetAttributeChangedSignal("TradingAllowed"):Connect(refresh)
     Players.PlayerAdded:Connect(refresh)
     Players.PlayerRemoving:Connect(function(player: Player)
         local index = table.find(incoming, player)

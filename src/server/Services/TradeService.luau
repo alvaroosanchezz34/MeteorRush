@@ -19,6 +19,7 @@ local DataService = require(script.Parent.DataService)
 local EquipmentService = require(script.Parent.EquipmentService)
 local IndexService = require(script.Parent.IndexService)
 local LiveOpsService = require(script.Parent.LiveOpsService)
+local PolicyGateService = require(script.Parent.PolicyGateService)
 
 local Shared = ReplicatedStorage.Shared
 local Network = require(Shared.Config.Network)
@@ -61,6 +62,31 @@ local GEAR_PREFIX = "gear:"
 local function gearOf(itemId: string): string?
     if string.sub(itemId, 1, #GEAR_PREFIX) == GEAR_PREFIX then
         return string.sub(itemId, #GEAR_PREFIX + 1)
+    end
+    return nil
+end
+
+-- Política de Roblox: indica si los dos jugadores pueden intercambiar objetos de pago
+-- entre sí. Solo vale un "sí" confirmado de los dos; si de alguno aún no se sabe, es que no.
+local function canTradePaidItems(a: Player, b: Player): boolean
+    return PolicyGateService.CanTradePaidItems(a) == true
+        and PolicyGateService.CanTradePaidItems(b) == true
+end
+
+-- Motivo por el que `player` no puede intercambiar con `other` por la política, o nil si
+-- puede. Con `PolicyBlocksAllTrading` apagado nunca bloquea aquí (solo picos y armas, más abajo).
+local function getPolicyBlock(player: Player, other: Player): string?
+    if not TradeConfig.PolicyBlocksAllTrading then
+        return nil
+    end
+    local own = PolicyGateService.CanTradePaidItems(player)
+    if own ~= true then
+        PolicyGateService.Refresh(player)
+        return if own == false then Strings.Trade.Restricted else Strings.Trade.Checking
+    end
+    if PolicyGateService.CanTradePaidItems(other) ~= true then
+        PolicyGateService.Refresh(other)
+        return Strings.Trade.PartnerRestricted
     end
     return nil
 end
@@ -133,7 +159,8 @@ local function isOfferValid(player: Player, itemIds: { string }, receiver: Playe
         local gear = gearOf(itemId)
         if gear then
             if
-                not EquipmentService.CanTrade(player, gear)
+                not canTradePaidItems(player, receiver)
+                or not EquipmentService.CanTrade(player, gear)
                 or not EquipmentService.CanReceive(receiver, gear)
             then
                 return false
@@ -184,7 +211,11 @@ end
 local function execute(trade: Trade)
     local offerA = trade.offers[trade.a]
     local offerB = trade.offers[trade.b]
-    if not (isOfferValid(trade.a, offerA, trade.b) and isOfferValid(trade.b, offerB, trade.a)) then
+    -- La política se vuelve a comprobar justo antes de mover nada.
+    if
+        getPolicyBlock(trade.a, trade.b) ~= nil
+        or not (isOfferValid(trade.a, offerA, trade.b) and isOfferValid(trade.b, offerB, trade.a))
+    then
         closeTrade(trade, Strings.Trade.Failed)
         return
     end
@@ -219,6 +250,11 @@ local function onRequest(player: Player, target: unknown)
     end
     if not LiveOpsService.IsEnabled("trading") then
         Remotes.Notify:FireClient(player, Strings.LiveOps.Disabled)
+        return
+    end
+    local block = getPolicyBlock(player, other)
+    if block then
+        Remotes.Notify:FireClient(player, block)
         return
     end
     if trades[player] or trades[other] then
@@ -264,6 +300,11 @@ local function onRespond(player: Player, requester: unknown, accept: unknown)
         Remotes.Notify:FireClient(other, string.format(Strings.Trade.Declined, player.DisplayName))
         return
     end
+    local block = getPolicyBlock(player, other)
+    if block then
+        Remotes.Notify:FireClient(player, block)
+        return
+    end
     if trades[player] or trades[other] then
         Remotes.Notify:FireClient(player, Strings.Trade.Busy)
         return
@@ -303,6 +344,13 @@ local function onUpdateOffer(player: Player, itemIds: unknown)
         table.insert(offer, itemId)
     end
     if not isOfferValid(player, offer, partnerOf(trade, player)) then
+        -- Si lo que falla es la política con un pico o un arma, se dice por qué.
+        for _, itemId in offer do
+            if gearOf(itemId) and not canTradePaidItems(player, partnerOf(trade, player)) then
+                Remotes.Notify:FireClient(player, Strings.Trade.GearRestricted)
+                break
+            end
+        end
         return
     end
 

@@ -138,11 +138,37 @@ local Strings = {
     -- NPCs ambientales (Config/Npcs). Frases cortas y opcionales.
     Npcs = {
         Talk = "Talk",
+        OutpostSign = "🏕 OUTPOST",
         Names = {
             meteorologist = "Meteorologist",
-            scientist = "Scientist",
+            crateDealer = "Crate Dealer",
+            blacksmith = "Blacksmith",
             trader = "Trader",
+            scientist = "Scientist",
+            quartermaster = "Quartermaster",
+            supplyOfficer = "Supply Officer",
             miner = "Old Miner",
+        } :: { [string]: string },
+        -- Para qué sirve cada uno (segunda línea de su cartel).
+        Roles = {
+            meteorologist = "Meteor forecast",
+            crateDealer = "Crates",
+            blacksmith = "Pickaxes & weapons",
+            trader = "Trading",
+            scientist = "Collection",
+            quartermaster = "Daily quests",
+            supplyOfficer = "Daily reward",
+            miner = "Upgrades",
+        } :: { [string]: string },
+        -- Texto de la opción de hablar de los que abren un menú.
+        Actions = {
+            crateDealer = "Open Crates",
+            blacksmith = "Open Equipment",
+            trader = "Open Trade",
+            scientist = "Open Collection",
+            quartermaster = "Open Quests",
+            supplyOfficer = "Open Daily Reward",
+            miner = "Open Upgrades",
         } :: { [string]: string },
         -- Frases fijas al hablar con cada uno, en orden.
         Lines = {
@@ -150,14 +176,31 @@ local Strings = {
                 "Watch for the red ring on the ground. That's where it lands.",
                 "Special meteors only show up during events. Keep an eye on the sky!",
             },
-            scientist = {
-                "Mutated minerals glow. The closer you get, the better they look.",
-                "Place your best minerals on pedestals. They earn coins while you're away.",
+            crateDealer = {
+                "Step right up! Every crate hides a pickaxe, a weapon or something shiny.",
+                "The drop rates are on every crate. No tricks here.",
+                "Duplicates turn into Forge Dust. Save it for the Legendary Crate!",
+            },
+            blacksmith = {
+                "A better pickaxe mines faster. A better weapon... persuades faster.",
+                "Check your equipment. Rare gear has its own tricks.",
             },
             trader = {
                 "Open Trade, pick a player and send them a request.",
                 "Both players have to confirm twice. No take-backs!",
                 "Only minerals that are off your pedestals can be traded.",
+            },
+            scientist = {
+                "Mutated minerals glow. The closer you get, the better they look.",
+                "Place your best minerals on pedestals. They earn coins while you're away.",
+            },
+            quartermaster = {
+                "New jobs on the board every day. Finish them for coins.",
+                "Seasons have their own missions too. Don't miss the rewards.",
+            },
+            supplyOfficer = {
+                "Your supply drop is ready once a day. Keep the streak going!",
+                "Come back tomorrow. It gets better every day in a row.",
             },
             miner = {
                 "Clang! Clang! ...What? I'm busy here.",
@@ -172,8 +215,12 @@ local Strings = {
                 "Hmm... pressure's dropping.",
                 "Another one's coming. I can feel it.",
             },
-            scientist = { "Fascinating...", "Don't touch the samples, please." },
+            crateDealer = { "Feeling lucky today?", "Fresh crates! Straight from orbit!" },
+            blacksmith = { "Clang!", "Hot steel, coming through." },
             trader = { "Got something shiny to trade?", "Best deals this side of the crater!" },
+            scientist = { "Fascinating...", "Don't touch the samples, please." },
+            quartermaster = { "Work's on the board.", "Somebody take the mining job, please." },
+            supplyOfficer = { "Supplies! Get your daily supplies!", "One drop per miner, per day." },
             miner = { "Clang!", "Almost... got it...", "This vein is a tough one." },
         } :: { [string]: { string } },
         Meteorologist = {
@@ -385,6 +432,12 @@ local Strings = {
         Close = "CLOSE",
         Skip = "SKIP",
         Odds = "Drop rates",
+        OddsButton = "ℹ DROP RATES",
+        -- %s = nombre de la caja
+        OddsTitle = "%s · drop rates",
+        OddsTotal = "Total: 100.00%",
+        Unavailable = "UNAVAILABLE",
+        Checking = "Checking crate availability...",
         -- %s = rareza, %d = aperturas que faltan
         Pity = "%s or better guaranteed within %d opens",
         Contents = "Pickaxes, weapons and exclusive cosmetics",
@@ -528,6 +581,10 @@ local Strings = {
     },
     Trade = {
         RequestSent = "Trade request sent to %s.",
+        Restricted = "Trading isn't available for your account.",
+        PartnerRestricted = "That player can't trade.",
+        GearRestricted = "Pickaxes and weapons can't be traded with that player.",
+        Checking = "Checking trade availability. Try again in a moment.",
         RequestReceived = "%s wants to trade with you. Open Trade to answer.",
         Declined = "%s declined your trade.",
         Cancelled = "Trade cancelled.",
@@ -557,6 +614,8 @@ local Strings = {
         BaseDistance = "🏠 Base: %d studs",
         BaseDistanceFull = "🏠 FULL! Base: %d studs",
         SafeZone = "🛡️ SAFE ZONE",
+        Outpost = "🏕 Outpost",
+        Home = "🏠 Home",
         NextMeteor = "☄️ Next meteor: %s",
         MeteorDistance = "%d studs",
         Buttons = {
@@ -712,6 +771,9 @@ local Strings = {
         Summary = "Rebirths: %d  ·  Index: %d/%d",
         Arrived = "Welcome to %s's base! Check the collection board on the back wall.",
         Carrying = "You can't visit a base while carrying minerals.",
+        TeleportCarrying = "You can't teleport while carrying minerals.",
+        OutpostArrived = "Welcome to the Outpost! Talk to anyone here.",
+        HomeArrived = "Back at your base.",
         Cooldown = "You can visit again in %s.",
     },
     Permanent = {

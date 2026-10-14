@@ -53,6 +53,7 @@ local Remotes = {
     SetBaseEffect = getOrCreateRemoteEvent("SetBaseEffect"),
     VisitBase = getOrCreateRemoteEvent("VisitBase"),
     LikeBase = getOrCreateRemoteEvent("LikeBase"),
+    Teleport = getOrCreateRemoteEvent("Teleport"),
     -- Equipamiento y cajas.
     EquipGear = getOrCreateRemoteEvent("EquipGear"),
     BuyCrate = getOrCreateRemoteEvent("BuyCrate"),

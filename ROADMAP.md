@@ -134,3 +134,5 @@ Pruebas: activar y desactivar una temporada · caducidad de un código · canjea
 - [ ] Rendimiento y memoria; quitar prints de depuración
 - [ ] Máximo de 8 jugadores, icono, miniatura, metadatos y cuestionario de contenido
 - [ ] Publicar en privado, pruebas finales, hacerla pública; checklist de lanzamiento y plan de rollback
+
+Preparado en código: lista de pruebas, pasos de publicación y plan de vuelta atrás en `LAUNCH.md`; los `print` que quedan son solo de Studio o del registro de administración. Las casillas se marcan cuando el desarrollador lo pruebe y publique.

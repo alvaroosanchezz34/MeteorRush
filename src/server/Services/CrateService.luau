@@ -14,13 +14,13 @@
 -- política del jugador lo restringe (PolicyService), no se pueden comprar.
 
 local Players = game:GetService("Players")
-local PolicyService = game:GetService("PolicyService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AchievementService = require(script.Parent.AchievementService)
 local DataService = require(script.Parent.DataService)
 local EquipmentService = require(script.Parent.EquipmentService)
 local IncomeService = require(script.Parent.IncomeService)
+local PolicyGateService = require(script.Parent.PolicyGateService)
 
 local Shared = ReplicatedStorage.Shared
 local Crates = require(Shared.Config.Crates)
@@ -38,9 +38,6 @@ local rng = Random.new()
 local buyLimiter = RateLimiter.new(Network.RateLimits.BuyCrate)
 local openLimiter = RateLimiter.new(Network.RateLimits.OpenCrate)
 local lastOpenAt: { [Player]: number } = {}
--- true = no puede comprar objetos aleatorios de pago; nil = todavía no se sabe.
-local restricted: { [Player]: boolean } = {}
-
 local function rank(rarity: string): number
     local entry = Equipment.Rarities[rarity]
     return if entry then entry.rank else 0
@@ -87,19 +84,6 @@ local function roll(crate: Crates.Crate, pityCount: number): (Crates.Reward?, bo
         return pick(0), false
     end
     return reward, guaranteed
-end
-
-local function isRestricted(player: Player): boolean?
-    if restricted[player] == nil then
-        local ok, info = pcall(function(): any
-            return PolicyService:GetPolicyInfoForPlayerAsync(player)
-        end)
-        if ok and type(info) == "table" and player.Parent == Players then
-            restricted[player] = info.ArePaidRandomItemsRestricted == true
-            player:SetAttribute("CratesRestricted", restricted[player])
-        end
-    end
-    return restricted[player]
 end
 
 -- Envía el resultado al cliente para que lo presente.
@@ -179,21 +163,18 @@ local function onBuy(player: Player, crateId: unknown)
         Remotes.Notify:FireClient(player, Strings.Crates.Full)
         return
     end
+    -- Política del jugador: si no puede comprar objetos aleatorios de pago, no compra
+    -- ninguna caja, tampoco con Forge Dust (que sale de cajas). Mientras no se sepa, tampoco.
+    local allowed = PolicyGateService.CanBuyRandomItems(player)
+    if allowed ~= true then
+        PolicyGateService.Refresh(player)
+        Remotes.Notify:FireClient(
+            player,
+            if allowed == false then Strings.Crates.Restricted else Strings.Crates.TryAgain
+        )
+        return
+    end
     if currency == "coins" then
-        -- Puede esperar (consulta a Roblox): después se vuelve a leer todo.
-        local blocked = isRestricted(player)
-        if blocked ~= false then
-            Remotes.Notify:FireClient(
-                player,
-                if blocked then Strings.Crates.Restricted else Strings.Crates.TryAgain
-            )
-            return
-        end
-        data = DataService.GetData(player)
-        if data == nil or (data.equipment.crates[crateId] or 0) >= Crates.MaxStored then
-            return
-        end
-        currency, price = Crates.GetCost(crate, data)
         if not IncomeService.SpendCoins(player, price, "crates") then
             Remotes.Notify:FireClient(player, Strings.Crates.NotEnoughCoins)
             return
@@ -279,20 +260,20 @@ local function onOpen(player: Player, crateId: unknown)
 end
 
 function CrateService.Init()
+    -- Las probabilidades que ve el jugador salen de estos pesos: tienen que cuadrar.
+    for _, crate in Crates.List do
+        local problem = Crates.Validate(crate)
+        if problem then
+            Log.Warn("Crates", `Caja "{crate.id}" mal configurada: {problem}`)
+        end
+    end
     Remotes.BuyCrate.OnServerEvent:Connect(onBuy)
     Remotes.OpenCrate.OnServerEvent:Connect(onOpen)
 end
 
 function CrateService.Start()
-    Players.PlayerAdded:Connect(function(player: Player)
-        task.spawn(isRestricted, player)
-    end)
-    for _, player in Players:GetPlayers() do
-        task.spawn(isRestricted, player)
-    end
     Players.PlayerRemoving:Connect(function(player: Player)
         lastOpenAt[player] = nil
-        restricted[player] = nil
     end)
 end
 

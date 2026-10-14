@@ -4,6 +4,7 @@
 --   * respiran y balancean los brazos (o pican, el minero), solo si están cerca de la cámara
 --   * giran la cabeza, y el cuerpo si su configuración lo permite, hacia el jugador más cercano
 --   * al usar la opción de hablar dicen la siguiente frase en un bocadillo sobre la cabeza
+--     y, los que tienen un menú del juego asignado, lo abren
 --   * de vez en cuando sueltan un comentario si el jugador está cerca
 -- Las figuras las crea el servidor (NpcService); cada parte trae los atributos `Joint` y
 -- `Offset`, que es lo que se usa aquí para colocarla en cada fotograma.
@@ -15,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Effects = require(script.Parent.Parent.UI.Effects)
+local MenuBus = require(script.Parent.Parent.UI.MenuBus)
 local NpcDialogue = require(script.Parent.Parent.UI.NpcDialogue)
 local Sound = require(script.Parent.Parent.UI.Sound)
 
@@ -80,7 +82,7 @@ local function getBubble(npc: Npc): (BillboardGui?, TextLabel?)
     corner.CornerRadius = UDim.new(0.25, 0)
     corner.Parent = frame
     local stroke = Instance.new("UIStroke")
-    stroke.Color = npc.config.hat
+    stroke.Color = npc.config.accent
     stroke.Thickness = 2
     stroke.Parent = frame
     local label = Instance.new("TextLabel")
@@ -275,14 +277,18 @@ local function track(model: Instance): boolean
     npcs[model] = npc
 
     -- Hablar: cada vez dice la frase siguiente, empezando por lo que esté pasando ahora.
+    -- Los que tienen un menú, además lo abren.
     prompt.Triggered:Connect(function()
         local lines = NpcDialogue.GetLines(config.id)
-        if #lines == 0 then
-            return
+        if #lines > 0 then
+            npc.lineIndex = npc.lineIndex % #lines + 1
+            say(npc, lines[npc.lineIndex])
         end
-        npc.lineIndex = npc.lineIndex % #lines + 1
-        say(npc, lines[npc.lineIndex])
         Sound.Play("UiClick")
+        local opens = config.opens
+        if opens then
+            MenuBus.Open(opens.menu, opens.tab)
+        end
     end)
     return true
 end

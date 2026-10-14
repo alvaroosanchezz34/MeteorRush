@@ -175,4 +175,58 @@ function Crates.GetOdds(crate: Crate): { { rarity: string, chance: number } }
     return odds
 end
 
+-- Probabilidad de cada objeto de una caja, en centésimas de punto porcentual (2500 = 25,00 %),
+-- del más común al más raro. Dentro de una rareza todos los objetos son igual de probables.
+-- El redondeo se reparte de forma que la suma sea exactamente 10000 (100,00 %): es lo que se
+-- enseña al jugador antes de comprar.
+function Crates.GetItemOdds(crate: Crate): { { reward: Reward, hundredths: number } }
+    local pool = Crates.GetPool(crate)
+    local entries: { { reward: Reward, hundredths: number, remainder: number } } = {}
+    local assigned = 0
+    for _, odds in Crates.GetOdds(crate) do
+        local rewards = pool[odds.rarity]
+        for _, reward in rewards do
+            local exact = odds.chance / #rewards * 10000
+            local whole = math.floor(exact)
+            assigned += whole
+            table.insert(
+                entries,
+                { reward = reward, hundredths = whole, remainder = exact - whole }
+            )
+        end
+    end
+    -- Las centésimas que faltan por el redondeo van a los que más se quedaron cortos.
+    local order = table.clone(entries)
+    table.sort(order, function(a, b): boolean
+        return a.remainder > b.remainder
+    end)
+    local missing = if #entries > 0 then 10000 - assigned else 0
+    for index = 1, math.min(missing, #order) do
+        order[index].hundredths += 1
+    end
+    local result: { { reward: Reward, hundredths: number } } = {}
+    for _, entry in entries do
+        table.insert(result, { reward = entry.reward, hundredths = entry.hundredths })
+    end
+    return result
+end
+
+-- Comprueba la configuración de una caja: los pesos de las rarezas que puede dar tienen que
+-- sumar exactamente 100, para que el peso de cada una sea su porcentaje. Devuelve el
+-- problema encontrado, o nil si está bien.
+function Crates.Validate(crate: Crate): string?
+    local pool = Crates.GetPool(crate)
+    local total = 0
+    for rarity, weight in crate.weights do
+        if pool[rarity] == nil then
+            return `la rareza "{rarity}" no tiene ningún objeto que dar`
+        end
+        total += weight
+    end
+    if total ~= 100 then
+        return `los pesos suman {total}, no 100`
+    end
+    return nil
+end
+
 return Crates

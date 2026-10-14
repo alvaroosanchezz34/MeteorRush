@@ -15,7 +15,7 @@ local AdminPermissions = {}
 -- ║  Ejemplo:   [123456789] = true,                                          ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 AdminPermissions.ADMIN_USER_IDS = {
-    -- [0] = true,
+    [10062862461] = true,
 } :: { [number]: boolean }
 
 -- El creador de la experiencia es administrador aunque no esté en la lista. Solo vale si
