@@ -13,6 +13,7 @@ local Effects = require(script.Parent.Parent.UI.Effects)
 local EconomyPanel = require(script.Parent.Parent.UI.EconomyPanel)
 local Hud = require(script.Parent.Parent.UI.Hud)
 local InspectBase = require(script.Parent.Parent.UI.InspectBase)
+local Offers = require(script.Parent.Parent.UI.Offers)
 local Sound = require(script.Parent.Parent.UI.Sound)
 local UpdateNotes = require(script.Parent.Parent.UI.UpdateNotes)
 
@@ -165,7 +166,8 @@ function UIController.Start()
     DataController.OnReady(function(data)
         Hud.Mount()
         InspectBase.Mount()
-        UpdateNotes.Show(data)
+        -- Primero las notas de versión; al cerrarlas, las ofertas de bienvenida.
+        UpdateNotes.Show(data, Offers.Start)
         if RunService:IsStudio() then
             EconomyPanel.Mount()
         end

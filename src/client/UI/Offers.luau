@@ -1,9 +1,10 @@
 --!strict
 
 -- Ofertas de Robux en pantalla:
---   · Oferta de bienvenida (Pack Inicial): sale en grande al entrar mientras no se haya
---     comprado. Al cerrarla se encoge hasta un botón en el lateral derecho, desde el que se
---     vuelve a abrir. Desaparece al comprarla (el servidor marca `offers.starterPack`).
+--   · Ofertas grandes (Shop.BigOffers: Pack Inicial y Mega Pack): al entrar, después de las
+--     notas de versión (Offers.Start), salen una detrás de otra. Al cerrar cada una se encoge
+--     hasta un botón en el lateral derecho (uno debajo de otro), desde el que se vuelve a abrir.
+--     El Pack Inicial desaparece al comprarlo (el servidor marca `offers.starterPack`).
 --   · Ofertas de esquina: una tarjeta pequeña que entra por la derecha en momentos concretos
 --     (mochila llena, meteorito grande en camino o de vez en cuando) y se va sola. Cada una
 --     sale como mucho una vez por sesión y nunca dos seguidas (Config/Shop).
@@ -31,16 +32,25 @@ local ShopConfig = require(Shared:WaitForChild("Config"):WaitForChild("Shop"))
 local Strings = require(Shared:WaitForChild("Strings"))
 
 local GOLD = Theme.Colors.Gold
--- Segundos tras entrar hasta que sale la oferta de bienvenida (que primero se vea el juego).
-local WELCOME_DELAY = 3
--- Dónde queda el botón de la oferta minimizada y la tarjeta de esquina.
-local MINI_POSITION = UDim2.fromScale(0.988, 0.46)
+-- Segundos entre cerrar una oferta grande y que salga la siguiente.
+local NEXT_OFFER_DELAY = 0.6
+-- Dónde quedan los botones de las ofertas minimizadas (el primero; los demás, debajo) y la
+-- tarjeta de esquina.
+local MINI_POSITION = UDim2.fromScale(0.988, 0.42)
+local MINI_STEP = 0.11
 local CORNER_POSITION_DESKTOP = UDim2.fromScale(0.988, 0.93)
 -- En pantallas táctiles la esquina de abajo es del botón de saltar: la tarjeta sube.
 local CORNER_POSITION_TOUCH = UDim2.fromScale(0.988, 0.6)
 local POP = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SHRINK = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 local SLIDE = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+-- Icono y color de cada oferta grande.
+local BIG_STYLES: { [string]: { icon: string, color: Color3 } } = {
+    starterPack = { icon = "🎁", color = GOLD },
+    megaPack = { icon = "🚀", color = Color3.fromRGB(170, 120, 255) },
+}
+-- Orden de los boosts en la lista de lo que incluye un paquete.
+local BOOST_ORDER = { "luck", "coins2x", "magnet", "carryShield" }
 
 type Offer = {
     key: string,
@@ -93,25 +103,114 @@ local function isTouch(): boolean
     return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
--- Oferta de bienvenida ---------------------------------------------------------------------
+-- Ofertas grandes ---------------------------------------------------------------------------
 
-local function mountWelcome(gui: ScreenGui)
-    local offer = findOffer(ShopConfig.StarterPackKey)
-    local product = ShopConfig.ProductsByKey[ShopConfig.StarterPackKey]
-    if offer == nil or product == nil then
-        return
+-- Texto de una duración: "1 hora", "2 horas" o "30 min".
+local function durationText(seconds: number): string
+    if seconds % 3600 == 0 then
+        local hours = seconds // 3600
+        return if hours == 1
+            then Strings.Offers.OneHour
+            else string.format(Strings.Offers.Hours, hours)
     end
+    return string.format(Strings.Offers.Minutes, math.floor(seconds / 60))
+end
 
-    -- Tarjeta grande ---------------------------------------------------------------------
+-- Lo que incluye un paquete, una línea por cosa. Las monedas dependen de los rebirths.
+local function contentLines(product: ShopConfig.Product): { string }
+    local lines: { string } = {}
+    local data = DataController.GetData()
+    if (product.rebirthCostFraction or 0) > 0 then
+        local amount = if data then PlayerStats.GetCoinPackAmount(data, product) else 0
+        table.insert(lines, string.format(Strings.Offers.LineCoins, Format.Number(amount)))
+    end
+    local boosts = product.boosts or {}
+    for _, boost in BOOST_ORDER do
+        local duration = boosts[boost]
+        if duration then
+            table.insert(
+                lines,
+                string.format(
+                    Strings.Offers.LineBoost,
+                    Strings.Offers.Boosts[boost] or boost,
+                    durationText(duration)
+                )
+            )
+        end
+    end
+    for _, key in product.cosmetics or {} do
+        table.insert(
+            lines,
+            string.format(Strings.Offers.LineExclusive, Strings.Shop.Names[key] or key)
+        )
+    end
+    return lines
+end
+
+-- Lo que costaría comprar suelto lo que trae un paquete: el paquete de monedas con la misma
+-- cantidad y cada boost con la misma duración. nil si alguna parte no se vende suelta o si no
+-- sale más caro: entonces la oferta no presume de ahorro.
+local function separatePrice(product: ShopConfig.Product): number?
+    if product.cosmetics and #product.cosmetics > 0 then
+        return nil
+    end
+    local total = 0
+    local fraction = product.rebirthCostFraction or 0
+    if fraction > 0 then
+        local match: ShopConfig.Product? = nil
+        for _, other in ShopConfig.Products do
+            if other.kind == "coins" and other.rebirthCostFraction == fraction then
+                match = other
+            end
+        end
+        if match == nil then
+            return nil
+        end
+        total += match.price
+    end
+    for boost, duration in product.boosts or {} do
+        local match: ShopConfig.Product? = nil
+        for _, other in ShopConfig.Products do
+            if other.kind == "boost" and other.boost == boost and other.duration == duration then
+                match = other
+            end
+        end
+        if match == nil then
+            return nil
+        end
+        total += match.price
+    end
+    return if total > product.price then total else nil
+end
+
+type BigOffer = {
+    -- Se puede enseñar: existe y, si es de una sola vez, no se ha comprado.
+    Available: () -> boolean,
+    -- Abre la tarjeta. `onClosed` se llama una vez, cuando se cierre (para la siguiente).
+    Open: (onClosed: (() -> ())?) -> (),
+    IsOpen: () -> boolean,
+    mini: Frame,
+}
+
+-- Tarjeta grande de una oferta (ShopConfig.BigOffers) y su botón minimizado del lateral.
+local function createBigOffer(gui: ScreenGui, key: string, relayout: () -> ()): BigOffer?
+    local offer = findOffer(key)
+    local product = ShopConfig.ProductsByKey[key]
+    if offer == nil or product == nil then
+        return nil
+    end
+    local style = BIG_STYLES[key] or { icon = "🎁", color = GOLD }
+    local color = style.color
+
     local card, cardStroke = Components.Glass({
         size = UDim2.fromScale(0.42, 0.56),
         position = UDim2.fromScale(0.5, 0.5),
         anchor = Vector2.new(0.5, 0.5),
-        accent = GOLD,
+        accent = color,
         radius = Theme.Radius.Window,
         parent = gui,
     })
-    card.Name = "WelcomeOffer"
+    card.Name = `Offer_{key}`
     card.Visible = false
     card.ZIndex = 20
     -- Tapa los clics para que no lleguen al juego.
@@ -121,21 +220,21 @@ local function mountWelcome(gui: ScreenGui)
     aspect.AspectRatio = 1.25
     aspect.Parent = card
     cardStroke.Thickness = Theme.Stroke.Focus
-    Components.SpinBorder(cardStroke, GOLD)
+    Components.SpinBorder(cardStroke, color)
     local cardScale = Instance.new("UIScale")
     cardScale.Parent = card
 
     local heading = Components.Label({
         text = function(): string
-            return Strings.Offers.WelcomeHeading
+            return Strings.Offers.Headings[key] or ""
         end,
         size = UDim2.fromScale(0.56, 0.08),
         position = UDim2.fromScale(0.22, 0.05),
-        color = Theme.Colors.TextDark,
+        color = Theme.TextOn(color),
         heading = true,
         parent = card,
     })
-    heading.BackgroundColor3 = GOLD
+    heading.BackgroundColor3 = color
     heading.BackgroundTransparency = 0
     local headingCorner = Instance.new("UICorner")
     headingCorner.CornerRadius = UDim.new(0.5, 0)
@@ -147,7 +246,7 @@ local function mountWelcome(gui: ScreenGui)
 
     -- Icono grande que flota despacio.
     local icon = Components.Label({
-        text = "🎁",
+        text = style.icon,
         size = UDim2.fromScale(0.3, 0.36),
         position = UDim2.fromScale(0.04, 0.2),
         parent = card,
@@ -160,56 +259,43 @@ local function mountWelcome(gui: ScreenGui)
 
     Components.Label({
         text = function(): string
-            return Strings.Offers.WelcomeTitle
+            return Strings.Shop.Names[key] or key
         end,
         size = UDim2.fromScale(0.6, 0.11),
         position = UDim2.fromScale(0.36, 0.17),
         alignment = Enum.TextXAlignment.Left,
-        color = GOLD,
+        color = color,
         heading = true,
         parent = card,
     })
 
-    -- Lo que incluye: una línea por cosa. Las monedas dependen de los rebirths del jugador.
+    -- Contenido: se vuelve a pintar al abrir (las monedas cambian con los rebirths).
     local list = Instance.new("Frame")
     list.BackgroundTransparency = 1
-    list.Size = UDim2.fromScale(0.6, 0.36)
+    list.Size = UDim2.fromScale(0.6, 0.38)
     list.Position = UDim2.fromScale(0.36, 0.3)
     list.Parent = card
     local listLayout = Instance.new("UIListLayout")
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding = UDim.new(0.03, 0)
+    listLayout.Padding = UDim.new(0.02, 0)
     listLayout.Parent = list
-    local coinsLine = Components.Label({
-        text = "",
-        size = UDim2.fromScale(1, 0.22),
-        alignment = Enum.TextXAlignment.Left,
-        layoutOrder = 1,
-        parent = list,
-    })
-    for order, key in { "WelcomeLuck", "WelcomeShield", "WelcomeTrail" } do
-        Components.Label({
-            text = function(): string
-                return Strings.Offers[key]
-            end,
-            size = UDim2.fromScale(1, 0.22),
-            alignment = Enum.TextXAlignment.Left,
-            layoutOrder = order + 1,
-            parent = list,
-        })
-    end
 
+    -- Una línea más pequeña debajo: "una vez por cuenta" o lo que costaría por separado.
+    local separate = separatePrice(product)
     Components.Label({
         text = function(): string
-            return Strings.Offers.WelcomeOnce
+            if product.oncePerAccount then
+                return Strings.Offers.WelcomeOnce
+            end
+            return if separate then string.format(Strings.Offers.Separately, separate) else ""
         end,
         size = UDim2.fromScale(0.9, 0.06),
-        position = UDim2.fromScale(0.05, 0.69),
+        position = UDim2.fromScale(0.05, 0.7),
         color = Theme.Colors.Muted,
         parent = card,
     })
 
-    local buyButton = Components.Button({
+    Components.Button({
         text = priceText(offer),
         size = UDim2.fromScale(0.5, 0.15),
         position = UDim2.fromScale(0.06, 0.79),
@@ -219,25 +305,24 @@ local function mountWelcome(gui: ScreenGui)
             prompt(offer)
         end,
     })
-    buyButton.ZIndex = 21
 
-    -- Botón minimizado ---------------------------------------------------------------------
+    -- Botón minimizado del lateral derecho ------------------------------------------------
     local mini, miniStroke = Components.Glass({
         size = UDim2.fromScale(0.085, 0.085),
         position = MINI_POSITION,
         anchor = Vector2.new(1, 0.5),
-        accent = GOLD,
+        accent = color,
         radius = 0.25,
         parent = gui,
     })
-    mini.Name = "WelcomeOfferMini"
+    mini.Name = `OfferMini_{key}`
     mini.Visible = false
     local miniAspect = Instance.new("UIAspectRatioConstraint")
     miniAspect.AspectRatio = 1
     miniAspect.Parent = mini
-    Components.SpinBorder(miniStroke, GOLD)
+    Components.SpinBorder(miniStroke, color)
     local miniIcon = Components.Label({
-        text = "🎁",
+        text = style.icon,
         size = UDim2.fromScale(0.7, 0.58),
         position = UDim2.fromScale(0.15, 0.06),
         parent = mini,
@@ -253,7 +338,7 @@ local function mountWelcome(gui: ScreenGui)
         end,
         size = UDim2.fromScale(0.9, 0.26),
         position = UDim2.fromScale(0.05, 0.68),
-        color = GOLD,
+        color = color,
         heading = true,
         parent = mini,
     })
@@ -263,43 +348,77 @@ local function mountWelcome(gui: ScreenGui)
     miniButton.Size = UDim2.fromScale(1, 1)
     miniButton.Parent = mini
 
-    local bought = false
-    local open: () -> ()
+    local function isBought(): boolean
+        local data = DataController.GetData()
+        return product.oncePerAccount == true and data ~= nil and data.offers[key] == true
+    end
+
+    local pendingClosed: (() -> ())? = nil
     local function minimize()
         if not card.Visible then
             return
         end
         Sound.Play(Theme.Sounds.close)
-        -- La tarjeta se encoge hacia el botón del lateral.
+        -- Se enseña ya el botón (invisible) para saber dónde acabará la tarjeta.
+        local bought = isBought()
+        mini.Visible = not bought
+        relayout()
+        local target = mini.Position
+        mini.Visible = false
         local shrink = TweenService:Create(card, SHRINK, {
-            Position = MINI_POSITION - UDim2.fromScale(0.035, 0),
+            Position = target - UDim2.fromScale(0.035, 0),
         })
         TweenService:Create(cardScale, SHRINK, { Scale = 0.1 }):Play()
         shrink.Completed:Connect(function()
             card.Visible = false
             card.Position = UDim2.fromScale(0.5, 0.5)
-            if not bought then
+            if not isBought() then
                 mini.Visible = true
+                relayout()
                 Components.Punch(mini, 0.25)
+            end
+            local callback = pendingClosed
+            pendingClosed = nil
+            if callback then
+                callback()
             end
         end)
         shrink:Play()
     end
-    open = function()
-        if bought then
+
+    local function open(onClosed: (() -> ())?)
+        if isBought() then
+            if onClosed then
+                onClosed()
+            end
             return
         end
+        pendingClosed = onClosed
         mini.Visible = false
+        relayout()
+        Components.Clear(list)
+        local lines = contentLines(product)
+        -- Todas las líneas con el mismo tamaño de letra como mucho, para que no salga cada una
+        -- de un tamaño (una línea corta crecería más que una larga).
+        local listHeight = list.AbsoluteSize.Y / math.max(cardScale.Scale, 0.1)
+        local maxTextSize = math.max(math.floor(listHeight / math.max(#lines, 4) * 0.8), 8)
+        for order, line in lines do
+            local label = Components.Label({
+                text = line,
+                size = UDim2.fromScale(1, math.min(0.98 / #lines - 0.02, 0.23)),
+                alignment = Enum.TextXAlignment.Left,
+                layoutOrder = order,
+                parent = list,
+            })
+            local limit = Instance.new("UITextSizeConstraint")
+            limit.MaxTextSize = maxTextSize
+            limit.Parent = label
+        end
         card.Visible = true
         card.Position = UDim2.fromScale(0.5, 0.5)
         cardScale.Scale = 0.6
         TweenService:Create(cardScale, POP, { Scale = 1 }):Play()
         Sound.Play(Theme.Sounds.open)
-        local data = DataController.GetData()
-        coinsLine.Text = string.format(
-            Strings.Offers.WelcomeCoins,
-            Format.Number(if data then PlayerStats.GetCoinPackAmount(data, product) else 0)
-        )
     end
 
     Components.Button({
@@ -311,8 +430,7 @@ local function mountWelcome(gui: ScreenGui)
         color = Theme.Colors.PanelRaised,
         parent = card,
         onClick = minimize,
-    }).ZIndex =
-        21
+    })
     local close = Components.Button({
         text = Theme.Icons.close,
         size = UDim2.fromScale(0.08, 0.1),
@@ -325,22 +443,34 @@ local function mountWelcome(gui: ScreenGui)
     local closeAspect = Instance.new("UIAspectRatioConstraint")
     closeAspect.AspectRatio = 1
     closeAspect.Parent = close
-    miniButton.Activated:Connect(open)
+    miniButton.Activated:Connect(function()
+        open(nil)
+    end)
 
-    -- Comprado: se quita de la pantalla para siempre.
-    local function checkBought()
-        local data = DataController.GetData()
-        if data and data.offers[ShopConfig.StarterPackKey] then
-            bought = true
+    -- Comprado (las de una sola vez): se quita de la pantalla para siempre.
+    DataController.OnChanged("offers", function()
+        if isBought() then
             card.Visible = false
             mini.Visible = false
+            relayout()
+            local callback = pendingClosed
+            pendingClosed = nil
+            if callback then
+                callback()
+            end
         end
-    end
-    DataController.OnChanged("offers", checkBought)
-    checkBought()
-    if not bought then
-        task.delay(WELCOME_DELAY, open)
-    end
+    end)
+
+    return {
+        Available = function(): boolean
+            return not isBought()
+        end,
+        Open = open,
+        IsOpen = function(): boolean
+            return card.Visible
+        end,
+        mini = mini,
+    }
 end
 
 -- Ofertas de esquina -----------------------------------------------------------------------
@@ -516,13 +646,49 @@ local function mountCorner(gui: ScreenGui, isWelcomeOpen: () -> boolean)
     end)
 end
 
--- Monta las ofertas en el HUD.
+local bigOffers: { BigOffer } = {}
+
+-- Coloca los botones minimizados visibles uno debajo de otro, en el orden de las ofertas.
+local function relayout()
+    local slot = 0
+    for _, big in bigOffers do
+        if big.mini.Visible then
+            big.mini.Position = MINI_POSITION + UDim2.fromScale(0, slot * MINI_STEP)
+            slot += 1
+        end
+    end
+end
+
+-- Monta las ofertas en el HUD (sin enseñar ninguna todavía).
 function Offers.Mount(gui: ScreenGui)
-    mountWelcome(gui)
-    local welcome = gui:FindFirstChild("WelcomeOffer")
+    for _, key in ShopConfig.BigOffers do
+        local big = createBigOffer(gui, key, relayout)
+        if big then
+            table.insert(bigOffers, big)
+        end
+    end
     mountCorner(gui, function(): boolean
-        return welcome ~= nil and welcome:IsA("GuiObject") and welcome.Visible
+        for _, big in bigOffers do
+            if big.IsOpen() then
+                return true
+            end
+        end
+        return false
     end)
+end
+
+-- Enseña las ofertas grandes una detrás de otra, empezando por la primera disponible. Se
+-- llama al cerrar las notas de versión (o al entrar, si no hay notas que enseñar).
+function Offers.Start(from: number?)
+    for index = from or 1, #bigOffers do
+        local big = bigOffers[index]
+        if big.Available() then
+            big.Open(function()
+                task.delay(NEXT_OFFER_DELAY, Offers.Start, index + 1)
+            end)
+            return
+        end
+    end
 end
 
 return Offers

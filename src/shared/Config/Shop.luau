@@ -64,8 +64,9 @@ Shop.MegaBackpackBonus = 20
 Shop.LuckBoostMultiplier = 2
 Shop.CoinsBoostMultiplier = 2
 
--- Oferta de bienvenida: producto que se enseña en grande al entrar hasta que se compra.
-Shop.StarterPackKey = "starterPack"
+-- Ofertas grandes que salen al entrar, en este orden, después de las notas de versión. Las de
+-- una sola vez (oncePerAccount) dejan de salir al comprarlas.
+Shop.BigOffers = { "starterPack", "megaPack" }
 -- Ofertas pequeñas en la esquina: segundos mínimos entre dos, y segundos que se quedan a la
 -- vista si no se tocan. Cada una sale como mucho una vez por sesión.
 Shop.CornerOfferGap = 240

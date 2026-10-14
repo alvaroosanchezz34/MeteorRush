@@ -2,12 +2,15 @@
 
 -- Notas de la actualización: al entrar con una versión que el jugador aún no ha visto se
 -- muestran sus novedades una vez. A quien entra por primera vez no se le enseñan (ya tiene
--- el tutorial); solo se apunta la versión.
+-- el tutorial); solo se apunta la versión. `onClosed` se llama al cerrarlas, o enseguida si no
+-- hay nada que enseñar: así las ofertas de bienvenida salen después.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Components = require(script.Parent.Components)
+local Theme = require(script.Parent.Theme)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local LiveOps = require(Shared:WaitForChild("Config"):WaitForChild("LiveOps"))
@@ -15,15 +18,31 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local Strings = require(Shared:WaitForChild("Strings"))
 local Types = require(Shared:WaitForChild("Types"))
 
+-- Segundos que se espera antes de `onClosed` cuando no hay notas que enseñar.
+local NOTHING_TO_SHOW_DELAY = 3
+
 local UpdateNotes = {}
 
 -- Muestra las notas de la versión actual si el jugador no las ha visto.
-function UpdateNotes.Show(data: Types.Profile)
+function UpdateNotes.Show(data: Types.Profile, onClosed: (() -> ())?)
+    local function done()
+        if onClosed then
+            task.spawn(onClosed)
+        end
+    end
+    -- Sin notas que enseñar, lo siguiente espera un poco: que primero se vea el juego.
+    local function doneLater()
+        if onClosed then
+            task.delay(NOTHING_TO_SHOW_DELAY, onClosed)
+        end
+    end
     if data.seenVersion == LiveOps.Version then
+        doneLater()
         return
     end
     if data.playtime <= 0 then
         Remotes.AckVersion:FireServer()
+        doneLater()
         return
     end
 
@@ -35,20 +54,43 @@ function UpdateNotes.Show(data: Types.Profile)
     gui.ResetOnSpawn = false
     gui.DisplayOrder = 15
 
-    local panel = Components.Panel({
+    local panel = Components.Glass({
         size = UDim2.fromScale(0.42, 0.5),
         position = UDim2.fromScale(0.5, 0.5),
-        color = Components.Colors.Background,
+        anchor = Vector2.new(0.5, 0.5),
+        accent = Theme.Colors.Accent,
+        radius = Theme.Radius.Window,
         parent = gui,
     })
-    panel.AnchorPoint = Vector2.new(0.5, 0.5)
+    panel.BackgroundTransparency = 0.06
+    panel.Active = true
+    local aspect = Instance.new("UIAspectRatioConstraint")
+    aspect.AspectRatio = 1.35
+    aspect.Parent = panel
+    -- Entra con un pequeño rebote.
+    local scale = Instance.new("UIScale")
+    scale.Scale = 0.6
+    scale.Parent = panel
+    TweenService:Create(
+        scale,
+        TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        { Scale = 1 }
+    ):Play()
+    Components.Label({
+        text = "📰",
+        size = UDim2.fromScale(0.12, 0.14),
+        position = UDim2.fromScale(0.05, 0.05),
+        parent = panel,
+    })
     Components.Label({
         text = function(): string
-            return string.format(Strings.LiveOps.WhatsNew, release.version)
+            return Strings.Upper(string.format(Strings.LiveOps.WhatsNew, release.version))
         end,
-        size = UDim2.fromScale(0.9, 0.14),
-        position = UDim2.fromScale(0.05, 0.04),
-        color = Components.Colors.Gold,
+        size = UDim2.fromScale(0.76, 0.12),
+        position = UDim2.fromScale(0.19, 0.06),
+        alignment = Enum.TextXAlignment.Left,
+        color = Theme.Colors.Accent,
+        heading = true,
         parent = panel,
     })
 
@@ -79,6 +121,7 @@ function UpdateNotes.Show(data: Types.Profile)
         onClick = function()
             gui:Destroy()
             Remotes.AckVersion:FireServer()
+            done()
         end,
     })
 
