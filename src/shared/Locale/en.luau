@@ -1132,6 +1132,7 @@ return {
             "New HUD and smoother menus",
             "Better meteor, mining and reward effects",
             "Shop: Starter Pack, Mega Pack, Server Meteor, new passes and 1-hour boosts",
+            "Titles: pick any title you've unlocked from your Profile (👤), and special titles with effects",
         },
         ["1.0.0"] = {
             "Achievements, titles and a player profile",

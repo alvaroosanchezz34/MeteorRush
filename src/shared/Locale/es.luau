@@ -1080,6 +1080,7 @@ return {
             "HUD nuevo y menús más fluidos",
             "Mejores efectos de meteoritos, minado y recompensas",
             "Tienda: Pack Inicial, Mega Pack, Meteorito para el Servidor, pases nuevos y boosts de 1 hora",
+            "Títulos: ponte cualquiera que tengas desbloqueado desde tu Perfil (👤), y títulos especiales con efectos",
         },
         ["1.0.0"] = {
             "Logros, títulos y perfil de jugador",

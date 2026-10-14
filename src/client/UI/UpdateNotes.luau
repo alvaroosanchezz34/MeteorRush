@@ -1,8 +1,8 @@
 --!strict
 
 -- Notas de la actualización: al entrar con una versión que el jugador aún no ha visto se
--- muestran sus novedades una vez. A quien entra por primera vez no se le enseñan (ya tiene
--- el tutorial); solo se apunta la versión. `onClosed` se llama al cerrarlas, o enseguida si no
+-- muestran sus novedades una vez, también a quien entra por primera vez (en Studio el perfil
+-- no se guarda, así que ahí salen siempre). `onClosed` se llama al cerrarlas, o enseguida si no
 -- hay nada que enseñar: así las ofertas de bienvenida salen después.
 
 local Players = game:GetService("Players")
@@ -37,11 +37,6 @@ function UpdateNotes.Show(data: Types.Profile, onClosed: (() -> ())?)
         end
     end
     if data.seenVersion == LiveOps.Version then
-        doneLater()
-        return
-    end
-    if data.playtime <= 0 then
-        Remotes.AckVersion:FireServer()
         doneLater()
         return
     end
