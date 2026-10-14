@@ -140,6 +140,12 @@ Theme.Motion = {
     -- Escala desde la que entra una ventana y a la que se encoge un botón al pulsarlo.
     OpenScale = 0.9,
     PressScale = 0.94,
+    -- Escala de un botón con el ratón encima o seleccionado con el mando.
+    HoverScale = 1.04,
+    -- Cuánto baja (fracción de la pantalla) una ventana al entrar, desde donde sube a su sitio.
+    WindowSlide = 0.03,
+    -- Segundos entre cada punto de un botón en espera.
+    BusyDotSeconds = 0.3,
     -- Segundos por vuelta del indicador de carga.
     SpinSeconds = 0.9,
     -- Desenfoque del mundo mientras hay una ventana abierta.

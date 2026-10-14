@@ -39,6 +39,9 @@ end
 -- Los colores del tema, con los nombres que usan las pantallas.
 Components.Colors = Theme.Colors
 
+-- Altura del centro de una ventana abierta (fracción de la pantalla).
+local WINDOW_Y = 0.52
+
 local blur: BlurEffect? = nil
 local openWindows = 0
 local windowCount = 0
@@ -138,6 +141,9 @@ local function addButtonFeedback(button: GuiButton, label: TextLabel | TextButto
     local function updateState()
         local disabled = isDisabled()
         button.Selectable = not disabled
+        if disabled then
+            scale.Scale = 1
+        end
         if label then
             label.TextColor3 = if disabled
                 then Theme.Colors.DisabledText
@@ -148,24 +154,37 @@ local function addButtonFeedback(button: GuiButton, label: TextLabel | TextButto
     updateState()
 
     -- Dentro de una lista o una rejilla no se escala: cambiar de tamaño movería a los vecinos.
-    local function setPressed(pressed: boolean)
+    local hovered = false
+    local function canScale(): boolean
         local parent = button.Parent
-        if isDisabled() or (parent and parent:FindFirstChildWhichIsA("UILayout")) then
+        return not isDisabled() and not (parent and parent:FindFirstChildWhichIsA("UILayout"))
+    end
+    local function setPressed(pressed: boolean)
+        if not canScale() then
             return
         end
+        local rest = if hovered then Theme.Motion.HoverScale else 1
         TweenService:Create(
             scale,
             if pressed then Theme.Motion.Press else Theme.Motion.Release,
-            { Scale = if pressed then Theme.Motion.PressScale else 1 }
+            { Scale = if pressed then Theme.Motion.PressScale else rest }
         ):Play()
     end
 
     local function setHover(hover: boolean)
         local lit = hover and not isDisabled()
+        hovered = lit
         TweenService:Create(stroke, Theme.Motion.Hover, {
             Color = if lit then Theme.Colors.Text else Theme.Colors.Shadow,
             Transparency = if lit then 0.1 else 0.55,
         }):Play()
+        if canScale() or not lit then
+            TweenService:Create(
+                scale,
+                Theme.Motion.Hover,
+                { Scale = if lit then Theme.Motion.HoverScale else 1 }
+            ):Play()
+        end
     end
 
     button.MouseEnter:Connect(function()
@@ -237,6 +256,8 @@ function Components.Button(props: {
     button.BackgroundColor3 = props.color or Theme.Colors.Primary
     Components.SetText(button, "Text", props.text)
     button.TextScaled = true
+    -- Un texto largo (los españoles lo son a menudo) parte en dos líneas antes que encogerse.
+    button.TextWrapped = true
     button.Font = Theme.Fonts.Body
     button.LayoutOrder = props.layoutOrder or 0
     corner(button, Theme.Radius.Button)
@@ -427,6 +448,23 @@ function Components.Spinner(props: { size: UDim2, position: UDim2?, parent: Inst
     return spinner
 end
 
+-- Salto corto de tamaño (crece y vuelve con rebote) para señalar que algo ha cambiado: un
+-- contador que sube, un premio que llega. No usarlo dentro de una lista o una rejilla: el
+-- cambio de tamaño movería a los vecinos.
+function Components.Punch(gui: GuiObject, amount: number?)
+    local found = gui:FindFirstChild("PunchScale")
+    local scale: UIScale
+    if found and found:IsA("UIScale") then
+        scale = found
+    else
+        scale = Instance.new("UIScale")
+        scale.Name = "PunchScale"
+        scale.Parent = gui
+    end
+    scale.Scale = 1 + (amount or 0.08)
+    TweenService:Create(scale, Theme.Motion.Release, { Scale = 1 }):Play()
+end
+
 -- Pone un botón "en espera" durante unos segundos: apagado y con puntos suspensivos, para
 -- que se vea que la acción está en marcha y no se pulse dos veces. Vuelve solo a su estado.
 function Components.SetBusy(button: TextButton, seconds: number)
@@ -435,9 +473,16 @@ function Components.SetBusy(button: TextButton, seconds: number)
     end
     local text, color = button.Text, button.BackgroundColor3
     button:SetAttribute("Busy", true)
-    button.Text = "..."
     button.BackgroundColor3 = Theme.Colors.Disabled
-    task.delay(seconds, function()
+    -- Puntos que se van llenando mientras espera: se ve que no se ha quedado colgado.
+    task.spawn(function()
+        local started = os.clock()
+        local dots = 0
+        while os.clock() - started < seconds and button.Parent do
+            dots = dots % 3 + 1
+            button.Text = string.rep(".", dots)
+            task.wait(Theme.Motion.BusyDotSeconds)
+        end
         if button.Parent then
             button.Text = text
             button.BackgroundColor3 = color
@@ -554,7 +599,7 @@ function Components.Window(props: {
     root.Name = "Window"
     root.BackgroundTransparency = 1
     root.AnchorPoint = Vector2.new(0.5, 0.5)
-    root.Position = UDim2.fromScale(0.5, 0.52)
+    root.Position = UDim2.fromScale(0.5, WINDOW_Y)
     root.Visible = false
     -- Por encima del resto del HUD (los hijos se dibujan sobre su padre).
     root.ZIndex = 5
@@ -677,6 +722,10 @@ function Components.Window(props: {
                 isOpen = true
                 scale.Scale = Theme.Motion.OpenScale
                 TweenService:Create(scale, Theme.Motion.Open, { Scale = 1 }):Play()
+                root.Position = UDim2.fromScale(0.5, WINDOW_Y + Theme.Motion.WindowSlide)
+                TweenService
+                    :Create(root, Theme.Motion.Open, { Position = UDim2.fromScale(0.5, WINDOW_Y) })
+                    :Play()
                 setWindowOpen(true)
                 AudioManager.Play(Theme.Sounds.open)
                 -- B del mando cierra la ventana mientras está abierta.
@@ -710,6 +759,11 @@ function Components.Window(props: {
             if selected and selected:IsDescendantOf(root) then
                 GuiService.SelectedObject = nil
             end
+            TweenService
+                :Create(root, Theme.Motion.Close, {
+                    Position = UDim2.fromScale(0.5, WINDOW_Y + Theme.Motion.WindowSlide * 0.5),
+                })
+                :Play()
             local tween =
                 TweenService:Create(scale, Theme.Motion.Close, { Scale = Theme.Motion.OpenScale })
             tween.Completed:Connect(function()

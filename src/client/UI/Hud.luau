@@ -397,16 +397,23 @@ function Hud.Mount()
     -- Texto "+$X" que sube y se desvanece junto al panel cada vez que entran monedas.
     -- Monedas que vuelan desde el centro de la pantalla hasta el contador. Como mucho una
     -- vez cada COIN_FLY_GAP segundos, para que los ingresos automáticos no las repitan sin parar.
+    -- Cuantas más monedas entran, más vuelan (de COIN_FLY_MIN a COIN_FLY_MAX).
     local COIN_FLY_GAP = 1.5
-    local COIN_FLY_COUNT = 6
+    local COIN_FLY_MIN = 4
+    local COIN_FLY_MAX = 12
     local lastCoinFly = 0
-    local function flyCoins()
+    local function flyCoins(amount: number)
         local now = os.clock()
         if now - lastCoinFly < COIN_FLY_GAP then
             return
         end
         lastCoinFly = now
-        for index = 1, COIN_FLY_COUNT do
+        local count = math.clamp(
+            COIN_FLY_MIN + math.floor(math.log10(math.max(amount, 1)) * 1.5),
+            COIN_FLY_MIN,
+            COIN_FLY_MAX
+        )
+        for index = 1, count do
             local coin = Instance.new("Frame")
             coin.AnchorPoint = Vector2.new(0.5, 0.5)
             coin.Size = UDim2.fromScale(0.012, 0.012)
@@ -420,6 +427,15 @@ function Hud.Mount()
             local corner = Instance.new("UICorner")
             corner.CornerRadius = UDim.new(1, 0)
             corner.Parent = coin
+            -- Borde oscuro y brillo arriba: se lee como una moneda y no como un punto.
+            local rim = Instance.new("UIStroke")
+            rim.Color = Color3.fromRGB(150, 100, 20)
+            rim.Thickness = 1.5
+            rim.Parent = coin
+            local shine = Instance.new("UIGradient")
+            shine.Rotation = 90
+            shine.Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(200, 200, 200))
+            shine.Parent = coin
             coin.Parent = gui
             local tween = TweenService:Create(
                 coin,
@@ -438,8 +454,9 @@ function Hud.Mount()
             end)
             tween:Play()
         end
-        -- El contador se enciende un momento cuando llegan.
-        task.delay(0.55, function()
+        -- El contador se enciende y el panel da un pequeño salto cuando llegan.
+        task.delay(0.55 + (count - 1) * 0.04, function()
+            Components.Punch(stats, 0.04)
             coinsLabel.TextColor3 = Color3.new(1, 1, 1)
             TweenService
                 :Create(coinsLabel, TweenInfo.new(0.4), { TextColor3 = Components.Colors.Gold })
@@ -480,7 +497,7 @@ function Hud.Mount()
         end
         if lastCoins and data.coins - lastCoins >= 1 then
             showCoinGain(data.coins - lastCoins)
-            flyCoins()
+            flyCoins(data.coins - lastCoins)
         end
         lastCoins = data.coins
         coinsLabel.Text = string.format(Strings.Hud.Coins, Format.Number(data.coins))

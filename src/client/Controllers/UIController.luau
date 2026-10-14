@@ -22,8 +22,19 @@ local Types = require(Shared:WaitForChild("Types"))
 
 local VIP_TAG = "<font color='#FFD700'>[VIP]</font> "
 local REBIRTH_COLOR = Color3.fromRGB(255, 200, 60)
+local DEPOSIT_COLOR = Color3.fromRGB(46, 196, 128)
 
 local UIController = {}
+
+-- Pies del personaje del jugador, o nil si no tiene.
+local function feetPosition(): Vector3?
+    local character = Players.LocalPlayer.Character
+    local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+    if root and root:IsA("BasePart") then
+        return root.Position - Vector3.new(0, 2.8, 0)
+    end
+    return nil
+end
 
 local function setupVipTag()
     TextChatService.OnIncomingMessage = function(
@@ -55,6 +66,18 @@ local function setupDataSounds()
     DataController.OnChanged("inventory", function(inventory: { any })
         if lastInventory and #inventory > lastInventory then
             Sound.Play("Deposit")
+            -- Anillo verde a los pies y destellos que suben: lo que llevabas ya está a salvo.
+            local feet = feetPosition()
+            if feet then
+                Effects.Shockwave({ position = feet, radius = 6, color = DEPOSIT_COLOR })
+                Effects.Burst({
+                    position = feet + Vector3.new(0, 1.5, 0),
+                    color = ColorSequence.new(DEPOSIT_COLOR, Color3.new(1, 1, 1)),
+                    count = 6 + math.min(#inventory - lastInventory, 10) * 2,
+                    speed = 8,
+                    size = 0.4,
+                })
+            end
         end
         lastInventory = #inventory
     end)
@@ -65,6 +88,35 @@ local function setupDataSounds()
             Sound.Play("Rebirth", { duck = true })
             Effects.Flash(REBIRTH_COLOR, 0.35, 1.2)
             Effects.Shake(0.5, 0.5)
+            -- Dos ondas doradas y una columna de destellos alrededor del personaje.
+            local feet = feetPosition()
+            if feet then
+                for index = 1, 2 do
+                    task.delay((index - 1) * 0.2, Effects.Shockwave, {
+                        position = feet,
+                        radius = 10 + index * 6,
+                        color = if index == 1 then REBIRTH_COLOR else Color3.new(1, 1, 1),
+                        duration = 0.8,
+                        ignoreDistance = true,
+                    })
+                end
+                Effects.Burst({
+                    position = feet + Vector3.new(0, 3, 0),
+                    color = ColorSequence.new(REBIRTH_COLOR, Color3.new(1, 1, 1)),
+                    count = 40,
+                    speed = 18,
+                    size = 0.7,
+                    lifetime = 1.4,
+                    ignoreDistance = true,
+                })
+                Effects.Sparks({
+                    position = feet + Vector3.new(0, 2, 0),
+                    direction = Vector3.yAxis,
+                    color = REBIRTH_COLOR,
+                    count = 10,
+                    length = 9,
+                })
+            end
         end
         lastRebirths = rebirths
     end)

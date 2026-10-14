@@ -28,6 +28,7 @@ local DiscoveryMoment = require(script.Parent.Parent.UI.DiscoveryMoment)
 local Effects = require(script.Parent.Parent.UI.Effects)
 local RarityStyle = require(script.Parent.Parent.UI.RarityStyle)
 local MutationFxController = require(script.Parent.MutationFxController)
+local Quality = require(script.Parent.Parent.UI.Quality)
 local Sound = require(script.Parent.Parent.UI.Sound)
 
 local MARKER_COLOR = Color3.fromRGB(255, 70, 50)
@@ -38,7 +39,17 @@ local SPARK_COLOR = Color3.fromRGB(255, 220, 120)
 local POPUP_DURATION = 1.4
 local POPUP_RISE = 5
 local HITS_BAR_COLOR = Color3.fromRGB(255, 120, 50)
+-- Color de la barra cuando al meteorito le queda poco: más claro, como la energía que se escapa.
+local HITS_BAR_LOW_COLOR = Color3.fromRGB(255, 236, 150)
+-- La barra baja deprisa y, detrás, un rastro blanco la sigue con retraso (daño reciente).
+local HITS_BAR_TWEEN = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local HITS_TRAIL_TWEEN =
+    TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.25)
+local HITS_PUNCH = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local SMOKE_COLOR = Color3.fromRGB(60, 52, 58)
 local CRATER_COLOR = Color3.fromRGB(18, 14, 14)
+-- Barra de progreso del golpe que se está dando.
+local PROGRESS_COLOR = Color3.fromRGB(255, 200, 60)
 -- Dos minerales en menos de este tiempo son un golpe doble.
 local DOUBLE_WINDOW = 0.15
 -- Un destello de pantalla solo se ve a menos de esta distancia (salvo los de evento).
@@ -240,7 +251,7 @@ local function burst(position: Vector3, color: Color3, count: number, speed: num
     emitter.Lifetime = NumberRange.new(0.4, 1)
     emitter.Rate = 0
     emitter.Parent = holder
-    emitter:Emit(count)
+    emitter:Emit(Quality.Count(count))
     task.delay(1.5, function()
         holder:Destroy()
     end)
@@ -255,6 +266,14 @@ local function playImpact(position: Vector3, meteorType: MeteorsConfig.MeteorTyp
     local distance = distanceToPlayer(position)
 
     burst(position, DUST_COLOR, math.floor(radius * 8), radius * 6, radius)
+    -- Polvo que se queda flotando tras el golpe y se disipa despacio.
+    Effects.Dust({
+        position = ground,
+        color = DUST_COLOR,
+        count = math.floor(6 + radius * 1.5),
+        size = radius * 1.4,
+        ignoreDistance = tier.isEvent,
+    })
     Effects.Burst({
         position = position,
         color = meteorType.glowColor,
@@ -358,8 +377,29 @@ local function playFall(position: Vector3, meteorType: MeteorsConfig.MeteorType)
     embers.Speed = NumberRange.new(radius, radius * 3)
     embers.SpreadAngle = Vector2.new(180, 180)
     embers.LightEmission = 1
-    embers.Rate = tier.emberRate
+    embers.Rate = tier.emberRate * Quality.Scales[Quality.Get()]
     embers.Parent = fireball
+
+    -- Humo oscuro que deja detrás: la bola parece arder al atravesar el aire.
+    if not Quality.IsLow() then
+        local smoke = Instance.new("ParticleEmitter")
+        smoke.Color = ColorSequence.new(SMOKE_COLOR)
+        smoke.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, radius * 0.8),
+            NumberSequenceKeypoint.new(1, radius * 2.2),
+        })
+        smoke.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.5),
+            NumberSequenceKeypoint.new(1, 1),
+        })
+        smoke.Lifetime = NumberRange.new(0.6, 1.1)
+        smoke.Speed = NumberRange.new(0, radius * 0.5)
+        smoke.SpreadAngle = Vector2.new(30, 30)
+        smoke.Rotation = NumberRange.new(0, 360)
+        smoke.RotSpeed = NumberRange.new(-40, 40)
+        smoke.Rate = tier.emberRate * 0.5 * Quality.Scales[Quality.Get()]
+        smoke.Parent = fireball
+    end
 
     local light = Instance.new("PointLight")
     light.Color = meteorType.glowColor
@@ -663,13 +703,20 @@ local function getProgressGui(): (BillboardGui, Frame)
     background.Size = UDim2.fromScale(1, 1)
     background.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
     background.BackgroundTransparency = 0.3
+    background.BorderSizePixel = 0
     background.Parent = billboard
+    local backgroundCorner = Instance.new("UICorner")
+    backgroundCorner.CornerRadius = UDim.new(0.5, 0)
+    backgroundCorner.Parent = background
 
     local fill = Instance.new("Frame")
     fill.Size = UDim2.fromScale(0, 1)
-    fill.BackgroundColor3 = Color3.fromRGB(255, 200, 60)
+    fill.BackgroundColor3 = PROGRESS_COLOR
     fill.BorderSizePixel = 0
     fill.Parent = background
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0.5, 0)
+    fillCorner.Parent = fill
 
     billboard.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
     progressGui = billboard
@@ -712,6 +759,13 @@ local function onMineState(state: any, meteorId: any, duration: any)
         local surface = origin + toward * meteorRadius
         local meteorType = MeteorsConfig.Types[meteor:GetAttribute("MeteorType") :: any]
         burst(surface, SPARK_COLOR, 12, 12, 0.4)
+        Effects.Sparks({
+            position = surface,
+            direction = toward,
+            color = SPARK_COLOR,
+            count = 4,
+            length = 2.5,
+        })
         Effects.Fragments({
             position = surface,
             direction = toward,
@@ -729,6 +783,9 @@ local function onMineState(state: any, meteorId: any, duration: any)
         Vector3.new(0, (if type(radius) == "number" then radius else 4) + 2, 0)
     billboard.Enabled = true
     fill.Size = UDim2.fromScale(0, 1)
+    -- Cada golpe nuevo empieza con un destello blanco que vuelve al dorado.
+    fill.BackgroundColor3 = Color3.new(1, 1, 1)
+    TweenService:Create(fill, TweenInfo.new(0.25), { BackgroundColor3 = PROGRESS_COLOR }):Play()
     local tween = TweenService:Create(fill, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
         Size = UDim2.fromScale(1, 1),
     })
@@ -879,6 +936,13 @@ local function playBreak(meteor: Instance)
     local radius = meteorType.radius
     local ground = Vector3.new(position.X, 0.3, position.Z)
     leaveCrater(position, meteorType)
+    Effects.Dust({
+        position = ground,
+        color = DUST_COLOR,
+        count = math.floor(4 + radius),
+        size = radius,
+        ignoreDistance = tier.isEvent,
+    })
 
     if state.hitsLeft > 1 then
         Effects.Burst({
@@ -1045,10 +1109,33 @@ local function attachHitsBar(meteor: Instance)
     local backgroundCorner = Instance.new("UICorner")
     backgroundCorner.CornerRadius = UDim.new(0.4, 0)
     backgroundCorner.Parent = background
+    -- Borde del color del meteorito que se enciende a medida que se gasta.
+    local glow = Instance.new("UIStroke")
+    glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    glow.Color = meteorType.glowColor
+    glow.Thickness = 2
+    glow.Transparency = 1
+    glow.Parent = background
+    -- Salto pequeño de la barra con cada golpe.
+    local punch = Instance.new("UIScale")
+    punch.Parent = background
+
+    -- Rastro blanco del daño reciente, detrás de la barra de color.
+    local trail = Instance.new("Frame")
+    trail.Name = "DamageTrail"
+    trail.BackgroundColor3 = Color3.new(1, 1, 1)
+    trail.BackgroundTransparency = 0.25
+    trail.BorderSizePixel = 0
+    trail.Size = UDim2.fromScale(1, 1)
+    trail.Parent = background
+    local trailCorner = Instance.new("UICorner")
+    trailCorner.CornerRadius = UDim.new(0.4, 0)
+    trailCorner.Parent = trail
 
     local fill = Instance.new("Frame")
     fill.BackgroundColor3 = HITS_BAR_COLOR
     fill.BorderSizePixel = 0
+    fill.Size = UDim2.fromScale(1, 1)
     fill.Parent = background
     local fillCorner = Instance.new("UICorner")
     fillCorner.CornerRadius = UDim.new(0.4, 0)
@@ -1066,8 +1153,22 @@ local function attachHitsBar(meteor: Instance)
     local function update()
         local hitsLeft = meteor:GetAttribute("HitsLeft")
         local left = if type(hitsLeft) == "number" then hitsLeft else meteorType.hits
-        fill.Size = UDim2.fromScale(math.clamp(left / meteorType.hits, 0, 1), 1)
+        local fraction = math.clamp(left / meteorType.hits, 0, 1)
+        local size = UDim2.fromScale(fraction, 1)
+        local color = HITS_BAR_COLOR:Lerp(HITS_BAR_LOW_COLOR, 1 - fraction)
         label.Text = string.format(Strings.Mining.HitsLeft, left, meteorType.hits)
+        glow.Transparency = 0.2 + fraction * 0.8
+        if left < state.hitsLeft then
+            TweenService:Create(fill, HITS_BAR_TWEEN, { Size = size, BackgroundColor3 = color })
+                :Play()
+            TweenService:Create(trail, HITS_TRAIL_TWEEN, { Size = size }):Play()
+            punch.Scale = 1.12
+            TweenService:Create(punch, HITS_PUNCH, { Scale = 1 }):Play()
+        else
+            fill.Size = size
+            fill.BackgroundColor3 = color
+            trail.Size = size
+        end
 
         -- Cada golpe, lo dé quien lo dé, hace saltar un par de fragmentos en un punto al azar.
         if left < state.hitsLeft then

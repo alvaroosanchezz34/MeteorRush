@@ -86,6 +86,7 @@
       "Depth": {
         "$className": "DepthOfFieldEffect",
         "$properties": {
+          "Enabled": false,
           "FarIntensity": 0,
           "NearIntensity": 0,
           "FocusDistance": 140,

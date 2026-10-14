@@ -3,7 +3,8 @@
 -- Efectos visuales reutilizables del cliente: ráfagas de partículas, ondas expansivas,
 -- fragmentos, textos flotantes, destello de pantalla y sacudida de cámara.
 -- Todo es local, de corta duración y se limpia solo. Hay un tope de efectos simultáneos
--- para que una situación con mucha actividad (8 jugadores minando) no los amontone, y las
+-- para que una situación con mucha actividad (8 jugadores minando) no los amontone; el tope
+-- y el número de partículas bajan en equipos modestos (UI/Quality). Las
 -- piezas se reutilizan (pool) en vez de crearse y destruirse cada vez.
 
 local Players = game:GetService("Players")
@@ -11,8 +12,8 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
--- Efectos de mundo vivos a la vez; por encima de esto, los nuevos se descartan.
-local MAX_ACTIVE = 40
+local Quality = require(script.Parent.Quality)
+
 -- Distancia a la cámara a partir de la cual no se crean efectos pequeños.
 local MAX_DISTANCE = 220
 -- Piezas guardadas para reutilizar, como mucho, de cada clase.
@@ -61,7 +62,7 @@ end
 
 -- Indica si merece la pena crear un efecto en ese punto: hay hueco y está cerca de la cámara.
 function Effects.CanSpawn(position: Vector3, ignoreDistance: boolean?): boolean
-    if active >= MAX_ACTIVE then
+    if active >= Quality.MaxActive[Quality.Get()] then
         return false
     end
     local camera = Workspace.CurrentCamera
@@ -119,7 +120,43 @@ function Effects.Burst(props: {
     emitter.LightEmission = 1
     emitter.Rate = 0
     emitter.Parent = holder
-    emitter:Emit(props.count)
+    emitter:Emit(Quality.Count(props.count))
+end
+
+-- Nube de polvo que se queda flotando un par de segundos y se disipa: da peso a un impacto.
+-- En gráficos bajos no sale (la ráfaga y la onda ya cuentan lo que ha pasado).
+function Effects.Dust(props: {
+    position: Vector3,
+    color: Color3,
+    count: number,
+    size: number,
+    ignoreDistance: boolean?,
+})
+    if Quality.IsLow() or not Effects.CanSpawn(props.position, props.ignoreDistance) then
+        return
+    end
+    local holder = Effects.Anchor(props.position, 3)
+    local emitter = Instance.new("ParticleEmitter")
+    emitter.Color = ColorSequence.new(props.color)
+    emitter.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, props.size * 0.4),
+        NumberSequenceKeypoint.new(1, props.size),
+    })
+    emitter.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.45),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    emitter.Speed = NumberRange.new(props.size * 0.6, props.size * 1.4)
+    emitter.SpreadAngle = Vector2.new(180, 25)
+    emitter.EmissionDirection = Enum.NormalId.Top
+    emitter.Acceleration = Vector3.new(0, 1.5, 0)
+    emitter.Lifetime = NumberRange.new(1.4, 2.4)
+    emitter.Rotation = NumberRange.new(0, 360)
+    emitter.RotSpeed = NumberRange.new(-30, 30)
+    emitter.Drag = 1.5
+    emitter.Rate = 0
+    emitter.Parent = holder
+    emitter:Emit(Quality.Count(props.count))
 end
 
 -- Onda expansiva: un anillo plano sobre el suelo que crece y se desvanece.
@@ -161,7 +198,7 @@ function Effects.Fragments(props: {
     if not Effects.CanSpawn(props.position) then
         return
     end
-    for _ = 1, props.count do
+    for _ = 1, Quality.Count(props.count) do
         local fragment = table.remove(fragmentPool) or newPart()
         fragment.Name = "Fragment"
         fragment.Anchored = false
@@ -278,6 +315,25 @@ function Effects.Popup(
         ),
         { TextTransparency = 1, TextStrokeTransparency = 1 }
     ):Play()
+end
+
+-- Chispas: varios rayos finos que salen de un punto hacia un lado (golpe de pico).
+function Effects.Sparks(props: {
+    position: Vector3,
+    direction: Vector3,
+    color: Color3,
+    count: number,
+    length: number,
+})
+    for _ = 1, Quality.Count(props.count) do
+        local spread = Vector3.new(math.random() - 0.5, math.random() - 0.2, math.random() - 0.5)
+        Effects.Ray({
+            position = props.position,
+            direction = (props.direction + spread * 1.6).Unit,
+            length = props.length * (0.6 + math.random() * 0.6),
+            color = props.color,
+        })
+    end
 end
 
 -- Destello de un color a pantalla completa que se apaga solo. `strength` (0-1) es cuánto tapa.
