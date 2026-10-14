@@ -19,6 +19,7 @@ local UpdateNotes = require(script.Parent.Parent.UI.UpdateNotes)
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local QuestsConfig = require(Shared:WaitForChild("Config"):WaitForChild("Quests"))
+local TitlesConfig = require(Shared:WaitForChild("Config"):WaitForChild("Titles"))
 local Types = require(Shared:WaitForChild("Types"))
 
 local VIP_TAG = "<font color='#FFD700'>[VIP]</font> "
@@ -46,11 +47,23 @@ local function setupVipTag()
             return nil
         end
         local player = Players:GetPlayerByUserId(source.UserId)
-        if player == nil or player:GetAttribute("VIP") ~= true then
+        if player == nil then
+            return nil
+        end
+        -- Un título especial puesto (owner, admin...) lleva su etiqueta de color; si no, la de VIP.
+        local titleId = player:GetAttribute("TitleId")
+        local style = if type(titleId) == "string" and TitlesConfig.IsSpecial(titleId)
+            then TitlesConfig.GetStyle(titleId)
+            else nil
+        local tag = if style and style.chatTag
+            then `<font color='#{style.color:ToHex()}'>[{style.chatTag}]</font> `
+            elseif player:GetAttribute("VIP") == true then VIP_TAG
+            else nil
+        if tag == nil then
             return nil
         end
         local properties = Instance.new("TextChatMessageProperties")
-        properties.PrefixText = VIP_TAG .. message.PrefixText
+        properties.PrefixText = tag .. message.PrefixText
         return properties
     end
 end

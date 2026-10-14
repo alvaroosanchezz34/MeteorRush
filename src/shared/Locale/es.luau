@@ -934,6 +934,11 @@ return {
         },
     },
     Titles = {
+        owner = "👑 Creador",
+        admin = "🛡️ Admin",
+        staff = "🔧 Staff",
+        legend = "💎 Leyenda",
+        vip = "⭐ VIP",
         mined1 = "Minero Novato",
         mined3 = "Maestro de Meteoritos",
         champion = "Campeón",
@@ -960,6 +965,15 @@ return {
     Profile = {
         NoTitle = "Sin título",
         RemoveTitle = "Quitar título",
+        Tabs = {
+            stats = "Estadísticas",
+            titles = "Títulos",
+        },
+        Equip = "Equipar",
+        Equipped = "Puesto",
+        Locked = "🔒 %s",
+        VipLocked = "🔒 Pase VIP",
+        TitlesHint = "Elige el título que se ve sobre tu cabeza, en tu base y en el chat.",
         Stats = {
             playtime = "Tiempo jugado",
             totalCoinsEarned = "Monedas ganadas",

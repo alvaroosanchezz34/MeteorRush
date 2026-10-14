@@ -30,6 +30,7 @@ local Workspace = game:GetService("Workspace")
 
 local AdminLogs = require(script.Parent.Parent.Admin.AdminLogs)
 local AdminPermissions = require(script.Parent.Parent.Admin.AdminPermissions)
+local AchievementService = require(script.Parent.AchievementService)
 local AmbientService = require(script.Parent.AmbientService)
 local CompetitionService = require(script.Parent.CompetitionService)
 local CrateService = require(script.Parent.CrateService)
@@ -58,6 +59,7 @@ local Mutations = require(Shared.Config.Mutations)
 local Network = require(Shared.Config.Network)
 local NpcsConfig = require(Shared.Config.Npcs)
 local PlayerStats = require(Shared.Util.PlayerStats)
+local TitlesConfig = require(Shared.Config.Titles)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Remotes = require(Shared.Remotes)
 local ShopConfig = require(Shared.Config.Shop)
@@ -720,6 +722,37 @@ commands.forceReveal = {
             true
         )
         return true, `Presentación de {item.id}. No se ha dado nada.`
+    end,
+}
+
+-- Títulos especiales que reparte un administrador (Config/Titles.Grantable: staff y legend).
+-- owner, admin y vip no se dan aquí: los decide el servidor según quién es el jugador.
+local function setTitle(admin: Player, args: Args, owns: boolean): (boolean, any)
+    local target = getTarget(args)
+    local titleId = args.title
+    if target == nil then
+        return false, NO_TARGET
+    end
+    if type(titleId) ~= "string" or not TitlesConfig.Grantable[titleId] then
+        return false, "Ese título no se puede dar desde el panel."
+    end
+    if not AchievementService.SetSpecialTitle(target, titleId, owns) then
+        return false, NO_TARGET
+    end
+    AdminLogs.Add(admin, if owns then "TITLE_GRANT" else "TITLE_REVOKE", target.Name, titleId)
+    return true,
+        if owns
+            then `{target.Name} tiene ahora el título "{titleId}".`
+            else `Título "{titleId}" quitado a {target.Name}.`
+end
+commands.titleGrant = {
+    handler = function(admin: Player, args: Args): (boolean, any)
+        return setTitle(admin, args, true)
+    end,
+}
+commands.titleRevoke = {
+    handler = function(admin: Player, args: Args): (boolean, any)
+        return setTitle(admin, args, false)
     end,
 }
 

@@ -18,6 +18,12 @@ AdminPermissions.ADMIN_USER_IDS = {
     [10062862461] = true,
 } :: { [number]: boolean }
 
+-- Dueños: llevan el título especial "owner" (👑). Solo estas cuentas y el creador de la
+-- experiencia (si es de un usuario). No se puede dar desde el panel.
+AdminPermissions.OWNER_USER_IDS = {
+    [10062862461] = true,
+} :: { [number]: boolean }
+
 -- El creador de la experiencia es administrador aunque no esté en la lista. Solo vale si
 -- la experiencia es de una cuenta de usuario; si es de un grupo, usa la lista de arriba.
 AdminPermissions.AllowCreator = true
@@ -25,6 +31,15 @@ AdminPermissions.AllowCreator = true
 -- En Roblox Studio, cualquier jugador de prueba es administrador, para poder probar el
 -- panel con las cuentas de prueba. No afecta al juego publicado.
 AdminPermissions.AllowStudio = true
+
+-- Indica si ese jugador es dueño (título "owner").
+function AdminPermissions.IsOwner(player: Player): boolean
+    if typeof(player) ~= "Instance" or not player:IsA("Player") then
+        return false
+    end
+    return AdminPermissions.OWNER_USER_IDS[player.UserId] == true
+        or (game.CreatorType == Enum.CreatorType.User and player.UserId == game.CreatorId)
+end
 
 -- Indica si ese jugador es administrador. Se comprueba en cada acción.
 function AdminPermissions.IsAdmin(player: Player): boolean

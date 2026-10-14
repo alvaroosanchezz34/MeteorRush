@@ -541,6 +541,16 @@ builders.Economy = function(page: ScrollingFrame)
     button(rebirths, "Resetear a 0", 110, COLORS.danger, function()
         dangerOnTarget("¿Dejar los rebirths a 0? No se puede deshacer.", "rebirthReset", nil, true)
     end)
+
+    section(page, "Títulos especiales (owner, admin y VIP son automáticos)")
+    local titles = row(page)
+    local title = cycle(titles, "Título", { "legend", "staff" }, 180)
+    button(titles, "Dar", 70, COLORS.ok, function()
+        runOnTarget("titleGrant", { title = title() })
+    end)
+    button(titles, "Quitar", 80, COLORS.warn, function()
+        runOnTarget("titleRevoke", { title = title() })
+    end)
     return nil
 end
 

@@ -50,6 +50,7 @@ local template: Types.Profile = {
     stats = {},
     achievements = {},
     title = "",
+    specialTitles = {},
     friendsOnline = 0,
     shards = 0,
     permanent = {},

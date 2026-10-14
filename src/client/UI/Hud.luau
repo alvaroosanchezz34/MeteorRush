@@ -545,6 +545,21 @@ function Hud.Mount()
     settingsAspect.AspectRatio = 1
     settingsAspect.Parent = settingsButton
 
+    -- Perfil y títulos: atajo a esa pestaña de la Colección.
+    local profileButton = Components.Button({
+        text = "👤",
+        size = UDim2.fromScale(0.045, 0.045),
+        position = UDim2.fromScale(0.198, 0.8),
+        color = Components.Colors.PanelRaised,
+        parent = gui,
+        onClick = function()
+            MenuBus.Open("index", "profile")
+        end,
+    })
+    local profileAspect = Instance.new("UIAspectRatioConstraint")
+    profileAspect.AspectRatio = 1
+    profileAspect.Parent = profileButton
+
     -- Abrir un menú desde fuera del HUD (los NPCs del Outpost).
     MenuBus.SetHandler(function(key: string, tab: string?)
         for index, menu in MENUS do

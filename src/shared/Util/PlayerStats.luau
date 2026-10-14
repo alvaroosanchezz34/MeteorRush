@@ -21,6 +21,7 @@ local Rebirth = require(Config.Rebirth)
 local Shop = require(Config.Shop)
 local Social = require(Config.Social)
 local Steal = require(Config.Steal)
+local Titles = require(Config.Titles)
 local Upgrades = require(Config.Upgrades)
 local Types = require(script.Parent.Parent.Types)
 
@@ -359,6 +360,10 @@ end
 
 -- Indica si el jugador ha desbloqueado ese título (el id es el del logro que lo da).
 function PlayerStats.OwnsTitle(data: Types.Profile, titleId: string): boolean
+    -- Especiales (owner, admin, vip...): los marca el servidor en `specialTitles`.
+    if Titles.IsSpecial(titleId) then
+        return data.specialTitles[titleId] == true
+    end
     local achievement = Achievements.ById[titleId]
     return achievement ~= nil and achievement.title == true and data.achievements[titleId] == true
 end

@@ -25,6 +25,7 @@ local CONTROLLER_ORDER: { string } = {
     "SwingController",
     "StealController",
     "EquipmentController",
+    "TitleController",
     "InputController",
     "UIController",
 }

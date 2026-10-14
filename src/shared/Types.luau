@@ -128,8 +128,11 @@ export type Profile = {
     stats: { [string]: number },
     -- [logro] = true para los logros desbloqueados (su recompensa ya está dada).
     achievements: { [string]: boolean },
-    -- Título equipado: id del logro que lo da, o "" si no lleva ninguno.
+    -- Título equipado: id del logro que lo da (o de un título especial), o "" si no lleva ninguno.
     title: string,
+    -- [título] = true para los títulos especiales (Config/Titles) que tiene. Solo lo cambia el
+    -- servidor: los automáticos al entrar y los que da un administrador desde el panel.
+    specialTitles: { [string]: boolean },
     -- Amigos de Roblox conectados en el mismo servidor. Es estado de la sesión: SocialService
     -- lo actualiza y lo deja a 0 al cerrar el perfil.
     friendsOnline: number,

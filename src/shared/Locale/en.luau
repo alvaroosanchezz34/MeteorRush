@@ -990,6 +990,11 @@ return {
     },
     -- Títulos: el id es el del logro que lo desbloquea.
     Titles = {
+        owner = "👑 Owner",
+        admin = "🛡️ Admin",
+        staff = "🔧 Staff",
+        legend = "💎 Legend",
+        vip = "⭐ VIP",
         mined1 = "Rookie Miner",
         mined3 = "Meteor Master",
         champion = "Champion",
@@ -1016,6 +1021,15 @@ return {
     Profile = {
         NoTitle = "No title",
         RemoveTitle = "Remove title",
+        Tabs = {
+            stats = "Stats",
+            titles = "Titles",
+        },
+        Equip = "Equip",
+        Equipped = "Equipped",
+        Locked = "🔒 %s",
+        VipLocked = "🔒 VIP pass",
+        TitlesHint = "Choose the title shown above your head, on your base and in chat.",
         Stats = {
             playtime = "Time played",
             totalCoinsEarned = "Coins earned",
