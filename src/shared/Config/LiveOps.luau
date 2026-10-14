@@ -157,6 +157,16 @@ LiveOps.EventCalendar = {
 -- La primera de la lista es la actual. Al entrar con una versión nueva se muestran sus notas.
 LiveOps.Releases = {
     {
+        version = "1.1.0",
+        date = "2026-10-14",
+        notes = {
+            "Play in Spanish or English (change it in Settings)",
+            "New HUD and smoother menus",
+            "Better meteor, mining and reward effects",
+            "Shop: Starter Pack, Mega Pack, Server Meteor, new passes and 1-hour boosts",
+        },
+    },
+    {
         version = "1.0.0",
         date = "2026-10-04",
         notes = {

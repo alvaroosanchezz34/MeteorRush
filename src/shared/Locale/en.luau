@@ -1102,6 +1102,12 @@ return {
     } :: { [string]: { Name: string, Missions: { [string]: string } } },
     -- Notas de cada versión (Config/LiveOps.Releases), por número de versión.
     Releases = {
+        ["1.1.0"] = {
+            "Play in Spanish or English (change it in Settings)",
+            "New HUD and smoother menus",
+            "Better meteor, mining and reward effects",
+            "Shop: Starter Pack, Mega Pack, Server Meteor, new passes and 1-hour boosts",
+        },
         ["1.0.0"] = {
             "Achievements, titles and a player profile",
             "Rebirth shards and the permanent Shard Tree",

@@ -1050,6 +1050,12 @@ return {
         },
     },
     Releases = {
+        ["1.1.0"] = {
+            "Juega en español o en inglés (se cambia en Ajustes)",
+            "HUD nuevo y menús más fluidos",
+            "Mejores efectos de meteoritos, minado y recompensas",
+            "Tienda: Pack Inicial, Mega Pack, Meteorito para el Servidor, pases nuevos y boosts de 1 hora",
+        },
         ["1.0.0"] = {
             "Logros, títulos y perfil de jugador",
             "Fragmentos de renacer y el Árbol de Fragmentos permanente",
