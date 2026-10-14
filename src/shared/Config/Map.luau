@@ -46,8 +46,11 @@ Map.CrateColor = Color3.fromRGB(120, 105, 85)
 -- Altura sobre el suelo de la parcela que sigue contando como "dentro" (zona segura).
 Map.PlotSafeHeight = 50
 
--- Distancia del punto de aparición al centro de la parcela, hacia el fondo.
-Map.SpawnOffsetZ = 22
+-- Distancia del punto de aparición al centro de la parcela, hacia el fondo (negativo = hacia
+-- la entrada). Se aparece junto a la entrada, entre la zona de depósito y la primera fila de
+-- pedestales, mirando hacia fuera: la cámara queda detrás, sobre la base, con sitio de sobra.
+-- Junto al muro del fondo la cámara se quedaba pegada a él y tapaba toda la pantalla.
+Map.SpawnOffsetZ = -19
 
 Map.DepositZoneWidth = 20
 Map.DepositZoneDepth = 8
