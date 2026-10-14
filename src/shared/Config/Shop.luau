@@ -105,9 +105,9 @@ Shop.GamePasses = {
     { key = "autoCollect", id = 2006018882, price = 249 },
     { key = "extraPedestals", id = 2007626854, price = 299 },
     { key = "vip", id = 2006738869, price = 399 },
-    { key = "fastMining", id = 0, price = 249 },
-    { key = "superLuck", id = 0, price = 349 },
-    { key = "megaBackpack", id = 0, price = 299 },
+    { key = "fastMining", id = 2037176455, price = 249 },
+    { key = "superLuck", id = 2038346476, price = 349 },
+    { key = "megaBackpack", id = 2039504305, price = 299 },
 } :: { GamePass }
 
 Shop.Products = {
@@ -137,7 +137,7 @@ Shop.Products = {
     },
     {
         key = "coins2x30",
-        id = 0,
+        id = 3718633117,
         price = 99,
         kind = "boost",
         boost = "coins2x",
@@ -146,7 +146,7 @@ Shop.Products = {
     -- Versiones de 1 hora: más baratas por minuto que dos de 30.
     {
         key = "carryShield60",
-        id = 0,
+        id = 3718633119,
         price = 79,
         kind = "boost",
         boost = "carryShield",
@@ -154,7 +154,7 @@ Shop.Products = {
     },
     {
         key = "magnet60",
-        id = 0,
+        id = 3718633122,
         price = 65,
         kind = "boost",
         boost = "magnet",
@@ -162,7 +162,7 @@ Shop.Products = {
     },
     {
         key = "luck60",
-        id = 0,
+        id = 3718633127,
         price = 129,
         kind = "boost",
         boost = "luck",
@@ -170,7 +170,7 @@ Shop.Products = {
     },
     {
         key = "coins2x60",
-        id = 0,
+        id = 3718633129,
         price = 169,
         kind = "boost",
         boost = "coins2x",
@@ -194,7 +194,7 @@ Shop.Products = {
     -- Paquetes: varias cosas juntas por menos de lo que cuestan sueltas.
     {
         key = "starterPack",
-        id = 0,
+        id = 3718633131,
         price = 99,
         kind = "bundle",
         rebirthCostFraction = 0.15,
@@ -204,7 +204,7 @@ Shop.Products = {
     },
     {
         key = "megaPack",
-        id = 0,
+        id = 3718633137,
         price = 499,
         kind = "bundle",
         rebirthCostFraction = 0.25,
@@ -216,7 +216,7 @@ Shop.Products = {
         },
     },
     -- Meteorito grande que cae para todo el servidor, con aviso de quién lo ha invocado.
-    { key = "serverMeteor", id = 0, price = 149, kind = "meteor", meteorType = "big" },
+    { key = "serverMeteor", id = 3718633143, price = 149, kind = "meteor", meteorType = "big" },
 } :: { Product }
 
 -- Cosméticos: compra directa con Robux (producto de desarrollador). El jugador ve el color antes de pagar.

@@ -1,53 +1,21 @@
 {
     "gamePasses":  {
-                       "extraPedestals":  {
-                                              "gamePassId":  2007626854,
-                                              "name":  "+6 Pedestals",
-                                              "description":  "6 extra pedestals in your base.",
-                                              "isForSale":  true,
-                                              "iconAssetId":  133448903949274,
-                                              "createdTimestamp":  "2026-10-03T16:16:15.55Z",
-                                              "updatedTimestamp":  "2026-10-03T16:16:15.55Z",
-                                              "priceInformation":  {
-                                                                       "defaultPriceInRobux":  299,
-                                                                       "enabledFeatures":  [
-
-                                                                                           ]
-                                                                   },
-                                              "isManagedPricingEnabled":  false
-                                          },
-                       "autoCollect":  {
-                                           "gamePassId":  2006018882,
-                                           "name":  "Auto Collect",
-                                           "description":  "Your base income is collected automatically.",
+                       "doubleCoins":  {
+                                           "gamePassId":  2006582930,
+                                           "name":  "2x Coins",
+                                           "description":  "Double income from all your pedestals.",
                                            "isForSale":  true,
                                            "iconAssetId":  133448903949274,
-                                           "createdTimestamp":  "2026-10-03T16:16:14.33Z",
-                                           "updatedTimestamp":  "2026-10-03T16:16:14.33Z",
+                                           "createdTimestamp":  "2026-10-03T16:16:11.813Z",
+                                           "updatedTimestamp":  "2026-10-03T16:16:11.813Z",
                                            "priceInformation":  {
-                                                                    "defaultPriceInRobux":  249,
+                                                                    "defaultPriceInRobux":  199,
                                                                     "enabledFeatures":  [
 
                                                                                         ]
                                                                 },
                                            "isManagedPricingEnabled":  false
                                        },
-                       "vip":  {
-                                   "gamePassId":  2006738869,
-                                   "name":  "VIP",
-                                   "description":  "VIP chat tag, exclusive gold trail and +10% walk speed.",
-                                   "isForSale":  true,
-                                   "iconAssetId":  133448903949274,
-                                   "createdTimestamp":  "2026-10-03T16:16:16.797Z",
-                                   "updatedTimestamp":  "2026-10-03T16:16:16.797Z",
-                                   "priceInformation":  {
-                                                            "defaultPriceInRobux":  399,
-                                                            "enabledFeatures":  [
-
-                                                                                ]
-                                                        },
-                                   "isManagedPricingEnabled":  false
-                               },
                        "vipBackpack":  {
                                            "gamePassId":  2004542931,
                                            "name":  "VIP Backpack",
@@ -64,42 +32,104 @@
                                                                 },
                                            "isManagedPricingEnabled":  false
                                        },
-                       "doubleCoins":  {
-                                           "gamePassId":  2006582930,
-                                           "name":  "2x Coins",
-                                           "description":  "Double income from all your pedestals.",
+                       "extraPedestals":  {
+                                              "gamePassId":  2007626854,
+                                              "name":  "+6 Pedestals",
+                                              "description":  "6 extra pedestals in your base.",
+                                              "isForSale":  true,
+                                              "iconAssetId":  133448903949274,
+                                              "createdTimestamp":  "2026-10-03T16:16:15.55Z",
+                                              "updatedTimestamp":  "2026-10-03T16:16:15.55Z",
+                                              "priceInformation":  {
+                                                                       "defaultPriceInRobux":  299,
+                                                                       "enabledFeatures":  [
+
+                                                                                           ]
+                                                                   },
+                                              "isManagedPricingEnabled":  false
+                                          },
+                       "superLuck":  {
+                                         "gamePassId":  2038346476,
+                                         "name":  "Super Luck",
+                                         "description":  "+50% luck with rare minerals. Forever.",
+                                         "isForSale":  true,
+                                         "iconAssetId":  133448903949274,
+                                         "createdTimestamp":  "2026-10-14T20:36:56.498Z",
+                                         "updatedTimestamp":  "2026-10-14T20:36:56.498Z",
+                                         "priceInformation":  {
+                                                                  "defaultPriceInRobux":  349,
+                                                                  "enabledFeatures":  [
+
+                                                                                      ]
+                                                              },
+                                         "isManagedPricingEnabled":  false
+                                     },
+                       "fastMining":  {
+                                          "gamePassId":  2037176455,
+                                          "name":  "Fast Mining",
+                                          "description":  "Every pickaxe hit takes 30% less time. Forever.",
+                                          "isForSale":  true,
+                                          "iconAssetId":  133448903949274,
+                                          "createdTimestamp":  "2026-10-14T20:36:55.291Z",
+                                          "updatedTimestamp":  "2026-10-14T20:36:55.291Z",
+                                          "priceInformation":  {
+                                                                   "defaultPriceInRobux":  249,
+                                                                   "enabledFeatures":  [
+
+                                                                                       ]
+                                                               },
+                                          "isManagedPricingEnabled":  false
+                                      },
+                       "vip":  {
+                                   "gamePassId":  2006738869,
+                                   "name":  "VIP",
+                                   "description":  "VIP chat tag, exclusive gold trail and +10% walk speed.",
+                                   "isForSale":  true,
+                                   "iconAssetId":  133448903949274,
+                                   "createdTimestamp":  "2026-10-03T16:16:16.797Z",
+                                   "updatedTimestamp":  "2026-10-03T16:16:16.797Z",
+                                   "priceInformation":  {
+                                                            "defaultPriceInRobux":  399,
+                                                            "enabledFeatures":  [
+
+                                                                                ]
+                                                        },
+                                   "isManagedPricingEnabled":  false
+                               },
+                       "autoCollect":  {
+                                           "gamePassId":  2006018882,
+                                           "name":  "Auto Collect",
+                                           "description":  "Your base income is collected automatically.",
                                            "isForSale":  true,
                                            "iconAssetId":  133448903949274,
-                                           "createdTimestamp":  "2026-10-03T16:16:11.813Z",
-                                           "updatedTimestamp":  "2026-10-03T16:16:11.813Z",
+                                           "createdTimestamp":  "2026-10-03T16:16:14.33Z",
+                                           "updatedTimestamp":  "2026-10-03T16:16:14.33Z",
                                            "priceInformation":  {
-                                                                    "defaultPriceInRobux":  199,
+                                                                    "defaultPriceInRobux":  249,
                                                                     "enabledFeatures":  [
 
                                                                                         ]
                                                                 },
                                            "isManagedPricingEnabled":  false
-                                       }
+                                       },
+                       "megaBackpack":  {
+                                            "gamePassId":  2039504305,
+                                            "name":  "Mega Backpack",
+                                            "description":  "+20 backpack capacity. Forever.",
+                                            "isForSale":  true,
+                                            "iconAssetId":  133448903949274,
+                                            "createdTimestamp":  "2026-10-14T20:36:57.715Z",
+                                            "updatedTimestamp":  "2026-10-14T20:36:57.715Z",
+                                            "priceInformation":  {
+                                                                     "defaultPriceInRobux":  299,
+                                                                     "enabledFeatures":  [
+
+                                                                                         ]
+                                                                 },
+                                            "isManagedPricingEnabled":  false
+                                        }
                    },
     "products":  {
-                     "baseForest":  {
-                                        "productId":  3716263197,
-                                        "name":  "Forest Base",
-                                        "description":  "Paint your base floor forest green.",
-                                        "iconImageAssetId":  88963008124478,
-                                        "universeId":  10769178796,
-                                        "isForSale":  true,
-                                        "priceInformation":  {
-                                                                 "defaultPriceInRobux":  79,
-                                                                 "enabledFeatures":  [
-
-                                                                                     ]
-                                                             },
-                                        "isImmutable":  false,
-                                        "createdTimestamp":  "2026-10-03T16:16:32.444Z",
-                                        "updatedTimestamp":  "2026-10-03T16:16:32.444Z",
-                                        "isManagedPricingEnabled":  false
-                                    },
                      "trailFire":  {
                                        "productId":  3716263182,
                                        "name":  "Fire Trail",
@@ -118,96 +148,24 @@
                                        "updatedTimestamp":  "2026-10-03T16:16:28.613Z",
                                        "isManagedPricingEnabled":  false
                                    },
-                     "coinsSmall":  {
-                                        "productId":  3716263157,
-                                        "name":  "Coin Pouch",
-                                        "description":  "A small pack of coins. Scales with your rebirths.",
-                                        "iconImageAssetId":  88963008124478,
-                                        "universeId":  10769178796,
-                                        "isForSale":  true,
-                                        "priceInformation":  {
-                                                                 "defaultPriceInRobux":  49,
-                                                                 "enabledFeatures":  [
+                     "serverMeteor":  {
+                                          "productId":  3718633143,
+                                          "name":  "Server Meteor",
+                                          "description":  "A big meteor falls for everyone in the server.",
+                                          "iconImageAssetId":  88963008124478,
+                                          "universeId":  10769178796,
+                                          "isForSale":  true,
+                                          "priceInformation":  {
+                                                                   "defaultPriceInRobux":  149,
+                                                                   "enabledFeatures":  [
 
-                                                                                     ]
-                                                             },
-                                        "isImmutable":  false,
-                                        "createdTimestamp":  "2026-10-03T16:16:22.108Z",
-                                        "updatedTimestamp":  "2026-10-03T16:16:22.108Z",
-                                        "isManagedPricingEnabled":  false
-                                    },
-                     "coinsLarge":  {
-                                        "productId":  3716263169,
-                                        "name":  "Coin Chest",
-                                        "description":  "A large pack of coins. Scales with your rebirths.",
-                                        "iconImageAssetId":  88963008124478,
-                                        "universeId":  10769178796,
-                                        "isForSale":  true,
-                                        "priceInformation":  {
-                                                                 "defaultPriceInRobux":  399,
-                                                                 "enabledFeatures":  [
-
-                                                                                     ]
-                                                             },
-                                        "isImmutable":  false,
-                                        "createdTimestamp":  "2026-10-03T16:16:24.644Z",
-                                        "updatedTimestamp":  "2026-10-03T16:16:24.644Z",
-                                        "isManagedPricingEnabled":  false
-                                    },
-                     "luck30":  {
-                                    "productId":  3716263154,
-                                    "name":  "2x Luck (30 min)",
-                                    "description":  "Double rare luck for 30 minutes.",
-                                    "iconImageAssetId":  88963008124478,
-                                    "universeId":  10769178796,
-                                    "isForSale":  true,
-                                    "priceInformation":  {
-                                                             "defaultPriceInRobux":  79,
-                                                             "enabledFeatures":  [
-
-                                                                                 ]
-                                                         },
-                                    "isImmutable":  false,
-                                    "createdTimestamp":  "2026-10-03T16:16:20.862Z",
-                                    "updatedTimestamp":  "2026-10-03T16:16:20.862Z",
-                                    "isManagedPricingEnabled":  false
-                                },
-                     "pickaxeCrystal":  {
-                                            "productId":  3716263178,
-                                            "name":  "Crystal Pickaxe",
-                                            "description":  "A crystal pickaxe skin.",
-                                            "iconImageAssetId":  88963008124478,
-                                            "universeId":  10769178796,
-                                            "isForSale":  true,
-                                            "priceInformation":  {
-                                                                     "defaultPriceInRobux":  149,
-                                                                     "enabledFeatures":  [
-
-                                                                                         ]
-                                                                 },
-                                            "isImmutable":  false,
-                                            "createdTimestamp":  "2026-10-03T16:16:27.337Z",
-                                            "updatedTimestamp":  "2026-10-03T16:16:27.337Z",
-                                            "isManagedPricingEnabled":  false
-                                        },
-                     "carryShield30":  {
-                                           "productId":  3716263146,
-                                           "name":  "Carry Shield (30 min)",
-                                           "description":  "Nobody can hit you while carrying for 30 minutes.",
-                                           "iconImageAssetId":  88963008124478,
-                                           "universeId":  10769178796,
-                                           "isForSale":  true,
-                                           "priceInformation":  {
-                                                                    "defaultPriceInRobux":  49,
-                                                                    "enabledFeatures":  [
-
-                                                                                        ]
-                                                                },
-                                           "isImmutable":  false,
-                                           "createdTimestamp":  "2026-10-03T16:16:18.369Z",
-                                           "updatedTimestamp":  "2026-10-03T16:16:18.369Z",
-                                           "isManagedPricingEnabled":  false
-                                       },
+                                                                                       ]
+                                                               },
+                                          "isImmutable":  false,
+                                          "createdTimestamp":  "2026-10-14T20:37:07.971Z",
+                                          "updatedTimestamp":  "2026-10-14T20:37:07.971Z",
+                                          "isManagedPricingEnabled":  false
+                                      },
                      "baseOcean":  {
                                        "productId":  3716263191,
                                        "name":  "Ocean Base",
@@ -226,6 +184,42 @@
                                        "updatedTimestamp":  "2026-10-03T16:16:31.17Z",
                                        "isManagedPricingEnabled":  false
                                    },
+                     "coinsLarge":  {
+                                        "productId":  3716263169,
+                                        "name":  "Coin Chest",
+                                        "description":  "A large pack of coins. Scales with your rebirths.",
+                                        "iconImageAssetId":  88963008124478,
+                                        "universeId":  10769178796,
+                                        "isForSale":  true,
+                                        "priceInformation":  {
+                                                                 "defaultPriceInRobux":  399,
+                                                                 "enabledFeatures":  [
+
+                                                                                     ]
+                                                             },
+                                        "isImmutable":  false,
+                                        "createdTimestamp":  "2026-10-03T16:16:24.644Z",
+                                        "updatedTimestamp":  "2026-10-03T16:16:24.644Z",
+                                        "isManagedPricingEnabled":  false
+                                    },
+                     "pickaxeCrystal":  {
+                                            "productId":  3716263178,
+                                            "name":  "Crystal Pickaxe",
+                                            "description":  "A crystal pickaxe skin.",
+                                            "iconImageAssetId":  88963008124478,
+                                            "universeId":  10769178796,
+                                            "isForSale":  true,
+                                            "priceInformation":  {
+                                                                     "defaultPriceInRobux":  149,
+                                                                     "enabledFeatures":  [
+
+                                                                                         ]
+                                                                 },
+                                            "isImmutable":  false,
+                                            "createdTimestamp":  "2026-10-03T16:16:27.337Z",
+                                            "updatedTimestamp":  "2026-10-03T16:16:27.337Z",
+                                            "isManagedPricingEnabled":  false
+                                        },
                      "pickaxeGold":  {
                                          "productId":  3716263174,
                                          "name":  "Golden Pickaxe",
@@ -244,6 +238,150 @@
                                          "updatedTimestamp":  "2026-10-03T16:16:25.977Z",
                                          "isManagedPricingEnabled":  false
                                      },
+                     "luck60":  {
+                                    "productId":  3718633127,
+                                    "name":  "2x Luck (1 hour)",
+                                    "description":  "Double rare luck for 1 hour.",
+                                    "iconImageAssetId":  88963008124478,
+                                    "universeId":  10769178796,
+                                    "isForSale":  true,
+                                    "priceInformation":  {
+                                                             "defaultPriceInRobux":  129,
+                                                             "enabledFeatures":  [
+
+                                                                                 ]
+                                                         },
+                                    "isImmutable":  false,
+                                    "createdTimestamp":  "2026-10-14T20:37:03.051Z",
+                                    "updatedTimestamp":  "2026-10-14T20:37:03.051Z",
+                                    "isManagedPricingEnabled":  false
+                                },
+                     "carryShield60":  {
+                                           "productId":  3718633119,
+                                           "name":  "Carry Shield (1 hour)",
+                                           "description":  "Nobody can hit you while carrying for 1 hour.",
+                                           "iconImageAssetId":  88963008124478,
+                                           "universeId":  10769178796,
+                                           "isForSale":  true,
+                                           "priceInformation":  {
+                                                                    "defaultPriceInRobux":  79,
+                                                                    "enabledFeatures":  [
+
+                                                                                        ]
+                                                                },
+                                           "isImmutable":  false,
+                                           "createdTimestamp":  "2026-10-14T20:37:00.633Z",
+                                           "updatedTimestamp":  "2026-10-14T20:37:00.633Z",
+                                           "isManagedPricingEnabled":  false
+                                       },
+                     "luck30":  {
+                                    "productId":  3716263154,
+                                    "name":  "2x Luck (30 min)",
+                                    "description":  "Double rare luck for 30 minutes.",
+                                    "iconImageAssetId":  88963008124478,
+                                    "universeId":  10769178796,
+                                    "isForSale":  true,
+                                    "priceInformation":  {
+                                                             "defaultPriceInRobux":  79,
+                                                             "enabledFeatures":  [
+
+                                                                                 ]
+                                                         },
+                                    "isImmutable":  false,
+                                    "createdTimestamp":  "2026-10-03T16:16:20.862Z",
+                                    "updatedTimestamp":  "2026-10-03T16:16:20.862Z",
+                                    "isManagedPricingEnabled":  false
+                                },
+                     "baseForest":  {
+                                        "productId":  3716263197,
+                                        "name":  "Forest Base",
+                                        "description":  "Paint your base floor forest green.",
+                                        "iconImageAssetId":  88963008124478,
+                                        "universeId":  10769178796,
+                                        "isForSale":  true,
+                                        "priceInformation":  {
+                                                                 "defaultPriceInRobux":  79,
+                                                                 "enabledFeatures":  [
+
+                                                                                     ]
+                                                             },
+                                        "isImmutable":  false,
+                                        "createdTimestamp":  "2026-10-03T16:16:32.444Z",
+                                        "updatedTimestamp":  "2026-10-03T16:16:32.444Z",
+                                        "isManagedPricingEnabled":  false
+                                    },
+                     "coins2x60":  {
+                                       "productId":  3718633129,
+                                       "name":  "2x Coins (1 hour)",
+                                       "description":  "Double income from your pedestals for 1 hour.",
+                                       "iconImageAssetId":  88963008124478,
+                                       "universeId":  10769178796,
+                                       "isForSale":  true,
+                                       "priceInformation":  {
+                                                                "defaultPriceInRobux":  169,
+                                                                "enabledFeatures":  [
+
+                                                                                    ]
+                                                            },
+                                       "isImmutable":  false,
+                                       "createdTimestamp":  "2026-10-14T20:37:04.257Z",
+                                       "updatedTimestamp":  "2026-10-14T20:37:04.257Z",
+                                       "isManagedPricingEnabled":  false
+                                   },
+                     "coins2x30":  {
+                                       "productId":  3718633117,
+                                       "name":  "2x Coins (30 min)",
+                                       "description":  "Double income from your pedestals for 30 minutes.",
+                                       "iconImageAssetId":  88963008124478,
+                                       "universeId":  10769178796,
+                                       "isForSale":  true,
+                                       "priceInformation":  {
+                                                                "defaultPriceInRobux":  99,
+                                                                "enabledFeatures":  [
+
+                                                                                    ]
+                                                            },
+                                       "isImmutable":  false,
+                                       "createdTimestamp":  "2026-10-14T20:36:59.382Z",
+                                       "updatedTimestamp":  "2026-10-14T20:36:59.382Z",
+                                       "isManagedPricingEnabled":  false
+                                   },
+                     "starterPack":  {
+                                         "productId":  3718633131,
+                                         "name":  "Starter Pack",
+                                         "description":  "Coins, 2x Luck 1 h, Carry Shield 1 h and the Starter Trail. Once per account.",
+                                         "iconImageAssetId":  88963008124478,
+                                         "universeId":  10769178796,
+                                         "isForSale":  true,
+                                         "priceInformation":  {
+                                                                  "defaultPriceInRobux":  99,
+                                                                  "enabledFeatures":  [
+
+                                                                                      ]
+                                                              },
+                                         "isImmutable":  false,
+                                         "createdTimestamp":  "2026-10-14T20:37:05.514Z",
+                                         "updatedTimestamp":  "2026-10-14T20:37:05.514Z",
+                                         "isManagedPricingEnabled":  false
+                                     },
+                     "magnet60":  {
+                                      "productId":  3718633122,
+                                      "name":  "Magnet (1 hour)",
+                                      "description":  "Pick up dropped minerals from 20 studs away for 1 hour.",
+                                      "iconImageAssetId":  88963008124478,
+                                      "universeId":  10769178796,
+                                      "isForSale":  true,
+                                      "priceInformation":  {
+                                                               "defaultPriceInRobux":  65,
+                                                               "enabledFeatures":  [
+
+                                                                                   ]
+                                                           },
+                                      "isImmutable":  false,
+                                      "createdTimestamp":  "2026-10-14T20:37:01.833Z",
+                                      "updatedTimestamp":  "2026-10-14T20:37:01.833Z",
+                                      "isManagedPricingEnabled":  false
+                                  },
                      "coinsMedium":  {
                                          "productId":  3716263162,
                                          "name":  "Coin Bag",
@@ -280,6 +418,24 @@
                                       "updatedTimestamp":  "2026-10-03T16:16:19.629Z",
                                       "isManagedPricingEnabled":  false
                                   },
+                     "carryShield30":  {
+                                           "productId":  3716263146,
+                                           "name":  "Carry Shield (30 min)",
+                                           "description":  "Nobody can hit you while carrying for 30 minutes.",
+                                           "iconImageAssetId":  88963008124478,
+                                           "universeId":  10769178796,
+                                           "isForSale":  true,
+                                           "priceInformation":  {
+                                                                    "defaultPriceInRobux":  49,
+                                                                    "enabledFeatures":  [
+
+                                                                                        ]
+                                                                },
+                                           "isImmutable":  false,
+                                           "createdTimestamp":  "2026-10-03T16:16:18.369Z",
+                                           "updatedTimestamp":  "2026-10-03T16:16:18.369Z",
+                                           "isManagedPricingEnabled":  false
+                                       },
                      "trailCosmic":  {
                                          "productId":  3716263186,
                                          "name":  "Cosmic Trail",
@@ -297,6 +453,42 @@
                                          "createdTimestamp":  "2026-10-03T16:16:29.851Z",
                                          "updatedTimestamp":  "2026-10-03T16:16:29.851Z",
                                          "isManagedPricingEnabled":  false
-                                     }
+                                     },
+                     "megaPack":  {
+                                      "productId":  3718633137,
+                                      "name":  "Mega Pack",
+                                      "description":  "A big pack of coins plus 1 hour of 2x Luck, Magnet, Carry Shield and 2x Coins.",
+                                      "iconImageAssetId":  88963008124478,
+                                      "universeId":  10769178796,
+                                      "isForSale":  true,
+                                      "priceInformation":  {
+                                                               "defaultPriceInRobux":  499,
+                                                               "enabledFeatures":  [
+
+                                                                                   ]
+                                                           },
+                                      "isImmutable":  false,
+                                      "createdTimestamp":  "2026-10-14T20:37:06.76Z",
+                                      "updatedTimestamp":  "2026-10-14T20:37:06.76Z",
+                                      "isManagedPricingEnabled":  false
+                                  },
+                     "coinsSmall":  {
+                                        "productId":  3716263157,
+                                        "name":  "Coin Pouch",
+                                        "description":  "A small pack of coins. Scales with your rebirths.",
+                                        "iconImageAssetId":  88963008124478,
+                                        "universeId":  10769178796,
+                                        "isForSale":  true,
+                                        "priceInformation":  {
+                                                                 "defaultPriceInRobux":  49,
+                                                                 "enabledFeatures":  [
+
+                                                                                     ]
+                                                             },
+                                        "isImmutable":  false,
+                                        "createdTimestamp":  "2026-10-03T16:16:22.108Z",
+                                        "updatedTimestamp":  "2026-10-03T16:16:22.108Z",
+                                        "isManagedPricingEnabled":  false
+                                    }
                  }
 }
